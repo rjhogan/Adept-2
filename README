@@ -5,22 +5,28 @@ By Robin Hogan <r.j.hogan@ecmwf.int>
 
 INTRODUCTION
 
-The Adept software library provides the capability to automatically
-differentiate an algorithm written in C or C++.  It uses expression
-templates in a way that allows it to compute adjoints significantly
-faster than the leading current tools that use the same approach of
-operator overloading. Benchmark calculations found that Adept was
-significantly faster than ADOL-C, CppAD and Sacado for adjoint
-calculations, and often not much slower than hand-written adjoint
-code. The code to run these benchmarks on your platform is provided in
-this package.
+The Adept version 2 software library provides two different
+functionalities:
 
-Since version 1.9, Adept has been rewritten to include array
-functionality.
+- Its array capability provides support for vectors, matrices, arrays
+  of up to 7 dimensions and linear algebra.
 
-The web site is at http://www.met.reading.ac.uk/clouds/adept/ where
-you can find the latest version of the code as well as a paper
-describing how it works:
+- Its automatic differentiation capability enables algorithms written
+  in C++ to be differentiated with little code modification, very
+  useful for a wide range of applications that involve mathematical
+  optimization. It is backwards compatible with and as fast as Adept
+  1.1.
+
+Adept 2 uses a single expression template framework under the hood to
+get good performance for both of these aspects. The web site is at
+http://www.met.reading.ac.uk/clouds/adept2/ where you can find the
+latest version of the code.
+
+The web site for Adept version
+1.1. (http://www.met.reading.ac.uk/clouds/adept/) includes a link to
+the paper describing how the automatic differentiation capability
+works:
+
 
 Hogan, R. J., 2014: Fast reverse-mode automatic differentiation using
 expression templates in C++. ACM Trans. Math. Soft., 40, 26:1-26:16.
