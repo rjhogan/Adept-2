@@ -1,0 +1,4 @@
+version 1.1
+	- Added ./configure script
+	- Added support for additional mathematical functions: asinh, acosh, atanh, expm1, log1p, cbrt, erf, erfc, exp2, log2
+	- License changed to Apache License, Version 2.0

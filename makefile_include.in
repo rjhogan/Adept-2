@@ -1,0 +1,19 @@
+# Template for configure to create makefile_include, which is included
+# by test/Makefile and benchmark/Makefile
+
+AR = @AR@
+CC = @CC@
+CFLAGS = @CFLAGS@
+CPP = @CPP@
+CPPFLAGS = @CPPFLAGS@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+CXXFLAGS = @CXXFLAGS@ @OPENMP_CXXFLAGS@
+DEFS = @DEFS@
+LD = @LD@
+LDFLAGS = @LDFLAGS@ @OPENMP_CXXFLAGS@
+LIBOBJS = @LIBOBJS@
+LIBS = @LIBS@
+SHELL = @SHELL@
+LIBTOOL = @LIBTOOL@
+USE_GSL = @USE_GSL@

@@ -1,0 +1,71 @@
+version 1.9.8 (April 2017):
+	- Completed FixedArray.h and tested for active arguments
+	- Added array_shortcuts for FixedArrays: (a)VectorX, (a)MatrixXX
+	- Added array_shortcuts for Arrays: (a)ArrayXD (for X = 3 to 7)
+	- interp permits general Expression arguments
+
+version 1.9.7 (April 2016):
+	- Nearly completed FixedArray.h
+
+version 1.9.6 (March 2016):
+	- Started FixedArray.h
+
+version 1.9.5 (March 2016):
+	- Fixed add_derivative_dependence and append_derivative_dependence
+	when applied to elements of arrays
+	- Added ADEPT_BOUNDS_CHECKING capability, and fixed IndexedArray
+	to work with this
+	- Now call BLAS and LAPACK (Fortran) routines, rather than C-BLAS
+	and LAPACKE functions
+	- Added matrix multiplication benchmark program
+	- Added IndexedArray for dimensions up to 7
+	- Added Array::data() and Array::const_data() for direct access
+	- Added Array::subset(); slightly more concise than using "range"
+
+version 1.9.4 (January 2016):
+	- Completed changes to documentation in doc directory
+	- Added control/inquiry of settings, e.g. set_max_blas_threads()
+	and configuration()
+
+version 1.9.3 (December 2015):
+	- Added "max" and "min" as binary operators (note that "maxval"
+	and "minval" are reduction operators as in Fortran)
+
+version 1.9.2 (December 2015):
+	- Added ActiveConstReference type for active constant references
+
+version 1.9.1 (November 2015):
+	- New matmul.h/matmul.cpp - not yet complete
+
+version 1.9.0 (November 2015):
+	- SUBSTANTIAL REWRITE TO INCORPORATE ARRAY FUNCTIONALITY
+
+version 1.1 (June 2015):
+	- Added ./configure script using autotools
+	- Added support for additional mathematical functions: asinh,
+	acosh, atanh, expm1, log1p, cbrt, erf, erfc, exp2, log2
+	- Changed license from GNU General Public License to Apache
+	License, Version 2.0
+	- Jacobian calculation uses OpenMP parallelization
+	- Removed multiscatter example code
+	- New benchmarking program in benchmark/ that compares to other
+	automatic differentiation tools if available
+	- Fixed bug so that gaps in the gradient list now merge properly
+	- Provided capability to compile code without an external library,
+	to facilitate porting to Windows
+	- Added programs in test/ demonstrating checkpointing,
+	thread-safety and compiling without an external library
+
+version 1.0 (September 2013):
+	- Very many internal changes and added features
+	- Detailed documentation in the doc/ directory
+	- Removed the LIFO requirement on the order with which aReal
+	objects ought to be created and destroyed
+	- For users of version 0.9, the main change to the interface is
+	that the Stack::start() member function is no longer supported;
+	rather you should call the Stack::new_recording() member function
+	*after* the independent variables have been initialized but
+	*before* any mathematical operations are performed using them
+
+version 0.9:
+	- First public release

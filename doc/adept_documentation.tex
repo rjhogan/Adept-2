@@ -1,0 +1,3242 @@
+% 
+% Adept automatic differentiation library for C++: User guide
+%
+% Type "pdflatex adept_documentation.tex" twice to recreate the PDF
+% file (or type "make pdf" in this directory after running the
+% configure script one directory above).
+%
+% Permission is granted to copy, distribute and/or modify this
+% document under the terms of the GNU Free Documentation License,
+% Version 1.3 or any later version published by the Free Software
+% Foundation. This license may be found at
+% http://www.gnu.org/copyleft/fdl.html, and in this directory in the
+% "COPYING" file. As an exception, no copyright is asserted for the
+% code fragments in this document (indicated in the text with a
+% light-grey background); these code fragments are in the Public
+% Domain and may be copied, modified and distributed without
+% restriction.
+
+\documentclass[a4,oneside]{book}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue]{hyperref}
+\usepackage{natbib}
+\usepackage{times}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{color}
+
+% Set math in Times Roman
+\DeclareSymbolFont{letters}{OML}{ptmcm}{m}{it}
+\DeclareSymbolFont{operators}{OT1}{ptmcm}{m}{n}
+
+% Page set up
+\setlength{\oddsidemargin}{0cm} %{0.5cm}
+\setlength{\evensidemargin}{0cm} %{0.5cm}
+\setlength{\topmargin}{-2cm}
+\setlength{\textheight}{24cm}
+\setlength{\textwidth}{16cm}
+\setlength{\marginparsep}{2cm}
+\setlength{\marginparwidth}{0cm}
+\setlength{\parindent}{1cm}
+\setlength{\parskip}{0cm}
+\renewcommand{\baselinestretch}{1.1}
+\sloppy
+
+% Configure appearance of code listings
+\definecolor{light-gray}{gray}{0.92}
+\def\codesize{\small}
+\lstset{language=C++,
+  backgroundcolor=\color{light-gray},
+  numbersep=5pt,
+  xleftmargin=0cm,
+  xrightmargin=0cm,
+  basicstyle=\footnotesize\ttfamily,
+  emph={adouble,xdouble,Stack,adept,Array,FixedArray,Vector,aVector,Matrix,aMatrix,Array3,aArray3,intVector,boolVector,floatVector,adept,SpecialMatrix,SquareMatrix,aSquareMatrix,SymmMatrix,aSymmMatrix,UpperMatrix,LowerMatrix,IntVector},
+  emphstyle=\bfseries\color{red}}
+\lstset{showstringspaces=false}
+
+% Table-of-contents configuration
+\usepackage{tocloft}
+\setlength\cftparskip{-2pt}
+\setlength\cftbeforesecskip{1pt}
+\setlength\cftaftertoctitleskip{2pt}
+\renewcommand\cftsecfont{\normalfont}
+\renewcommand\cftsecpagefont{\normalfont}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftsecdotsep}}
+\renewcommand\cftsecdotsep{\cftdot}
+\renewcommand\cftsubsecdotsep{\cftdot}
+
+% Page headers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\sectionmark}[1]{\markright{\thesection.\ #1}}
+\renewcommand{\subsectionmark}[1]{}
+\fancyhead[RO,RE]{\thepage}
+\fancyfoot[C]{}
+
+% Symbols and macros
+\def\x{\ensuremath{{\bf x}}}
+\def\y{\ensuremath{{\bf y}}}
+\def\H{\ensuremath{{\bf H}}}
+\def\T{\ensuremath{^\mathrm{T}}}
+\def\Adept{\emph{Adept}}
+\def\code#1{{\codesize\texttt{#1}}}
+\def\codebf#1{{\codesize\texttt{\textbf{#1}}}}
+\def\citem#1{\item[{\codesize\texttt{#1}}]}
+\def\codestyle#1{\texttt{#1}}
+\def\Offset{size\_t}
+\renewcommand\thefootnote{\relax}
+% Title material
+\title{\Adept\ C++ Software Library: User
+  Guide} \author{Robin J. Hogan\\ \emph{European Centre for Medium
+    Range Weather Forecasts, Reading, UK}\\ \emph{and School of
+    Mathematical and Physical Sciences, University of Reading, UK,}}
+
+\date{Document version 1.9.8 (April 2016) applicable to \Adept\ version
+  1.9.8 \thanks{This document is copyright \copyright\ Robin J. Hogan
+    2013--2016.  Permission is granted to copy, distribute and/or
+    modify this document under the terms of the GNU Free Documentation
+    License, Version 1.3 or any later version published by the Free
+    Software Foundation. This license may be found at
+    \url{http://www.gnu.org/copyleft/fdl.html}.  As an exception, no
+    copyright is asserted for the code fragments in this document
+    (indicated in the text with a light-grey background); these code
+    fragments are hereby placed in the Public Domain, and accordingly
+    may be copied, modified and distributed without restriction.}
+  \thanks{If you have any queries about \Adept\ that are not answered
+    by this document or by the information on the \Adept\ web site
+    (\url{http://www.met.reading.ac.uk/clouds/adept/}) then please
+    email me at
+    \href{mailto:r.j.hogan@ecmwf.int}{\texttt{r.j.hogan@ecmwf.int}}.}}
+\begin{document}
+\maketitle
+
+\tableofcontents
+\def\thefootnote{\fnsymbol{footnote}}
+\chapter{Introduction}
+\section{What is Adept?}
+\Adept\ (Automatic Differentiation using Expression Templates) is a
+C++ software library that enables algorithms to be automatically
+differentiated. Since version 2.0\footnote{Note that the version 1.9.x
+  series serve as beta releases for version 2.0 of \Adept.} it also
+provides array classes that can be used in array expressions.  These
+two capabilities are fully integrated such that array expressions can
+be differentiated efficiently, but the array capability may also be
+used on its own.
+
+The automatic-differentiation capability uses an operator overloading
+approach, so very little code modification is
+required. Differentiation can be performed in forward mode (the
+``tangent-linear'' computation), reverse mode (the ``adjoint''
+computation), or the full Jacobian matrix can be computed. This
+behaviour is common to several other libraries, namely ADOL-C
+\citep{Griewank+1996}, CppAD \citep{Bell2007} and Sacado
+\citep{Gay2005}, but the use of expression templates, an efficient way
+to store the differential information and several other optimizations
+mean that reverse-mode differentiation tends to be significantly
+faster and use less memory. In fact, \Adept\ is also usually only a
+little slower than an adjoint code you might write by hand, but
+immeasurably faster in terms of user time; adjoint coding is very time
+consuming and error-prone. For technical details of how it works,
+benchmark results and further discussion of the factors affecting its
+speed when applied to a particular code, see \cite{Hogan2014}.
+
+Expression templates also underpin a number of libraries that provide
+the capability to perform mathematical operations on entire arrays
+\citep{Veldhuizen1995}. Unfortunately, if \Adept\ version 1.x and such
+an array library are used together, then the speed advantages of
+expression templates are lost, if indeed the libraries work together
+at all. Since version 2.0, \Adept\ provides array classes that
+overcome this problem: its automatic differentiation and array
+capabilities are underpinned by a single unified expression template
+framework so that array expressions may be differentiated very
+efficiently.  However, it should be stressed that \Adept\ is useful as
+a fully functional array library even if you don't wish to use its
+automatic differentiation capability. \Adept\ uses BLAS and LAPACK for
+matrix operations.
+
+This user guide describes how to apply the \Adept\ software library to
+your code, and many of the examples map on to those in the \code{test}
+directory of the \Adept\ software package.  Section
+\ref{sec:installing} outlines how to install \Adept\ on your system
+and how to compile your own code to use it. Chapter \ref{chap:ad}
+describes how to use the automatic differentiation capability of the
+library, while chapter \ref{chap:arrays} describes how to use its
+array capability. Chapter \ref{chap:gen} then describes general
+aspects such as exception handling, configuration options and license
+terms.
+
+\section{Installing \Adept\ and compiling your code to use it}
+\label{sec:installing}
+\Adept\ is compatible with any C++98 compliant compiler,
+although most of the testing has been specifically on Linux with the
+GNU C++ compiler. The code is built with the help of a
+\code{configure} shell script generated by GNU autotools.  If you are
+on a non-Unix system (e.g.\ Windows) and cannot use shell scripts, see
+section \ref{sec:non-unix}.
+\subsection{Unix-like platforms}
+\label{sec:unix}
+On a Unix-like system, do the following:
+\begin{enumerate}
+\item Ensure you have a BLAS library installed, necessary for matrix
+  multiplication.  For the best performance in matrix operations it is
+  recommended that you install an optimized package such as
+  OpenBLAS\footnote{OpenBLAS is available from
+    \url{http://www.openblas.net/}.} or ATLAS\footnote{ATLAS is
+    available from \url{http://math-atlas.sourceforge.net/}.}.  If you
+  have multiple BLAS libraries available on your system you can
+  specify the one you want by calling the \code{configure} script
+  below with \code{--with-blas=openblas} or similar.
+\item Optionally install the LAPACK library, necessary for matrix
+  inversion and solving linear systems of equations. If you do not
+  install this then \Adept\ will still compile but the functions
+  \code{inv} and \code{solve} will fail at run time. Note that LAPACK
+  relies on the underlying BLAS library for its speed.
+\item The test and benchmarking programs can make use of additional
+  libraries if available. If you also install any of the automatic
+  differentiation tools ADOL-C, CppAD and/or Sacado then the
+  benchmarking test program can compare them to \Adept. One of the
+  test programs uses the minimization algorithm from the GNU
+  Scientific Library, if available, so you may wish to install that
+  too.
+\item Unpack the package (\code{tar xvfz adept-2.x.tar.gz} on Linux)
+  and \code{cd} to the directory \code{adept-2.x}.
+\item Configure the build using the \code{configure} script. The most
+  basic method is to just run
+\begin{lstlisting}
+./configure
+\end{lstlisting}
+More likely you will wish to compile with a higher level of
+optimization than the default (which is \code{-O2}), achieved by
+setting the environment variable \code{CXXFLAGS}. You may also wish to
+specify the root directory of the installation, say to
+\code{/foo}. These may be done by running instead
+\begin{lstlisting}
+./configure CXXFLAGS="-g -O3" --prefix=/foo
+\end{lstlisting}
+The \code{-g} option to \code{CXXFLAGS} ensures debugging information
+is stored.  If a library you wish to use is installed in a non-system
+directory, say under \code{/foo}, then specify the locations as
+follows:
+\begin{lstlisting}
+./configure CPPFLAGS="-I/foo/include" LDFLAGS="-L/foo/lib -Wl,-rpath,/foo/lib"
+\end{lstlisting}
+where the \code{-rpath} business is needed in order that the
+\Adept\ shared library knows where to look for the libraries it is
+dependent on.  If you have them then for the benchmarking program you
+can also add the non-system location of ADOL-C, CppAD and Sacado
+libraries with additional \code{-I} and \code{-L} arguments, but note
+that the \code{-rpath} argument is not needed in that case.  You can
+see the more general options available by running \code{./configure
+  --help}; for example, you can turn-off OpenMP parallelization in the
+computation of Jacobian matrices using \code{--disable-openmp}.  See
+also section \ref{sec:configuring} for ways to make more fundamental
+changes to the configuration of \Adept.  The output from the
+\code{configure} script provides information on aspects of how
+\Adept\ and the test programs will be built.
+\item Build \Adept\ by running
+\begin{lstlisting}
+make
+\end{lstlisting}
+This will create the static and shared libraries in \code{adept/.libs}.
+\item Install the header files and the static and shared libraries by
+  running
+\begin{lstlisting}
+make install
+\end{lstlisting}
+If this is to be installed to a system directory, you will need to log
+in as the super-user first, or run \code{sudo make install} on
+depending on your system.
+\item Build the example and benchmarking programs by running
+\begin{lstlisting}
+make check
+\end{lstlisting}
+Note that this may be done without first installing the
+\Adept\ library to a system directory.  This compiles the following
+programs in the \code{test} directory:
+\begin{itemize}
+\item\code{test\_misc}: the trivial example from \cite{Hogan2014};
+\item\code{test\_adept}: compares the results of numerical and
+  automatic differentiation;
+\item\code{test\_with\_without\_ad}: does the same but compiling the
+  same source code both with and without automatic differentiation
+  (see \code{test/Makefile} for how this is done),
+\item\code{test\_radiances}: demonstrates the interfacing of
+  \Adept\ with code that provides its own Jacobian;
+\item\code{test\_gsl\_interface}: implementation of a simple minimization
+  problem using the L-BFGS minimizer in the GSL library;
+\item\code{test\_checkpoint}: demonstration of checkpointing, a useful
+  technique for large codes;
+\item\code{test\_thread\_safe}: demonstration of the use of multiple
+  OpenMP threads, each with its own instance of an \Adept\ stack;
+\item\code{test\_no\_lib}: demonstrates the use of the
+  \code{adept\_source.h} header file that means there is no need to
+  link to the \Adept\ library in order to create an executable.
+\item\code{test\_arrays}: tests many of the array capabilities
+  described in chapter \ref{chap:arrays}.
+\item\code{test\_fixed\_arrays}: tests the similar capabilities of
+  arrays with fixed dimensions (known at compile time).
+\end{itemize}
+In the \code{benchmark} directory it compiles
+\code{autodiff\_benchmark} for comparing the speed of the
+differentiation of two advection algorithms using \Adept, ADOL-C,
+CppAD and Sacado (or whichever subset of these tools you have on your
+system).  It also compiles \code{animate} for visualizing at a
+terminal what the algorithms are doing.  Further information on
+running these programs can be found in the \code{README} files in the
+relevant directories.  Note that despite the implication, ``\code{make
+  check}'' does not automatically run any of the programs it makes to
+check they function correctly.
+\end{enumerate}
+
+To compile source files that use the \Adept\ library, you need to make
+sure that \code{adept.h} and \code{adept\_arrays.h} are in your
+include path. If they are located in a directory that is not in the
+default include path, add something like \code{-I/home/fred/include}
+to the compiler command line. At the linking stage, add \code{-ladept}
+to the command line to tell the linker to look for the
+\code{libadept.a} static library, or equivalent shared library. If
+this file is in a non-standard location, also add something like
+\code{-L/home/fred/lib -Wl,-rpath,/home/fred/lib} before the
+\code{-ladept} argument to specify its location. Section
+\ref{sec:multipleobjects} provdes an example Makefile for compiling
+code that uses the \Adept\ library. Read on to see how you can compile
+an \Adept\ application \emph{without} needing to link to a library.
+
+\subsection{Non-Unix platforms, and compiling \Adept\ applications
+  without linking to an external library}
+\label{sec:non-unix}
+{\bf WARNING: THIS FUNCTIONALITY IS BROKEN IN VERSION 1.9 BUT WILL BE FIXED WITH VERSION 2.0}
+
+Most of the difficulty in maintaining software that can compile on
+multiple platforms arises from the different ways of compiling
+software libraries, and the need to test on compilers that may be
+proprietary.  Unfortunately I don't have the time to maintain versions
+of \Adept\ that build specifically on Microsoft Windows or other
+non-Unix platforms.  However, \Adept\ is not a large library, so I
+have provided a very simple way to build an \Adept\ application
+\emph{without} the need to link to a pre-compiled \Adept\ library. In
+one of your source files and one only, add this near the top:
+\begin{lstlisting}
+#include <adept_source.h>
+\end{lstlisting}
+Typically you would include this in the source file containing the
+\code{main} function.  This header file is simply a concatenation of
+the \Adept\ library source files, so when you compile a file that
+includes it, you compile in all the functionally of the
+\Adept\ library. All other source files in your application should
+include the \code{adept.h} or \code{adept\_arrays.h} header file as normal.  When you link all
+your object files together to make an executable, the
+\Adept\ functionality will be built in, even though you did not link
+to an external \Adept\ library.  A demonstration of this is in the
+\code{test/test\_no\_lib.cpp} source file, which needs to be compiled
+together with \code{test/algorithm.cpp} to make an executable.
+%
+It is hoped that this feature will make it easy to use \Adept\ on
+non-Unix platforms, although of course this feature works just as well
+on Unix-like platforms as well.  If you want to use OpenBLAS on such
+platforms then you will still need to install that library in the
+normal way.
+
+A further point to note is that, under the terms of the license, it is
+permitted to copy all the \Adept\ include files, including
+\code{adept\_source.h}, into an include directory in your software
+package and use it from there in both binary and source-code releases
+of your software. This means that users do not need to install
+\Adept\ separately before they use your software.  However, if you do
+this then remember that your use of these files must comply with the
+terms of the Apache License, Version 2.0; see section
+\ref{sec:license} for details.
+%
+\chapter{Using \Adept\ for automatic differentiation}
+\label{chap:ad}
+%
+\section{Introduction}
+\label{sec:ad_functionality}
+This chapter describes how to use \Adept\ to differentiate your code.
+For simplicity, none of the examples use array functionality described
+in the next chapter. \Adept\ provides the following
+automatic-differentiation functionality:
+%
+\begin{description}
+\item[Full Jacobian matrix] Given the non-linear function $\y=f(\x)$
+  relating vector $\y$ to vector $\x$ coded in C or C++, after a
+  little code modification \Adept\ can compute the Jacobian matrix
+  $\H=\partial\y/\x$, where the element at row $i$ and column $j$ of
+  $\H$ is $H_{i,j}=\partial y_i/\partial x_j$. This matrix will be
+  computed much more rapidly and accurately than if you simply
+  recompute the function multiple times, each time perturbing a
+  different element of $\x$ by a small amount. The Jacobian matrix is
+  used in the Gauss-Newton and Levenberg-Marquardt minimization
+  algorithms.
+\item[Reverse-mode differentiation] This is a key component in
+  optimization problems where a non-linear function needs to be
+  minimized but the state vector $\x$ is too large for it to make
+  sense to compute the full Jacobian matrix. Atmospheric data
+  assimilation is the canonical example in the field of
+  meteorology. Given a nonlinear function $J(\x)$ relating the
+  scalar to be minimized $J$ to vector $\x$, \Adept\ will compute the
+  vector of adjoints $\partial J/\partial\x$. Moreover, for a
+  component of the code that may be expressed as a multi-dimensional
+  non-linear function $\y=f(\x)$, \Adept\ can compute $\partial
+  J/\partial\x$ if it is provided with the vector of input adjoints
+  $\partial J/\partial\y$.  In this case, $\partial J/\partial\x$ is
+  equal to the matrix-vector product $\H\T\partial J/\partial\y$, but
+  it is computed here without computing the full Jacobian matrix
+  $\H$. The vector $\partial J/\partial\x$ may then be used in a
+  quasi-Newton minimization scheme \cite[e.g.,][]{Liu+1989}.
+\item[Forward-mode differentiation] Given the non-linear function
+  $\y=f(\x)$ and a vector of perturbations $\delta\x$, \Adept\ will
+  compute the corresponding vector $\delta\y$ arising from a
+  linearization of the function $f$. Formally, $\delta\y$ is equal
+  to the matrix-vector product $\H\delta\x$, but it is computed here
+  without computing the full Jacobian matrix $\H$. Note that
+  \Adept\ is designed for the reverse case, so might not be as fast
+  or economical in memory in the forward mode as libraries written
+  especially for that purpose (although Hogan, 2014, showed that it
+  was competitive).
+\end{description}%
+%
+\Adept\ can automatically differentiate the following
+operators and functions:
+\begin{itemize}
+\item The standard binary mathematical operators \code{+}, \code{-},
+  \code{*} and \code{/}.
+\item The assignment versions of these operators:
+  \code{+=}, \code{-=}, \code{*=} and \code{/=}.
+\item The unary mathematical functions \code{sqrt},
+\code{exp}, \code{log}, \code{log10}, \code{sin}, \code{cos},
+\code{tan}, \code{asin}, \code{acos}, \code{atan}, \code{sinh},
+\code{cosh}, \code{tanh}, \code{abs}, \code{asinh}, \code{acosh}, \code{atanh},
+\code{expm1}, \code{log1p}, \code{cbrt}, \code{erf}, \code{erfc},
+\code{exp2} and \code{log2}. 
+\item The binary functions \code{pow}, \code{min} and \code{max}.
+\end{itemize}
+Variables to take part in expressions to be differentiated have a
+special ``active'' type; such variables can take part in comparison
+operations \code{==}, \code{!=}, \code{>}, \code{<}, \code{>=} and
+\code{<=}, as well as the diagnostic functions \code{isfinite},
+\code{isinf} and \code{isnan}.
+
+Note that at present \Adept\ is missing some functionality that you may
+require:
+
+\begin{itemize}
+\item Differentiation is first-order only: it cannot directly compute
+  higher-order derivatives such as the Hessian matrix (although one of
+  the Frequently Asked Questions in section \ref{sec:faq} describes
+  how \Adept\ can help compute the Hessian of a certain category of
+  algorithms).
+\item It has limited support for complex numbers; no support for
+  mathematical functions of complex numbers, and expressions involving
+  operations (addition, subtraction, multiplication and division) on
+  complex numbers are not optimized.
+\item It can be applied to C and C++ only; \Adept\ could not be
+  written in Fortran since the language provides no template
+  capability.
+\end{itemize}%
+%
+It is hoped that future versions will remedy these limitations (and
+maybe even a future version of Fortran will support templates).
+
+Section \ref{sec:preparation} describes how to prepare your code for
+automatic differentiation, and section \ref{sec:adjoint} describes how
+to perform forward- and reverse-mode automatic differentiation on this
+code. Section \ref{sec:jacobian} describes how to compute Jacobian
+matrices. Section \ref{sec:realworld} provides a detailed description
+of how to interface an algorithm implemented using \Adept\ with a
+third-party minimization library.  Section \ref{sec:withwithout}
+describes how to call a function both with and without automatic
+differentiation from within the same program. Section
+\ref{sec:interfacehandcoded} describes how to interface to software
+modules that compute their own Jacobians.  Section \ref{sec:stack}
+describes the user-oriented member functions of the \code{Stack} class
+that contains the differential information and section
+\ref{sec:adouble} describes the member functions of the ``active''
+double-precision type \code{adouble}.
+
+
+\section{Code preparation}
+\label{sec:preparation}
+If you have used ADOL-C, CppAD or Sacado then you will already be
+familiar with what is involved in applying an operator-overloading
+automatic differentiation package to your code. The user interface to
+\Adept\ differs from these only in the detail. It is assumed that you
+have an algorithm written in C or C++ that you wish to
+differentiate. This section deals with the modifications needed to
+your code, while section \ref{sec:adjoint} describes the small
+additional amount of code you need to write to differentiate it.
+
+In all source files containing code to be differentiated, you need to
+include the \code{adept.h} header file and import the \code{adouble}
+type from the \code{adept} namespace. Assuming your code uses double
+precision, you then search and replace \code{double} with the
+``active'' equivalent \code{adouble}, but doing this only for those
+variables whose values depend on the independent input variables.
+Under the hood this type is an alias for \code{Active<double>}.  The
+single-precision equivalent is \code{afloat}, an alias for
+\code{Active<float>}.  Active and passive variables of single and
+double precision may be used together in the same expressions, but
+note that by default all differentiation is done in double precision.
+
+If you wish to enable your code to be easily recompiled to use
+different precisions, then you may alternatively use the generic
+\code{Real} type from the \code{adept} namespace with its active
+equivalent \code{aReal} (an alias for \code{Active<Real>}). Section
+\ref{sec:configuring} describes how to redefine \code{Real} to
+represent single, double or quadruple precision.  Automatic
+differentiation will be performed using the same precision as
+\code{Real}, but but be aware that if this is defined to be the same
+as a single-precision \code{float}, accumulation of round-off error
+can make the accuracy of derivatives insufficient for minimization
+algorithms. The examples in the remainder of this chapter use only
+double precision.
+
+Consider the following contrived algorithm from \cite{Hogan2014} that
+takes two inputs and returns one output:
+
+\begin{lstlisting}
+ double algorithm(const double x[2]) {
+   double y = 4.0;
+   double s = 2.0*x[0] + 3.0*x[1]*x[1];
+   y *= sin(s);
+   return y;
+ }
+\end{lstlisting}
+
+\noindent The modified code would look like this:
+
+\begin{lstlisting}
+ #include <adept.h>
+ using adept::adouble;
+
+ adouble algorithm(const adouble x[2]) {
+   adouble y = 4.0;
+   adouble s = 2.0*x[0] + 3.0*x[1]*x[1];
+   y *= sin(s);
+   return y;
+ }
+\end{lstlisting}
+
+\noindent Changes like this need to be done in all source files that
+form part of an algorithm to be differentiated. 
+
+If you need to access the real number underlying an \code{adouble}
+variable \code{a}, for example in order to use it as an argument to
+the \code{fprintf} function, then use \code{a.value()} or
+\code{adept::value(a)}. Any mathematical operations performed on
+this real number will not be differentiated.
+
+You may use \code{adouble} as the template argument of a Standard
+Template Library (STL) vector type (i.e.  \code{std::vector\textless
+  adouble\textgreater}), or indeed any container where you access
+individual elements one by one. For types allowing mathematical
+operations on the whole object, such as the STL \code{complex} and
+\code{valarray} types, you will find that although you can multiply
+one \code{std::complex\textless adouble\textgreater} or
+\code{std::valarray\textless adouble\textgreater} object by another,
+mathematical functions (\code{exp}, \code{sin} etc.) will not work
+when applied to whole objects, and neither will some simple operations
+such as multiplying these types by an ordinary (non-active)
+\code{double} variable.  Moreover, the performance is not great
+because expressions cannot be fully optimized when in these
+containers.  Therefore If you need array functionality then you should
+use the features described in chapter \ref{chap:arrays}.  It is hoped
+that a future version of \Adept\ will include its own complex type.
+
+\section{Applying reverse-mode differentiation}
+\label{sec:adjoint}
+
+Suppose you wanted to create a version of \code{algorithm} that
+returned not only the result but also the gradient of the result with
+respect to its inputs, you would do this:
+
+\begin{lstlisting}
+ #include <adept.h>
+ double algorithm_and_gradient(
+                     const double x_val[2], // Input values
+                     double dy_dx[2]) {     // Output gradients
+   adept::Stack stack,                      // Where the derivative information is stored
+   using adept::adouble;                    // Import adouble from adept
+   adouble x[2] = {x_val[0], x_val[1]};     // Initialize active input variables
+   stack.new_recording();                   // Start recording
+   adouble y = algorithm(x);                // Call version overloaded for adouble args
+   y.set_gradient(1.0);                     // Defines y as the objective function 
+   stack.compute_adjoint();                 // Run the adjoint algorithm
+   dy_dx[0] = x[0].get_gradient();          // Store the first gradient
+   dy_dx[1] = x[1].get_gradient();          // Store the second gradient
+   return y.value();                        // Return the result of the simple computation
+ }
+\end{lstlisting}
+%
+The component parts of this function are in a specific order, and if
+this order is violated then the code will not run correctly. The steps
+are now described.
+%
+\subsection{Set-up stack to record derivative information}
+\label{sec:stack_setup}
+\begin{lstlisting}
+ adept::Stack stack;
+\end{lstlisting}
+The \code{Stack} object is where the differential version of the
+algorithm will be stored. When initialized, it makes itself accessible
+to subsequent statements via a global variable, but using thread-local
+storage to ensure thread safety. \emph{It must be initialized before
+  the first \code{adouble} object is instantiated and it must not go
+  out of scope until the last \code{adouble} object is destructed.}
+This is because \code{adouble} objects register themselves with the
+currently active stack, and deregister themselves when they are
+destroyed; if the same stack is not active throughout the lifetime of
+such \code{adouble} objects then the code will crash with a
+segmentation fault.
+
+In the example here, the \code{Stack} object is local to the scope of
+the function. If another \code{Stack} object had been initialized by
+the calling function and so was active at the point of entry to the
+function, then the local \code{Stack} object would throw an
+\code{adept::stack\_already\_active} exception (see Test 3 described
+at \code{test/README} in the \Adept\ package if you want to use
+multiple \code{Stack} objects in the same program).  A disadvantage of
+local \code{Stack} objects is that the memory it uses must be
+reallocated each time the function is called.  This can be overcome in
+several ways:
+\begin{itemize}
+\item Declare the \code{Stack} object to be \code{static}, which means
+  that it will persist between function calls. This has the
+  disadvantage that you won't be able to use other \code{Stack}
+  objects in the program without deactivating this one first (see Test
+  3 in the \Adept\ package, referred to above, for how to do this).
+\item Initialize \code{Stack} at a higher level in the program. If you
+  need access to the stack, you may either pass a reference to it to
+  functions such as \code{algorithm\_and\_gradient}, or alternatively
+  you can use the \code{adept::active\_stack()} function to return a
+  pointer to the currently active stack object.
+\item Put it in a class so that it is accessible to member functions;
+  this approach is demonstrated in section \ref{sec:realworld}.
+\end{itemize}
+%
+\subsection{Initialize independent variables and start recording}
+\begin{lstlisting}
+ adouble x[2] = {x_val[0], x_val[1]};
+ stack.new_recording();
+\end{lstlisting}
+The first line here simply copies the input values to the algorithm
+into \code{adouble} variables. These are the \emph{independent
+  variables}, but note that there is no obligation for these to be
+stored as one array (as in CppAD), and for forward- and reverse-mode
+automatic differentiation you do not need to tell \Adept\ explicitly
+via a function call which variables are the independent ones. The next
+line clears all differential statements from the stack so that it is
+ready for a new recording of differential information.
+%
+Note that the first line here actually stores two differential
+statements, $\delta$\code{x[0]=0} and $\delta$\code{x[1]=0}, which are
+immediately cleared by the \code{new\_recording} function call.  To
+avoid the small overhead of storing redundant information on the
+stack, we could replace the first line with 
+\begin{lstlisting}
+ x[0].set_value(x_val[0]);
+ x[1].set_value(x_val[1]);
+\end{lstlisting}
+or
+\begin{lstlisting}
+ adept::set_values(x, 2, x_val);
+\end{lstlisting}
+which have the effect of setting the values of \code{x} without storing
+the equivalent differential statements.
+
+Previous users of \Adept\ version 0.9 should note that since version
+1.0, the \code{new\_recording} function replaces the \code{start}
+function call, which had to be put \emph{before} the independent
+variables were initialized.  The problem with this was that the
+independent variables had to be initialized with the \code{set\_value}
+or \code{set\_values} functions, otherwise the gradients coming out of
+the automatic differentiation would all be zero.  Since it was easy to
+forget this, \code{new\_recording} was introduced to allow the
+independent variables to be assigned in the normal way using the
+assignment operator (\code{=}).  But don't just replace \code{start}
+in your version-0.9-compatible code with \code{new\_recording}; the
+latter must appear \emph{after} the independent variables have been
+initialized.
+
+\subsection{Perform calculations to be differentiated}
+\begin{lstlisting}
+ adouble y = algorithm(x);
+\end{lstlisting}
+The algorithm is called, and behind the scenes the equivalent
+differential statement for every mathematical statement is stored in the
+stack. The result of the forward calculation is stored in \code{y},
+known as a dependent variable. This example has one dependent
+variable, but any number is allowed, and they could be returned in
+another way, e.g. by passing a non-constant array to algorithm that is
+filled with the final values when the function returns.
+%
+\subsection{Perform reverse-mode differentiation}
+
+\begin{lstlisting}
+ y.set_gradient(1.0);
+ stack.compute_adjoint();
+\end{lstlisting}
+The first line sets the initial gradient (or adjoint) of \code{y}. In
+this example, we want the output gradients to be the derivatives of
+\code{y} with respect to each of the independent variables; to achieve
+this, the initial gradient of \code{y} must be unity.
+
+More generally, if \code{y} was only an intermediate value in the
+computation of objective function $J$, then for the outputs of the
+function to be the derivatives of $J$ with respect to each of the
+independent variables, we would need to set the gradient of
+\code{y} to $\partial J/\partial$\code{y}. In the case of multiple
+intermediate values, a separate call to \code{set\_gradient} is needed
+for each intermediate value.  If \code{y} was an array of length
+\code{n} then the gradient of each element could be set to the values in a \code{double} array \code{y\_ad} using
+\begin{lstlisting}
+ adept::set_gradients(y, n, y_ad);
+\end{lstlisting}
+
+The \code{compute\_adjoint()} member function of stack performs the
+adjoint calculation, sweeping in reverse through the differential
+statements stored on the stack. Note that this must be preceded by at
+least one \code{set\_gradient} or \code{set\_gradients} call, since
+the first such call initializes the list of gradients for
+\code{compute\_adjoint()} to act on. Otherwise,
+\code{compute\_adjoint()} will throw a
+\code{gradients\_not\_initialized} exception. 
+
+\subsection{Extract the final gradients}
+
+\begin{lstlisting}
+ dy_dx[0] = x[0].get_gradient();
+ dy_dx[1] = x[1].get_gradient();
+\end{lstlisting}
+These lines simply extract the gradients of the objective function
+with respect to the two independent variables. Alternatively we could
+have extracted them simultaneously using
+\begin{lstlisting}
+ adept::get_gradients(x, 2, dy_dx);
+\end{lstlisting}
+
+To do forward-mode differentiation in this example would involve
+setting the initial gradients of \code{x} instead of \code{y}, calling
+the member function \code{compute\_tangent\_linear()} instead of
+\code{compute\_adjoint()}, and extracting the final gradients from
+\code{y} instead of \code{x}.
+
+\section{Computing Jacobian matrices}
+\label{sec:jacobian}
+Until now we have considered a function with two inputs and one
+output.  Consider the following more general function whose declaration
+is
+\begin{lstlisting}
+ void algorithm2(int n, const adouble* x, int m, adouble* y);
+\end{lstlisting}
+where \code{x} points to the \code{n} independent (input) variables
+and \code{y} points to the \code{m} dependent (output) variables. The
+following function would return the full Jacobian matrix:
+%
+\begin{lstlisting}
+ #include <vector>
+ #include <adept.h>
+ void algorithm2_jacobian(
+                     int n,                 // Number of input values
+                     const double* x_val,   // Input values
+                     int m,                 // Number of output values
+                     double* y_val,         // Output values
+                     double* jac) {         // Output Jacobian matrix
+   using adept::adouble;                    // Import Stack and adouble from adept
+   adept::Stack stack;                      // Where the derivative information is stored
+   std::vector<adouble> x(n);               // Vector of active input variables
+   adept::set_values(&x[0], n, x_val);      // Initialize adouble inputs
+   adept.new_recording();                   // Start recording
+   std::vector<adouble> y(m);               // Create vector of active output variables
+   algorithm2(n, &x[0], m, &y[0]);          // Run algorithm
+   stack.independent(&x[0], n);             // Identify independent variables
+   stack.dependent(&y[0], m);               // Identify dependent variables
+   stack.jacobian(jac);                     // Compute & store Jacobian in jac
+ }
+\end{lstlisting}
+%
+Note that:
+\begin{itemize}
+\item The \code{independent} member function of stack is used to
+  identify the independent variables, i.e.\ the variables that the
+  derivatives in the Jacobian matrix will be with respect to. In this
+  example there are \code{n} independent variables located together in
+  memory and so can be identified all at once. Multiple calls are
+  possible to identify further independent variables.  To identify a
+  single independent variable, call \code{independent} with just one
+  argument, the independent variable (not as a pointer). 
+\item The \code{dependent} member function of stack identifies the
+  dependent variables, and its usage is identical to
+  \code{independent}.
+\item The memory provided to store the Jacobian matrix (pointed to by
+  \code{jac}) must be a one-dimensional array of size
+  \code{m}$\times$\code{n}, where \code{m} is the number of dependent
+  variables and \code{n} is the number of independent variables.
+\item The resulting matrix is stored in the sense of the index
+  representing the dependent variables varying fastest (column-major
+  order).
+% To get row-major order, call the \code{jacobian} function
+%  with a second argument of \code{true} (see section \ref{sec:stack}).
+\item Internally, the Jacobian calculation is performed by multiple
+  forward or reverse passes, whichever would be faster (dependent on
+  the numbers of independent and dependent variables).
+\item The use of \code{std::vector<adouble>} rather than \code{new
+  adouble[n]} ensures no memory leaks in the case of an exception being
+  thrown, since the memory associated with \code{x} and \code{y} will
+  be automatically deallocated when they go out of scope.
+\end{itemize}%
+
+\section{Real-world usage: interfacing \Adept\ to a minimization library}
+\label{sec:realworld}
+Suppose we want to find the vector $\x$ that minimizes an objective function
+$J(\x)$ that consists of a large algorithm coded using the
+\Adept\ library and encapsulated within a C++ class.  In this section
+we illustrate how it may be interfaced to a third-party minimization
+algorithm with a C-style interface, specifically the free one in the
+GNU Scientific Library.  The full working version of this example,
+using the N-dimensional Rosenbrock banana function as the function to
+be minimized, is ``Test 4'' in the \code{test} directory of the
+\Adept\ software package. The interface to the algorithm is as
+follows:
+%
+\begin{lstlisting}
+ #include <vector>
+ #include <adept.h>
+ using adept::adouble;
+ class State {
+  public:
+    // Construct a state with n state variables
+    State(int n) { active_x_.resize(n); x_.resize(n); }
+    // Minimize the function, returning true if minimization successful, false otherwise
+    bool minimize();
+    // Get copy of state variables after minimization
+    void x(std::vector<double>& x_out) const;
+    // For input state variables x, compute the function J(x) and return it
+    double calc_function_value(const double* x);
+    // For input state variables x, compute function and put its gradient in dJ_dx
+    double calc_function_value_and_gradient(const double* x, double* dJ_dx);
+    // Return the size of the state vector
+    unsigned int nx() const { return active_x_.size(); }
+  protected:
+    // Active version: the algorithm is contained in the definition of this function
+    adouble calc_function_value(const adouble* x);
+    // DATA
+    adept::Stack stack_;             // Adept stack object
+    std::vector<adouble> active_x_;  // Active state variables
+ };
+\end{lstlisting}
+%
+The algorithm itself is contained in the definition of
+\code{calc\_function\_value(const adouble*)}, which is implemented using
+\code{adouble} variables (following the rules in section
+\ref{sec:preparation}). However, the public interface to the class
+uses only standard \code{double} types, so the use of \Adept\ is
+hidden to users of the class.  Of course, a complicated algorithm may
+be implemented in terms of multiple classes that do exchange data via
+\code{adouble} objects. We will be using a quasi-Newton minimization
+algorithm that calls the algorithm many times with trial vectors $\x$,
+and for each call may request not only the value of the function, but
+also its gradient with respect to $\x$. Thus the public interface
+provides \code{calc\_function\_value(const double*)} and
+\code{calc\_function\_value\_and\_gradient}, which could be implemented as
+follows:
+%
+\begin{lstlisting}
+ double State::calc_function_value(const double* x) {
+   for (unsigned int i = 0; i < nx(); ++i) active_x_[i] = x[i];
+   stack_.new_recording();
+   return value(calc_function_value(&active_x_[0]));
+ }
+
+ double State::calc_function_value_and_gradient(const double* x, double* dJ_dx) {
+   for (unsigned int i = 0; i < nx(); ++i) active_x_[i] = x[i];
+   stack_.new_recording();
+   adouble J = calc_function_value(&active_x_[0]);
+   J.set_gradient(1.0);
+   stack_.compute_adjoint();
+   adept::get_gradients(&active_x_[0], nx(), dJ_dx);
+   return value(J);
+ }
+\end{lstlisting}
+%
+The first function simply copies the \code{double} inputs into an
+\code{adouble} vector and runs the version of
+\code{calc\_function\_value} for \code{adouble} arguments. Obviously
+there is an inefficiency here in that gradients are recorded that are
+then not used, and this function would be typically 2.5--3 times
+slower than an implementation of the algorithm that did not store
+gradients.  Section \ref{sec:withwithout} describes three ways to
+overcome this problem.  The second function above implements
+reverse-mode automatic differentiation as described in section
+\ref{sec:adjoint}.
+
+The \code{minimize} member function could be implemented using GSL as
+follows:
+%
+\begin{lstlisting}
+ #include <iostream>
+ #include <gsl/gsl_multimin.h>
+
+ bool State::minimize() {
+   // Minimizer settings
+   const double initial_step_size = 0.01;
+   const double line_search_tolerance = 1.0e-4;
+   const double converged_gradient_norm = 1.0e-3;
+   // Use the "limited-memory BFGS" quasi-Newton minimizer
+   const gsl_multimin_fdfminimizer_type* minimizer_type
+     = gsl_multimin_fdfminimizer_vector_bfgs2;
+
+   // Declare and populate structure containing function pointers
+   gsl_multimin_function_fdf my_function;
+   my_function.n = nx();
+   my_function.f = my_function_value;
+   my_function.df = my_function_gradient;
+   my_function.fdf = my_function_value_and_gradient;
+   my_function.params = reinterpret_cast<void*>(this);
+   
+   // Set initial state variables using GSL's vector type
+   gsl_vector *x;
+   x = gsl_vector_alloc(nx());
+   for (unsigned int i = 0; i < nx(); ++i) gsl_vector_set(x, i, 1.0);
+
+   // Configure the minimizer
+   gsl_multimin_fdfminimizer* minimizer
+     = gsl_multimin_fdfminimizer_alloc(minimizer_type, nx());
+   gsl_multimin_fdfminimizer_set(minimizer, &my_function, x,
+                                 initial_step_size, line_search_tolerance);
+   // Begin loop
+   size_t iter = 0;
+   int status;
+   do {
+     ++iter;
+     // Perform one iteration
+     status = gsl_multimin_fdfminimizer_iterate(minimizer);
+
+     // Quit loop if iteration failed
+     if (status != GSL_SUCCESS) break;
+    
+     // Test for convergence
+     status = gsl_multimin_test_gradient(minimizer->gradient, converged_gradient_norm);
+   }
+   while (status == GSL_CONTINUE && iter < 100);
+
+   // Free memory
+   gsl_multimin_fdfminimizer_free(minimizer);
+   gsl_vector_free(x);
+
+   // Return true if successfully minimized function, false otherwise
+   if (status == GSL_SUCCESS) {
+     std::cout << "Minimum found after " << iter << " iterations\n";
+     return true;
+   }
+   else {
+     std::cout << "Minimizer failed after " << iter << " iterations: "
+               << gsl_strerror(status) << "\n";
+     return false;
+   }
+ }
+\end{lstlisting}
+%
+The GSL interface requires three functions to be defined, each of
+which takes a vector of state variables $\x$ as input:
+\code{my\_function\_value}, which returns the value of the function;
+\code{my\_function\_gradient}, which returns the gradient of the
+function with respect to $\x$; and
+\code{my\_function\_value\_and\_gradient}, which returns the value and
+the gradient of the function. These functions are provided to GSL as
+function pointers (see above), but since GSL is a C library, we need
+to use the `\code{extern "C"}' specifier in their definition. Thus the
+function definitions would be:
+%
+\begin{lstlisting}
+ extern "C" 
+ double my_function_value(const gsl_vector* x, void* params) {
+   State* state = reinterpret_cast<State*>(params);
+   return state->calc_function_value(x->data);
+ }
+
+ extern "C"
+ void my_function_gradient(const gsl_vector* x, void* params, gsl_vector* gradJ) { 
+   State* state = reinterpret_cast<State*>(params);
+   state->calc_function_value_and_gradient(x->data, gradJ->data);
+ }
+
+ extern "C"
+ void my_function_value_and_gradient(const gsl_vector* x, void* params,
+                                     double* J, gsl_vector* gradJ) { 
+   State* state = reinterpret_cast<State*>(params);
+   *J = state->calc_function_value_and_gradient(x->data, gradJ->data);
+ }
+\end{lstlisting}
+%
+When the \code{gsl\_multimin\_fdfminimizer\_iterate} function is
+called, it chooses a search direction and performs several calls of
+these functions to approximately minimize the function along this
+search direction. The \code{this} pointer (i.e.\ the pointer to the
+\code{State} object), which was provided to the \code{my\_function}
+structure in the definition of the \code{minimize} function above, is
+provided as the second argument to each of the three functions
+above. Unlike in C, in C++ this pointer needs to be cast back to a
+pointer to a \code{State} type, hence the use of
+\code{reinterpret\_cast}.
+
+That's it! A call to \code{minimize} should successfully minimize well
+behaved differentiable multi-dimensional functions.  It should be
+straightforward to adapt the above to work with other minimization
+libraries.
+
+\section{Calling an algorithm with and without automatic differentiation from the same program}
+\label{sec:withwithout}
+The \code{calc\_function\_value(const double*)} member function
+defined in section \ref{sec:realworld} is sub-optimal in that it
+simply calls the \code{calc\_function\_value(const adouble*)} member
+function, which not only computes the value of the function, it also
+records the derivative information of all the operations involved.
+This information is then ignored. This overhead makes the function
+typically 2.5--3 times slower than it needs to be, although sometimes
+(specifically for loops containing no trancendental functions) the
+difference between an algorithm coded in terms of \code{double}s and
+the same algorithm coded in terms of \code{adouble}s can exceed a
+factor of 10 \citep{Hogan2014}.  The impact on the computational speed
+of the entire minimization process depends on how many requests are
+made for the function value only as opposed to the gradient of the
+function, and can be significant.  We require a way to avoid the
+overhead of \Adept\ computing the derivative information for calls to
+\code{calc\_function\_value(const double*)}, without having to
+maintain two versions of the algorithm, one coded in terms of
+\code{double}s and the other in terms of \code{adouble}s. The three
+ways to achieve this are now described.
+%
+\subsection{Function templates}
+\label{sec:func_templates}
+The simplest approach is to use a function template for those
+functions that take active arguments, as demonstrated in the following
+example:
+%
+\begin{lstlisting}
+ #include <adept.h>
+ class State {
+  public:
+    ...
+    template <typename xdouble>
+    xdouble calc_function_value(const xdouble* x);
+    ...
+ };
+
+ // Example function definition that must be in a header file included
+ // by any source file that calls calc_function_value
+ template <typename xdouble>
+ inline
+ xdouble State::calc_function_value(const xdouble* x) {
+   xdouble y = 4.0;
+   xdouble s = 2.0*x[0] + 3.0*x[1]*x[1];
+   y *= sin(s);
+   return y;
+ }
+\end{lstlisting}
+%
+This takes the example from section \ref{sec:preparation} and replaces
+\code{adouble} by the template type \code{xdouble}. Thus,
+\code{calc\_function\_value} can be called with either \code{double}
+or \code{adouble} arguments, and the compiler will compile inline the
+inactive or active version accordingly.  Note that the function
+template need not be a member function of a class.  
+
+This technique is good if only a small amount of code needs to be
+differentiated, but for large models the use of inlining is likely to
+lead to duplication of compiled code leading to large executables and
+long compile times.  The following two approaches do not have this
+drawback and are suitable for large codes.
+
+\subsection{Pausable recording}
+\label{sec:pausable}
+{\bf WARNING: THIS FUNCTIONALITY IS BROKEN IN VERSION 1.9 BUT WILL BE FIXED WITH VERSION 2.0}
+
+The second method involves compiling the entire code with the
+\code{ADEPT\_RECORDING\_PAUSABLE} preprocessor variable defined, which
+can be done by adding an argument \code{-DADEPT\_RECORDING\_PAUSABLE}
+to the compler command line. This modifies the behaviour of
+mathematical operations performed on \code{adouble} variables: instead
+of performing the operation and then storing the derivative
+information, it performs the operation and then only stores the
+derivative information if the \Adept\ stack is not in the ``paused''
+state. We then use the following member function definition instead of
+the one in section \ref{sec:realworld}:
+%
+\begin{lstlisting}
+ double State::calc_function_value(const double* x) {
+   stack_.pause_recording();
+   for (unsigned int i = 0; i < nx(); ++i) active_x_[i] = x[i];
+   double J = value(calc_function_value(&active_x_[0]));
+   stack_.continue_recording();
+   return J;
+ }
+\end{lstlisting}
+%
+By pausing the recording for all operations on \code{adouble} objects,
+most of the overhead of storing derivative information is removed. The
+extra run-time check to see whether the stack is in the paused state,
+which is carried out by mathematical operations involving
+\code{adouble} objects, generally adds a small overhead.  However, in
+algorithms where most of the number crunching occurs in loops
+containing no trancendental functions, even if the stack is in the
+paused state, the presence of the check can prevent the compiler from
+agressively optimizing the loop.  In that instance the third method
+may be preferable.
+%
+\subsection{Multiple object files per source file}
+\label{sec:multipleobjects}
+The third method involves compiling each source file containing
+functions with \code{adouble} arguments twice.  The first time, the
+code is compiled normally to produce an object file containing
+compiled functions including automatic differentiation. The second
+time, the code is compiled with the
+\code{-DADEPT\_NO\_AUTOMATIC\_DIFFERENTIATION} flag on the compiler
+command line. This instructs the \code{adept.h} header file to turn
+off automatic differentiation by defining the \code{adouble} type to
+be an alias of the \code{double} type. This way, a second set of
+object files are created containing overloaded versions of the same
+functions as the first set but this time without automatic
+differentiation. These object files can be compiled together to form
+one executable.  In the example presented in section
+\ref{sec:realworld}, the \code{calc\_function\_value} function would
+be one that would be compiled twice in this way, once to provide the
+\code{calc\_function\_value(const adouble*)} version and the other to
+provide the \code{calc\_function\_value(const double*)} version. Note
+that any functions that do not include \code{adouble} arguments must
+be compiled only once, because otherwise the linker will complain
+about multiple versions of the same function.
+
+The following shows a Makefile from a hypothetical project that
+compiles two source files (\code{algorithm1.cpp} and
+\code{algorithm2.cpp}) twice and a third (\code{main.cpp}) once:
+%
+\begin{lstlisting}[language=make]
+ # Specify compiler and flags
+ CPP = g++
+ CPPFLAGS = -Wall -O3 -g
+ # Normal object files to be created
+ OBJECTS = algorithm1.o algorithm2.o main.o
+ # Object files created with no automatic differentiation
+ NO_AD_OBJECTS = algorithm1_noad.o algorithm2_noad.o
+ # Program name
+ PROGRAM = my_program
+ # Include-file location
+ INCLUDES = -I/usr/local/include
+ # Library location and name, plus the math library
+ LIBS = -L/usr/local/lib -lm -ladept
+
+ # Rule to build the program (typing "make" will use this rule)
+ $(PROGRAM): $(OBJECTS) $(NO_AD_OBJECTS)
+         $(CPP) $(CPPFLAGS) $(OBJECTS) $(NO_AD_OBJECTS) $(LIBS) -o $(PROGRAM)
+ # Rule to build a normal object file (used to compile all objects in OBJECTS)
+ %.o: %.cpp
+         $(CPP) $(CPPFLAGS) $(INCLUDES) -c $<
+ # Rule to build a no-automatic-differentiation object (used to compile ones in NO_AD_OBJECTS)
+ %_noad.o: %.cpp
+         $(CPP) $(CPPFLAGS) $(INCLUDES) -DADEPT_NO_AUTOMATIC_DIFFERENTIATION -c $< -o $@
+\end{lstlisting}
+%
+
+There is a further modification required with this approach, which
+arises because if a header file declares both the \code{double} and
+\code{adouble} versions of a function, then when compiled with
+\code{-DADEPT\_NO\_AUTOMATIC\_DIFFERENTIATION} it appears to the
+compiler that the same function is declared twice, leading to a
+compile-time error.  This can be overcome by using the preprocessor to
+hide the \code{adouble} version if the code is compiled with this
+flag, as follows (using the example from section \ref{sec:realworld}):
+%
+\begin{lstlisting}
+ #include <adept.h>
+ class State {
+  public:
+    ...
+    double calc_function_value(const double* x);
+  protected:
+ #ifndef ADEPT_NO_AUTOMATIC_DIFFERENTIATION
+    adouble calc_function_value(const adouble* x);
+ #endif
+    ...
+ };
+\end{lstlisting}
+
+A final nuance is that if the code contains an \code{adouble} object
+\code{x}, then \code{x.value()} will work fine in the compilation when
+\code{x} is indeed of type \code{adouble}, but in the compilation when
+it is set to a simple \code{double} variable, the \code{value()}
+member function will not be found.  Hence it is better to use
+\code{adept::value(x)}, which returns a \code{double} regardless of
+the type of \code{x}, and works regardless of whether the code was
+compiled with or without the
+\code{-DADEPT\_NO\_AUTOMATIC\_DIFFERENTIATION} flag.
+
+\section{Interfacing with software containing hand-coded Jacobians}
+\label{sec:interfacehandcoded}
+Often a complicated algorithm will include multiple components.
+Components of the code written in C or C++ for which the source is
+available are straightforward to convert to using \Adept, following
+the rules in section \ref{sec:preparation}.  For components written in
+Fortran, this is not possible, but if such components have their own
+hand-coded Jacobian then it is possible to interface \Adept\ to them.
+More generally, in certain situations automatic differentiation is
+much slower than hand-coding \cite[see the Lax-Wendroff example
+  in][]{Hogan2014} and we may wish to hand-code certain critical
+parts.  In general the Jacobian matrix is quite expensive to compute,
+so this interfacing strategy makes most sense if the component of the
+algorithm has a small number of inputs or a small number of
+outputs. A full working version of the following example is given as
+``Test 3'' in the \code{test} directory of the \Adept\ package.
+
+Consider the example of a radiative transfer model for simulating
+satellite microwave radiances at two wavelengths, $I$ and $J$, which
+takes as input the surface temperature $T_s$ and the vertical profile
+of atmospheric temperature $T$ from a numerical weather forecast
+model. Such a model would be used in a data assimilation system to
+assimilate the temperature information from the satellite observations
+into the weather forecast model. In addition to returning the
+radiances, the model returns the gradient $\partial I/\partial T_s$
+and the gradients $\partial I/\partial T_i$ for all height layers $i$
+between 1 and $n$, and likewise for radiance $J$. The interface to the
+radiative transfer model is the following:
+%
+\begin{lstlisting}
+ void simulate_radiances(int n, // Size of temperature array
+                         // Input variables:
+                         double surface_temperature, 
+                         const double* temperature,
+                         // Output variables:
+                         double radiance[2],
+                         // Output Jacobians:
+                         double dradiance_dsurface_temperature[2],
+                         double* dradiance_dtemperature);
+\end{lstlisting}
+%
+The calling function needs to allocate \code{2*n} elements for the
+temperature Jacobian \code{dradiance\_dtemperature} to be stored, and
+the stored Jacobian will be oriented such that the radiance index
+varies fastest.
+
+\Adept\ needs to be told how to relate the radiance perturbations
+$\delta I$ and $\delta J$, to perturbations in the input
+variables, $\delta T_s$ and $\delta T_i$ (for all layers
+$i$). Mathematically, we wish the following relationship to be stored
+within the \Adept\ stack:
+%
+\begin{equation}
+\delta I = \frac{\partial I}{\partial T_s}\delta
+T_s+\sum_{i=1}^n\frac{\partial I}{\partial T_i}\delta T_i.\nonumber
+\end{equation}
+%
+This is achieved with the following wrapper function, which has
+\code{adouble} inputs and outputs and therefore can be called from
+within other parts of the algorithm that are coded in terms of
+\code{adouble} objects:
+%
+\begin{lstlisting}
+ void simulate_radiances_wrapper(int n,
+                                 const adouble& surface_temperature,
+                                 const adouble* temperature,
+                                 adouble radiance[2]) {
+   // Create inactive (double) versions of the active (adouble) inputs
+   double st = value(surface_temperature);
+   std::vector<double> t(n);
+   for (int i = 0; i < n; ++i) t[i] = value(temperature[i]);
+
+   // Declare variables to hold the inactive outputs and their Jacobians
+   double r[2];
+   double dr_dst[2];
+   std::vector<double> dr_dt(2*n);
+
+   // Call the non-Adept function
+   simulate_radiances(n, st, &t[0], &r[0], dr_dst, &dr_dt[0]);
+
+   // Copy the results into the active variables, but use set_value in order
+   // not to write any equivalent differential statement to the Adept stack
+   radiance[0].set_value(r[0]);
+   radiance[1].set_value(r[1]);
+
+   // Loop over the two radiances and add the differential statements to the Adept stack
+   for (int i = 0; i < 2; ++i) {
+     // Add the first term on the right-hand-side of Equation 1 in the text
+     radiance[i].add_derivative_dependence(surface_temperature, dr_dst[i]);
+     // Now append the second term on the right-hand-side of Equation 1. The third argument
+     // "n" of the following function says that there are n terms to be summed, and the fourth 
+     // argument "2" says to take only every second element of the Jacobian dr_dt, since the 
+     // derivatives with respect to the two radiances have been interlaced.  If the fourth 
+     // argument is omitted then relevant Jacobian elements will be assumed to be contiguous
+     // in memory.
+     radiance[i].append_derivative_dependence(temperature, &dr_dt[i], n, 2);
+   }
+ }
+\end{lstlisting}
+%
+In this example, the form of \code{add\_derivative\_dependence} for
+one variable on the right-hand-side of the derivative expression has
+been used, and the form of \code{append\_derivative\_dependence} for
+an array of variables on the right-hand-side has been used. As
+described in section \ref{sec:adouble}, both functions have forms that
+take single variables and arrays as arguments. Note also that the use
+of \code{std::vector<double>} rather than \code{new double[n]} ensures
+that if \code{simulate\_radiances} throws an exception, the memory
+allocated to hold \code{dr\_dt} will be freed correctly.
+
+\section{Member functions of the \codestyle{Stack} class}
+\label{sec:stack}
+This section describes the user-oriented member functions of the
+\code{Stack} class. Some functions have arguments with default values;
+if these arguments are omitted then the default values will be used.
+Some of these functions throw \Adept\ exceptions, defined in section
+\ref{sec:exceptions}.
+
+\begin{description}
+\citem{Stack(bool activate\_immediately = true)} The constructor for the
+\codebf{Stack} class.  Normally \codebf{Stack} objects are constructed
+with no arguments, which means that the object will attempt to make
+itself the currently active stack by placing a pointer to itself into
+a global variable.  If another \codebf{Stack} object is currently
+active, then the present one will be fully constructed, left in the
+unactivated state, and an \code{stack\_already\_active} exception
+will be thrown.  If a \codebf{Stack} object is constructed with an
+argument ``\codebf{false}'', it will be started in an unactivated
+state, and a subsequent call to its member function \codebf{activate}
+will be needed to use it.
+%
+\citem{void new\_recording()} Clears all the information on the stack
+in order that a new recording can be started. Specifically this
+function clears all the differential statements, the list of
+independent and dependent variables (used in computing Jacobian
+matrices) and the list of gradients used by the
+\codebf{compute\_tangent\_linear} and \codebf{compute\_adjoint} functions.
+Note that this function leaves the memory allocated to reduce the
+overhead of reallocation in the new recordings.
+%
+\citem{bool pause\_recording()} Stops recording differential
+  information every time an \code{adouble} statement is
+  executed. This is useful if within a single program an algorithm
+  needs to be run both with and without automatic
+  differentiation. This option is only effective within compilation
+  units compiled with \code{ADEPT\_RECORDING\_PAUSABLE} defined; if it is,
+  the function returns \code{true}, otherwise it returns
+  \code{false}. Further information on using this and the following
+  function are provided in section \ref{sec:pausable}.
+%
+\citem{bool continue\_recording()} Instruct a stack that may have
+previously been put in a paused state to now continue recording
+differential information as normal.  This option is only effective within
+compilation units compiled with \code{ADEPT\_RECORDING\_PAUSABLE}
+defined; if it is, the function returns \code{true}, otherwise it
+returns \code{false}.
+%
+\citem{bool is\_recording()} Returns \code{false} if recording has
+  been paused with \code{pause\_recording()} and the code has been
+  compiled with \code{ADEPT\_RECORDING\_PAUSABLE} defined.
+  Otherwise returns \code{true}.
+%
+\citem{void compute\_tangent\_linear()} Perform a tangent-linear
+calculation (forward-mode differentiation) using the stored
+differential statements.  Before calling this function you need call
+the \code{adouble::set\_gradient} or \code{set\_gradients} function (see
+section \ref{sec:adouble}) on the independent variables to set the
+initial gradients, otherwise the function will throw a
+\code{gradients\_not\_initialized} exception. This function is
+synonymous with \codebf{forward()}.
+%
+\citem{void compute\_adjoint()} Perform an adjoint calculation
+(reverse-mode differentiation) using the stored differential
+statements.  Before calling this function you need call the
+\code{adouble::set\_gradient} or \code{set\_gradients} function on the
+dependent variables to set the initial gradients, otherwise the
+function will throw a \code{gradients\_not\_initialized}
+exception. This function is synonymous with \codebf{reverse()}.
+%
+\citem{void independent(const adouble\&\ x)} Before computing Jacobian
+  matrices, you need to identify the independent and dependent
+  variables, which correspond to the columns and rows of he Jacobian,
+  respectively. This function adds \codebf{x} to the list of
+  independent variables. If it is the $n$th variable identified in
+  this way, the $n$th column of the Jacobian will correspond to
+  derivatives with respect to \codebf{x}.
+\citem{void dependent(const adouble\&\ y)} Add \codebf{y} to the
+  list of dependent variables.  If it is the $m$th variable identified
+  in this way, the $m$th row of the Jacobian will correspond to
+  derivatives of \codebf{y} with respect to each of the independent
+  variables.
+\citem{void independent(const adouble* x\_ptr, \Offset\ n)} Add
+  \codebf{n} independent variables to the list, which must be
+  stored consecutively in memory starting at the memory pointed to by
+  \codebf{x\_ptr}.
+\citem{void dependent(const adouble* y\_ptr, \Offset\ n)} Add
+\codebf{n} dependent variables to the list, which must be stored
+consecutively in memory starting at the memory pointed to by
+\codebf{y\_ptr}.
+%
+\citem{void jacobian(double* jacobian\_out)} Compute the Jacobian matrix, i.e., the gradient of the $m$
+dependent variables (identified with the \codebf{dependent(...)}
+function) with respect to the $n$ independent variables (identified
+with \codebf{independent(...)}. The result is returned in the memory
+pointed to by \codebf{jacobian\_out}, which must have been allocated
+to hold $m\times n$ values. The result is stored in
+column-major order, i.e., the $m$ diemension of the matrix varies
+fastest. If no dependents or independents have been identified,
+then the function will throw a
+\code{dependents\_or\_independents\_not\_identified} exception. In
+practice, this function calls \codebf{jacobian\_forward} if $n\le
+m$ and \codebf{jacobian\_reverse} if $n>m$.
+%
+\citem{void jacobian\_forward(double* jacobian\_out)} Compute the Jacobian matrix by executing
+$n$ forward passes through the stored list of differential statements;
+this is typically faster than \codebf{jacobian\_reverse} for $n\le
+m$.
+%
+\citem{void jacobian\_reverse(double* jacobian\_out)} Compute the Jacobian matrix by executing
+$m$ reverse passes through the stored list of differential statements;
+this is typically faster than \codebf{jacobian\_forward} for
+$n>m$.
+%
+\citem{void clear\_gradients()} Clear the gradients set with the
+\code{set\_gradient} member function of the \code{adouble} class. This
+enables multiple adjoint and/or tangent-linear calculations to be
+performed with the same recording.
+%
+\citem{void clear\_independents()} Clear the list of independent
+variables, enabling a new Jacobian matrix to be computed from the same
+recording but for a different set of independent variables.
+%
+\citem{void clear\_dependents()} Clear the list of dependent
+variables, enabling a new Jacobian matrix to be computed from the same
+recording but for a different set of dependent variables.
+%
+\citem{\Offset\ n\_independents()} Return the number of independent
+variables that have been identified.
+%
+\citem{\Offset\ n\_dependents()} Return the number of dependent
+variables that have been identified.
+%
+\citem{\Offset\ n\_statements()} Return the number of differential
+statements in the recording.
+%
+\citem{\Offset\ n\_operations()} Return the total number of operations
+in the recording, i.e the total number of terms on the right-hand-side
+of all the differential statements.
+%
+\citem{\Offset\ max\_gradients()} Return the number of working gradients
+that need to be stored in order to perform a forward or reverse pass.
+%
+\citem{size\_t memory()} Return the number of bytes currently
+used to store the differential statements and the working
+gradients. Note that this does not include memory allocated but not
+currently used.
+%
+\citem{\Offset\ n\_gradients\_registered()} Each time an
+\code{adouble} object is created, it is allocated a unique index that
+is used to identify its gradient in the recorded differential
+statements. When the object is destructed, its index is freed for
+reuse. This function returns the number of gradients currently
+registered, equal to the number of \code{adouble} objects currently
+created.
+%
+\citem{void print\_status(std::ostream\&\ os = std::cout)} Print the
+current status of the \codebf{Stack} object, such as number of
+statements and operations stored and allocated, to the stream
+specified by \codebf{os}, or standard output if this function is
+called with no arguments.  Sending the \codebf{Stack} object to the
+stream using the ``\code{<<}'' operator results in the same behaviour.
+%
+\citem{void print\_statements(std::ostream\&\ os = std::cout)} Print
+the list of differential statements to the specified stream (or
+standard output if not specified). Each line corresponds to a separate
+statement, for example ``\code{d[3] = 1.2*d[1] + 3.4*d[2]}''.
+%
+\citem{bool print\_gradients(std::ostream\&\ os = std::cout)} Print
+the vector of gradients to the specified stream (or standard output if
+not specified). This function returns
+\code{false} if no \code{set\_gradient}
+function has been called to set the first gradient and initialize the
+vector, and \code{true} otherwise. To diagnose what
+\codebf{compute\_tangent\_linear} and 
+\codebf{compute\_adjoint} are doing, it can be useful to call
+\codebf{print\_gradients} immediately before and after.
+%
+\citem{void activate()} Activate the \codebf{Stack} object by copying
+its \code{this} pointer to a global variable that will be accessed by
+subsequent operations involving \code{adouble} objects.  If another
+\codebf{Stack} is already active, a \code{stack\_already\_active}
+exception will be thrown. To check whether this is the case before
+calling \codebf{activate()}, check that the \code{active\_stack()}
+function (described below) returns \code{0}.
+%
+\citem{void deactivate()} Deactivate the \codebf{Stack} object by
+checking whether the global variable holding the pointer to the
+currently active \codebf{Stack} is equal to \code{this}, and if it is,
+setting it to \code{0}.
+%
+\citem{bool is\_active()} Returns \code{true} if the \codebf{Stack}
+object is the currently active one, \code{false} otherwise.
+%
+\citem{void start()} This function was present in version 0.9 to
+activate a \codebf{Stack} object, since in that version they were not
+constructed in an activated state.  This function has now been
+deprecated and will always throw a \code{feature\_not\_available}
+exception.
+\citem{int max\_jacobian\_threads()} Return the maximum number of
+OpenMP threads available for Jacobian calculations.  The number will
+be 1 if either the library was or the current source code is compiled
+without OpenMP support (i.e.\ without the \code{-fopenmp} compiler and
+linker flag). (Introduced in \Adept\ version 1.1.) 
+\citem{int set\_max\_jacobian\_threads(int n)} Set the maximum number of
+threads to be used in Jacobian calculations to \code{n}, if
+possible. A value of 1 indicates that OpenMP will not be used, while a
+value of 0 indicates that the maximum available will be used. Returns
+the maximum that will be used, which may be fewer than requested,
+e.g. 1 if the \Adept\ library was compiled without OpenMP
+support. (Introduced in \Adept\ version 1.1.) 
+\end{description}
+
+\noindent The following non-member functions are provided in the
+\code{adept} namespace:
+\begin{description}
+\citem{adept::Stack* active\_stack()} Returns a pointer to the
+currently active \codebf{Stack} object, or \code{0} if there is none.
+\citem{bool is\_thread\_unsafe()} Returns \code{true} if your code has
+been compiled with \code{ADEPT\_STACK\_THREAD\_UNSAFE}, \code{false}
+otherwise.
+%
+\end{description}
+
+
+\section{Member functions of the \codestyle{adouble} object}
+\label{sec:adouble}
+This section describes the user-oriented member functions of the
+\code{adouble} class. Some functions have arguments with default
+values; if these arguments are omitted then the default values will be
+used. Some of these functions throw \Adept\ exceptions, defined in
+section \ref{sec:exceptions}.
+\begin{description}
+\citem{double value()} Return the underlying \code{double} value.
+%
+\citem{void set\_value(double x)} Set the value of the \codebf{adouble}
+object to \codebf{x}, without storing the equivalent differential
+statement in the currently active stack.
+%
+\citem{void set\_gradient(const double\&\ gradient)} Set the
+gradient corresponding to this \codebf{adouble} variable. The first call
+of this function (for any \codebf{adouble} variable) after a new
+recording is made also initializes the vector of working gradients.
+This function should be called for one or more \codebf{adouble} objects
+after a recording has been made but before a call to
+\code{Stack::compute\_tangent\_linear()} or
+\code{Stack::compute\_adjoint()}.
+%
+\citem{void get\_gradient(double\&\ gradient)} Set \codebf{gradient}
+to the value of the gradient corresponding to this \codebf{adouble}
+object. This function is used to extract the result after a call to
+\code{Stack::compute\_tangent\_linear()} or
+\code{Stack::compute\_adjoint()}. If the \codebf{set\_gradient} function
+was not called since the last recording was made, this function will
+throw a \code{gradients\_not\_initialized} exception.  The function
+can also throw a \code{gradient\_out\_of\_range} exception if new
+\codebf{adouble} objects were created since the first
+\codebf{set\_gradient} function was called.
+%
+\citem{void add\_derivative\_dependence(const adouble\&\ r, const
+  adouble\&\ g)} Add a differential statement to the currently active
+stack of the form $\delta \codebf{l}=\codebf{g}\times\delta
+\codebf{r}$, where \codebf{l} is the \codebf{adouble} object from which
+this function is called.  This function is needed to interface to
+software containing hand-coded Jacobians, as described in section
+\ref{sec:interfacehandcoded}; in this case \codebf{g} is the gradient
+$\partial\codebf{l}/\partial\codebf{r}$ obtained from such software.
+%
+\citem{void append\_derivative\_dependence(const adouble\&\ r, const
+  adouble\&\ g)} Assuming that the same \codebf{adouble} object has just
+had its \codebf{add\_derivative\_dependence} member function called,
+this function appends ${}+\codebf{g}\times\delta\codebf{r}$ to the
+most recent differential statement on the stack.  If the calling
+\codebf{adouble} object is different, then a \code{wrong\_gradient}
+exception will be thrown. Note that multiple
+\codebf{append\_derivative\_dependence} calls can be made in succession.
+%
+\item[\begin{minipage}{\textwidth}\codesize\texttt{void 
+add\_derivative\_dependence(const adouble* r, const double* g,}\\ 
+\mbox{ }\texttt{\hspace{18em}\Offset\ n = 1, \Offset\
+      m\_stride = 1)}\end{minipage}]
+%
+Add a differential statement to the currently active stack of the form
+$\delta\codebf{l}=\sum_{i=0}^{\codebf{n}-1}\codebf{m[}i\codebf{]}
+\times\delta\codebf{r[}i\codebf{]}$, where \codebf{l} is the \codebf{adouble}
+object from which this function is called. If the \codebf{g\_stride}
+argument is provided, then the index to the \codebf{g} array will be
+$i\times\codebf{g\_stride}$ rather than $i$.  This is useful if the
+Jacobian provided is oriented such that the relevant gradients for
+\codebf{l} are not spaced consecutively.
+%
+\item[\begin{minipage}{\textwidth}\codesize\texttt{void 
+append\_derivative\_dependence(const adouble* rhs, const double* g,}\\ 
+\mbox{ }\texttt{\hspace{20em}\Offset\ n = 1, \Offset\
+      g\_stride = 1)}\end{minipage}]
+%
+Assuming that the same \codebf{adouble} object has just called the
+\codebf{add\_derivative\_dependence} function, this function appends
+${}+\sum_{i=0}^{\codebf{n}-1}\codebf{m[}i\codebf{]}
+\times\delta\codebf{r[}i\codebf{]}$ to the most recent differential
+statement on the stack. If the calling \codebf{adouble} object is
+different, then a \code{wrong\_gradient} exception will be
+thrown. The \codebf{g\_stride} argument behaves the same way as in the
+previous function described.
+\end{description}
+
+\noindent The following non-member functions are provided in the
+\code{adept} namespace:
+\begin{description}
+\citem{double value(const adouble\& x)} Returns the underlying
+value of \codebf{x} as a \codebf{double}. This is useful to enable
+\codebf{x} to be used in \code{fprintf} function calls. It is
+generally better to use \codebf{adept::value(x)} rather than
+\codebf{x.value()}, because the former also works if you compile the
+code with the \code{ADEPT\_NO\_AUTOMATIC\_DIFFERENTIATION} flag set,
+as discussed in section \ref{sec:multipleobjects}.
+%
+\citem{void set\_values(adouble* x, \Offset\ n, const double* x\_val)}
+Set the value of the \codebf{n} \codebf{adouble} objects starting at
+\codebf{x} to the values in \codebf{x\_val}, without storing the
+equivalent differential statement in the currently active stack.
+%
+\citem{void set\_gradients(adouble* x, size\_t n, const double*
+  gradients)} Set the gradients corresponding to the \codebf{n}
+\codebf{adouble} objects starting at \codebf{x} to the \codebf{n}
+\code{double}s starting at \codebf{gradients}.  This has the same
+effect as calling the \codebf{set\_gradient} member function of each
+\codebf{adouble} object in turn, but is more concise.
+%
+\citem{void get\_gradients(const adouble* y, size\_t n, double*
+  gradients)} Copy the gradient of the \codebf{n} \codebf{adouble}
+objects starting at \codebf{y} into the \codebf{n} \code{double}s
+starting at \codebf{gradients}. This has the same effect as calling
+the \codebf{get\_gradient} member function of each \codebf{adouble} object
+in turn, but is more concise.  This function can throw a
+\code{gradient\_out\_of\_range} exception if new \codebf{adouble}
+objects were created since the first \codebf{set\_gradients} function
+or \codebf{set\_gradient} member function was called.
+\end{description}
+
+\chapter{Using \Adept's array functionality}
+\label{chap:arrays}
+
+\section{Introduction}
+\label{sec:array_functionality}
+The design of \Adept's array capability and many of the functions is
+inspired to a significant extent by the built-in array support in
+Fortran 90 (and later), and a lesser extent by Matlab, although
+implemented in the ``C++ way'', e.g.\ default row-major order with all
+array indices starting from zero.  Future additions to the array
+capability in \Adept\ will attempt to reproduce built-in Fortran array
+functions if available\footnote{This decision may puzzle some readers,
+  since Fortran is a dirty word to many C++ users due to the
+  limitations of the FORTRAN 77 language. Many of these limitations
+  were overcome in Fortran 90, whose array functionality in particular
+  is rather well designed. All references to Fortran in this document
+  imply the 1990 (or later) standard.}. This design makes \Adept\ a
+good choice if you have Fortran code that you wish to convert to C++.
+\Adept\ provides the following array functionality:
+%
+\begin{description}
+\item[Multi-dimensional arrays.]  Standard dynamically sized arrays
+  can have an arbitrary number of dimensions (although indexing and
+  slicing is supported only up to 7), and may refer to non-contiguous
+  areas of memory. See section \ref{sec:array}.
+\item[Mathematical operators and functions.] \Adept\ supports array
+  expressions containing the standard mathematical operators \code{+},
+  \code{-}, \code{*} and \code{/}, as well as their assignment
+  versions \code{+=}, \code{-=}, \code{*=} and \code{/=}. When applied
+  to arrays, they work ``element-wise'', applying the same operation
+  to every element of the arrays. \Adept\ also supports array
+  operations on all the mathematical functions listed in section
+  \ref{sec:ad_functionality}. The following operators and functions
+  return boolean array expressions: \code{==}, \code{!=}, \code{>},
+  \code{<}, \code{>=} and \code{<=}, \code{isfinite}, \code{isinf} and
+  \code{isnan}.  See section \ref{sec:operators}.
+\item[Array slicing.] There are many ways to produce an array that
+  references a subset of another array, and therefore can be used as
+  an lvalue in a statement. Arrays can be indexed with scalar
+  integers, a contiguous range of integers, a strided range of
+  integers or an arbitrary list of integers.  This is facilitated with
+  ``\code{\_\_}'' (a double underscore) and ``\code{end}'', such that
+  \code{A(\_\_,end-1)} returns a vector pointing to the penultimate
+  column of matrix \code{A}. The member function \code{subset}
+  produces an array pointing to a contiguous subset of the original
+  array, while \code{diag\_vector} and \code{diag\_matrix} produce
+  arrays pointing to the diagonal of the original array.  \code{T}
+  produces an array pointing to the transpose of the original array.
+  See section \ref{sec:slice}.
+\item[Passing arrays to and from functions.] \Adept\ uses a
+  reference-counting approach to implement the storage of array data,
+  enabling multiple array objects to point to the same data, or parts
+  of it in the case of array slices. This makes it straightforward to
+  pass arrays to and from functions without having to perform a deep
+  copy. See section \ref{sec:passing}.
+\item[Array reduction operations.] The functions \code{sum},
+  \code{mean}, \code{product}, \code{minval}, \code{maxval} and
+  \code{norm2} perform reduction operations that return an array of
+  lower rank to the expression they are applied to. The functions
+  \code{all} and \code{any} do the same but for boolean
+  expressions. \code{count}\footnote{Not yet implemented.} returns the
+  number of \code{true} elements in a boolean expression.
+% The function
+%  \code{find(A)} returns indices to the \code{true} elements of
+%  \code{A}. 
+  See section \ref{sec:reduce}.
+\item[Conditional operations.] Two convenient ways are provided to
+  perform an operation on an array depending on the result of a
+  boolean expression: \code{where} and \code{find}. The statement
+  \code{A.where(B>0)=C} assigns elements of \code{C} to elements of
+  \code{A} whenever the corresponding element of \code{B} is greater
+  than zero. For vectors only, the same result could be obtained with
+  \code{A(find(B>0))=C(find(B>0))}. See section \ref{sec:conditional}.
+\item[Fixed-size arrays.] \Adept\ provides a fixed-size array class
+  with dimensions (up to seven) that are known at compile time. The
+  functionality is very similar to standard dynamic arrays.
+\item[Special square matrices.] \Adept\ uses specific classes for
+  symmetric, triangular and band-diagonal matrices, the latter of
+  which use compressed storage and include diagonal and tridiagonal
+  matrices. Certain operations such as matrix multiplication and solving
+  linear equations are optimized especially for these objects. See
+  section \ref{sec:square}.
+\item[Matrix multiplication.] Matrix multiplication can be applied to
+  one- and two-dimensional arrays using the \code{matmul} function, of
+  for extra syntactic sugar, the ``\code{**}''
+  pseudo-operator. \Adept\ uses whatever BLAS (Basic Linear Algebra
+  Subroutines) support is available on your system, including
+  optimized versions for symmetric and band-diagonal matrices. See
+  section \ref{sec:matmul}.
+\item[Linear algebra.] \Adept\ uses the LAPACK library to invert
+  matrices and solve linear systems of equations. See section
+  \ref{sec:la}.
+\item[Array bounds and alias checking.] \Adept\ checks at compile time
+  that terms in an array expression accord in rank, and at run time
+  that they accord in the size of each dimension. Run-time alias
+  checking is performed to determine if any objects on the
+  right-hand-side of a statement overlap in memory with the
+  left-hand-side of the statement, making a temporary copy of the
+  right-hand-side if they do. This can be overridden with the
+  \code{noalias} function. See section \ref{sec:bounds}.
+\end{description}% 
+%
+
+
+\section{The \codestyle{Array} class}
+\label{sec:array}
+The bread and butter of array operations is provided by the
+\code{Array} class template (in the \code{adept} namespace along with
+all other public types and classes), which has the following declaration:
+\begin{lstlisting}
+ namespace adept {
+   template <int Rank, typename Type = Real, bool IsActive = false>
+   class Array;
+ }
+\end{lstlisting}
+The first template argument provides the number of dimensions of the
+array and may be 1 or greater, although indexing and slicing is only
+supported up to 7 dimensions. The second argument is the numerical
+type being stored and can be any simple integer or real number,
+including \code{bool}. The default type is \code{adept::Real}, which
+is the default floating-point type the \Adept\ library has been
+compiled to use for computing derivatives, and is usually
+\code{double}. The final argument states whether the array is
+``active'', i.e.\ whether it participates in the differentiation of an
+algorithm.
+
+A number of typedefs are provided for the most common types of array:
+\code{Vector}, \code{Matrix} and \code{Array3} provide inactive arrays
+of type \code{Real} and rank 1--3. The corresponding active types are
+\code{aVector}, \code{aMatrix} and \code{aArray3}. Vectors of other
+numeric types are \code{boolVector}, \code{intVector},
+\code{floatVector}, \code{afloatVector}, and similarly for matrices
+and 3D arrays of these types. If you wanted shortcuts for
+4-dimensional active and passive arrays, they could be defined using:
+\begin{lstlisting}
+ typedef adept::Array<4> Array4;
+ typedef adept::Array<4,adept::Real,true> aArray4;
+\end{lstlisting}
+
+An \code{Array} can be constructed in numerous ways:
+\begin{lstlisting}
+ using namespace adept;
+ Matrix M;           // Initialize an empty matrix
+ Matrix M(3,4);      // Initialize a 3-by-4 matrix (up to 7 arguments possible)
+ Index dim[2]={3,4}; // "Index" is the integer type used for array dimensions
+   Matrix M(dim);    // This works for an array with an arbitrary number of dimensions
+ Vector v = M(__,0); // Link to a existing array, in this case the first column of M
+ Vector v(M(__,0));  // Has exactly the same effect as the previous example
+ Matrix N = log(M);  // Initialize with the size and values of a mathematical expression
+\end{lstlisting}
+%POINT TO EXISTING DATA; ExpressionSize
+Note that in the remaining code examples it will be assumed that
+\code{using namespace adept} has already been called.  When new memory
+is needed, the \code{Array} object creates a \code{Storage} object
+that contains the memory needed, and stores pointers to both the
+\code{Storage} object and the start of the data. By default the data
+are accessed in C-style row-major order (i.e.\ the final index
+corresponds to the array dimension that varies most rapidly in
+memory). However, this is flexible since in addition to storing the
+length of each of its $n$ dimensions, a rank-$n$ \code{Array} also
+stores $n$ ``offsets'' that define the separation of elements in
+memory in each dimension. Thus, a 3-by-4 matrix with row-major storage
+would store offsets of (4,1). The same size matrix would use
+column-major storage simply by storing offsets of (1,3). To make new
+arrays use column-major storage, call the following function:
+\begin{lstlisting}
+ set_array_row_major_order(false);
+\end{lstlisting}
+Note that this does not change the storage of any existing
+objects. Note also that when array expressions are evaluated, the data
+are requested in row-major order, so the use of column-major arrays
+will incur a performance penalty.
+
+It can be seen from one of the constructors above (the example
+involving a \code{Vector}) that an \code{Array} can be configured to
+``link'' to part of an existing \code{Array}, and modifications to the
+numbers in one will be seen by the other. This is a very useful
+feature as it allows slices of an array to be passed to functions and
+modified; see section \ref{sec:slice}. Note that the array or
+sub-array being linked to must be of the same rank, type and
+activeness as the linking array.  Internally, linking is achieved by
+both the arrays pointing to the same \code{Storage} object, which
+itself contains a reference count of the number of arrays pointing to
+it. When an \code{Array} is destructed the reference count is reduced
+by one and only if it falls to zero will the data get deallocated.
+
+After it has been constructed, an \code{Array} can be resized,
+relinked or cleared completely as follows:
+\begin{lstlisting}
+ M.resize(5,2);       // Works up to 7 dimensions
+ Index dim[2]={5,2};
+   M.resize(dim);     // Works for any number of dimensions
+ v.link(M(end-1,__)); // Size of v set to that of the argument
+ M.clear();           // Returns array to original empty state
+\end{lstlisting}
+The member functions \code{resize} and \code{clear} unlink from any
+existing data, while \code{link} can only be used if the array is
+already in an empty state.  Note that if you assign one array to
+another (e.g.\ \code{N=M}), then they must be of the same size; if
+they are not then you should clear the left-hand-side first.
+
+The \code{Array} class implements a number of member functions for
+inquiring about its properties:
+\begin{description}
+\citem{size()} Returns the total number of elements, i.e.\ the product
+of the lengths of each of the dimensions.
+\citem{dimension(i)} Returns the length of dimension \code{i}.
+\citem{offset(i)} Returns the separation in memory of elements along
+dimension \code{i}.
+\citem{gradient\_index()} For active arrays, returns the gradient
+index of the first element of the array, which is always positive; for
+inactive arrays it returns a negative number.
+\citem{empty()} Returns \code{true} if the array is in the empty
+state, or \code{false} otherwise.
+\end{description}
+
+An \code{Array} may be filled using the \code{<<} operator for the
+first element followed by either the \code{<<} or \code{,} operators
+for subsequent elements:
+\begin{lstlisting}
+Vector v(4);
+v << 1 << 2 << 3 << 4; // Fill the four elements of v
+v << 1, 2, 3, 4;       // Same behaviour but easier on the eye
+v << 1, 2, 3, 4, 5;    // Error: v has been overfilled
+Matrix M(2,4);
+M << 1, 2, 3, 4,       // Filling of multi-dimensional arrays
+     5, 6, 7, 8;       // automatically moves on to next dimension
+M << 1, 2, 3, 4,
+     v;                // v treated as a row vector here
+\end{lstlisting}
+For multidimensional arrays, elements are filled such that the final
+dimension ticks over fastest (regardless of whether the array uses
+row-major storage internally), and new rows are started when a row is
+complete. Moreover, other arrays can be part of the list of elements,
+provided that they fit in.  In this context, a rank-1 array is treated
+as a row vector. An \code{index\_out\_of\_bounds} exception is thrown
+if an array is overfilled, while an \code{empty\_array} exception is
+thrown if an attempt is made to fill an empty array.
+
+When interfacing with other libraries, direct access to the data is
+often required. The \code{Array} class provides the following member
+functions:
+\begin{description}
+\citem{data()} Returns a pointer to the first element in the array,
+i.e.\ the element found by indexing all the dimensions of the array
+with zero. It is up to the caller to understand the layout of the data
+in memory and not to stray outside.  Remember that an array may be
+strided and the stride may even be negative so that the data returned
+from increasing indices are actually from earlier memory
+addresses. Note that a double-precision active array is not stored as
+an array of \code{adouble} objects, but as an array of \code{double}
+data and a single gradient index for the first element. Thus the
+pointer returned by \code{data()} will point to the underlying
+inactive data.  In contexts where the \code{Array} object is
+\code{const}, a \code{const} pointer will be returned.
+%
+\citem{const\_data()} It is sometimes convenient to specify explicitly
+that read-only access is required, in which case you can use
+\code{const\_data()} to return a \code{const} pointer to the first
+element in the array.
+\end{description} 
+
+\section{Operators and mathematical functions}
+\label{sec:operators}
+The operators and mathematical functions listed in section
+\ref{sec:ad_functionality} have been overloaded so that they work exactly as you
+would expect. Consider this example:
+\begin{lstlisting}
+ floatVector a(5);      // Inactive single-precision vector
+ aVector b(5), c(5);    // Active vectors
+ aReal d;               // An active scalar
+ // ... other code manipulating a-d ...
+ b = 2.0;               // Set all elements of b to a scalar value
+ c += 5.0*a + sin(b)/d; // Add the right-hand-side to c
+\end{lstlisting}
+The penultimate illustrates that all elements of an \code{Array} can
+be set to the same value, although note that this will only work if
+the array is not in the empty state. The final line illustrates how
+terms with different rank, type and activeness can participate in the
+same expression. Scalars and arrays can participate in the same
+expression on the right-hand-side of a statement provided that the
+arrays have the same size as the array on the left-hand-side. Objects
+of different type (in this case single and double precision) can be
+combined in a mathematical operation, and the type of that operation
+will be the larger (higher precision) of the two types. If active and
+inactive objects participate in an expression then the left-hand-side
+must also be active. Expression templates ensure that no temporary
+arrays need to be created to store the output of intermediate parts of
+the expression.  The functions \code{max} and \code{min} behave just
+like binary operators (such as \code{+} and \code{*}) in this regard,
+as shown by the following:
+\begin{lstlisting}
+ c = max(a,b);          // Element-wise comparison of a and b 
+ c = min(a,3.0);        // Return minimum of each element of a and 3
+\end{lstlisting}
+
+The examples so far have floating-point results, but some operators
+(e.g.\ ``\code{==}'') and some functions (e.g.\ \code{isinf}) take
+floating-point arguments and return a boolean.  The \Adept\ versions
+take floating-point array expressions as arguments and return
+\code{bool} expressions of the same rank and size. Finally, the
+\Adept\ versions of the operators \code{!}, \code{||} and \code{\&\&}
+take a \code{bool} expression as arguments and return a \code{bool}
+expression of the same size and rank.
+
+\section{Array slicing}
+\label{sec:slice}
+This section concerns the many ways that sub-parts of an \code{Array}
+can be extracted to produce an object that can be used as an lvalue;
+that is, if the object is modified then it will modify part of the
+original \code{Array}. It should be stressed that none of these
+methods results in any rearrangement of data in memory, so they should
+be efficient.
+
+The first way this can be done is via the function-call and
+member-access operators (i.e.\ \code{operator()} and
+\code{operator[]}, respectively) of the \code{Array}. In the case of
+the function-call operator, the same number of arguments as the rank
+of the array must be provided, where each argument states how its
+corresponding dimension should be treated.  The nature of the
+resulting object depends on the type of all of the arguments in a way
+that is similar to how Fortran arrays behave, although note that
+array indices always start at 0. The four different behaviours are as
+follows:
+
+
+\begin{description}
+\item[Extract single value.] If every argument is an integer scalar or
+  scalar expression, then a reference to a single element of the array
+  will be extracted. If an argument is an integer expression
+  containing \code{end}, then \code{end} will be interpretted to be
+  the index to the final element of that dimension (a feature borrowed
+  from Matlab). If the array is active then the returned object will
+  be of a special ``active reference'' type that can be used as an
+  lvalue and ensures that any expressions making use of this element
+  can be differentiated. Now for some examples:
+  \begin{lstlisting}
+ aMatrix A(4,3);
+ aReal x = A(1,1);  // Copy element at second row and second column into x
+ A(end-1,1) *= 2.0; // Double the element in the penultimate column and 2nd row of A
+ A(3) = 4.0;        // Error: number of indices does not match number of dimensions
+  \end{lstlisting}
+\item[Extract regular subarray.] If every argument is either (i) an
+  integer scalar or scalar expression, or (ii) a regular range of
+  indices, and there is at least one of (ii), then an \code{Array}
+  object will be returned of the same type and activeness as the
+  original. However, for each argument of type (i), the rank of the
+  returned array will be one less than that of the original. There are
+  three ways to express a regular range of indices: ``\code{\_\_}''
+  represents all indices of a particular dimension, \code{range(a,b)}
+  represents a contiguous range of indices between \code{a} and
+  \code{b} (equivalent to \code{a:b} in Fortran and Matlab), and
+  \code{stride(a,b,c)} represents a regular range of indices between
+  \code{a} and \code{b} with spacing \code{c} (equivalent to
+  \code{a:b:c} in Fortran and \code{a:c:b} in Matlab). Note that
+  \code{a}, \code{b} and \code{c} may be scalar expressions containing
+  \code{end}, but \code{c} must not be zero although it can be
+  negative to indicate a reversed ordering. The rank of the returned
+  array is known at compile time; thus if range arguments are found at
+  run-time to contain only one element (e.g.\ \code{range(1,1)}) then
+  the dimension being referred to will be not be removed in the
+  returned array but will remain as a singleton dimension. This
+  behaviour is the same as indexing an array dimension with \code{1:1}
+  in Fortran. Now for some examples:
+\begin{lstlisting}
+ v(range(1,end-1))           // Subset of vector v that excludes 1st & last points
+ A(0,stride(end,0,-1))       // First row of A as a vector treated in reverse order
+ A(range(0,0),stride(0,0,1)) // A 1-by-1 matrix containing the first element of A
+\end{lstlisting}
+\item[Extract irregular subarray.] If an array is indexed as in either
+  of the two methods above, except that one or more dimensions is
+  instead indexed using a rank-1 \code{Array} of integers, then the
+  result is a special ``indexed-array'' type that stores how each
+  dimension is indexed.  If it then participates either on the left-
+  or right-hand-side of a mathematical expression then when an element
+  is requested, the indices will be queried to map the request to
+  obtain the correct element from the original array. This is much
+  less efficient than using regular ranges of indices as above. It
+  also means that if an indexed array is passed to a function
+  expecting an object of type \code{Array}, then it will first be
+  converted to an \code{Array} and any modifications performed within
+  the function will not be passed back to the original array. For
+  example:
+\begin{lstlisting}
+ intVector index(3);
+ index << 2, 3, 5;
+ Array A(4,4);
+ A(0,index) = 2.0; // Set irregularly spaced elements of the first row of A
+\end{lstlisting}
+\item[Slice leading dimension.] In C, an element is extracted from a
+  two-dimensional array using \code{A[i][j]}, and \code{A[i]} returns
+  a pointer to a single row of \code{A}, where \code{i} and \code{j}
+  are integers. To enable similar functionality, if \code{A} is an
+  \Adept\ matrix then \code{A[i]} indexes the leading dimension by
+  integer \code{i} returning an array of rank one less than the
+  original. This is equivalent to \code{A(i,\_\_)}. Furthermore,
+  \code{A[i][j]} will return an individual element as in C, but it
+  should be stressed that \code{A(i,j)} is more efficient since it
+  does not involve the creation of intermediate arrays.
+\end{description}
+%
+There are a few other ways to produce lvalues that consist of a subset
+or a reordering of an array. They are implemented as member functions
+of the \code{Array} class, in order to distinguish from non-member
+functions that produce a copy of the data and therefore cannot be
+usefully used as lvalues.  For example, \code{A.T()} and
+\code{transpose(A)} both return the transpose of matrix \code{A}, but
+the former is faster since it does not make a copy of the original
+data, while the latter is more flexible since it can be applied to
+array expressions (e.g.\ \code{transpose(A*B)}).  The member functions
+available are:
+\begin{description}
+\citem{subset(int ibegin0, int iend0, ...)} This function returns a
+contiguous subset of an array as an array of the same rank that points
+to the original data. It takes twice as many arguments as the array
+has dimensions, with each pair of arguments representing the indices
+to the first and last element to include from a particular
+dimension. Exactly the same result can be obtained using \code{range}
+but the \code{subset} form is more concise. For example, for a matrix
+\code{M}, \code{M.subset(1,5,3,10)} is equivalent to
+\code{M(range(1,5),range(3,10))}.
+%
+\citem{T()} This function returns the transpose of a rank-2 array (a
+matrix). The returned array points to the same data but with its
+dimensions reversed. A compile-time error occurs if this function is
+used on an array with rank other than 2.  Currently \Adept\ doesn't
+allow the transpose of a rank-1 array (a vector), since vectors are
+not intended to have an intrinsic orientation.  When orientation
+matters, such as in matrix multiplication, the intended orientation
+may be inferred from the context or specified explicitly.
+%
+\citem{permute(int i0, int i1, ...)} This function is the
+generalization of the transpose for multi-dimensional arrays: it
+returns an array of the same rank as the original but with the
+dimensions rearranged according to the arguments. There must be the
+same number of arguments as there are dimensions, and each dimension
+(starting at 0) must be provided once only. The returned array is
+linked to the original; the permutation is achieved simply by
+rearranging the list of dimensions and the list of ``offsets'' (the
+separation in memory of elements along each dimension individually).
+%
+\citem{diag\_matrix()} When this function is applied to a rank-1
+\code{Array} of length $n$, it returns an $n$-by-$n$ diagonal matrix
+(specifically a \code{DiagMatrix}; see section \ref{sec:square}) that
+points to the data from the rank-1 array along its diagonal.
+%
+\citem{diag\_vector()} When this function is applied to a rank-2
+\code{Array} with equally sized dimensions, it returns a rank-1 array
+pointing to the data along its diagonals.  An
+\code{invalid\_operation} exception is thrown if applied to a
+non-square matrix, and a compile-time error if applied to an array of
+rank other than 2.
+%
+\citem{diag\_vector(i)} When applied to a square rank-2 $n$-by-$n$
+\code{Array}, this returns a rank-1 array of length
+$n-\mathrm{abs}(i)$ pointing to the $i$th superdiagonal of the square
+matrix, or the $-i$th subdiagonal if $i$ is negative. An
+\code{invalid\_exception} exception occurs if applied to a non-square
+matrix, and a compile-time error if applied to an array of rank other
+than 2.
+%
+\citem{submatrix\_on\_diagonal(ibegin,iend)} When applied to a square rank-2
+array, this function returns a square matrix that shares part of the
+diagonal of the original matrix.  Thus
+\code{A.submatrix\_on\_diagonal(int ibegin,int iend)} is equivalent to
+\code{A(range(ibegin,iend),range(ibegin,iend))}. Its purpose is to
+provide a subsetting facility for symmetric, triangular and
+band-diagonal matrices (see section \ref{sec:square}) for which
+general array indexing is not available. If applied to a non-square
+matrix, an \code{invalid\_operation} exception will be thrown.
+%\citem{upper\_matrix()}
+%\citem{lower\_matrix()}
+%\citem{band\_matrix<LDiag,UDiag>()}
+\end{description}
+
+\section{Passing arrays to and from functions}
+\label{sec:passing}
+How can large arrays be returned efficiently from a function?  If
+array \code{A} is created in a function and then returned with
+\code{return A}, the receiving function invokes a copy constructor to
+copy \code{A} into an array in that function, followed by calling the
+destructor of \code{A}. It is unnecessary to perform a deep copy when
+\code{A} is about to be destructed; it is enough for the receiving
+array to simply copy the data members of \code{A}, i.e.\ little more
+than the dimensions of the array and pointers to the data and the
+\code{Storage} object. This is how copy constructors are implemented
+in \Adept. Consider the following function to square the elements of a
+matrix:
+\begin{lstlisting}
+ Matrix sqr(const Matrix& in) {
+   Matrix out;      // Create an empty matrix but don't allocate any memory yet
+   out = in*in;     // Allocate memory for "out" and fill with in*in
+   return out;  
+ }
+ Matrix A(100,100); // Allocate memory for "A"
+ Matrix B = sqr(A); // Shallow copy of "out" into "B"
+\end{lstlisting}
+When an empty matrix is constructed using ``\code{Matrix out}'', it is
+placed on the stack but no memory is allocated on the heap for the
+actual contents of the matrix via a \code{Storage} object. This is
+done on the next line when it is assigned to \code{in*in}.  At the
+\code{return} statement, matrix \code{out} is received by the copy
+constructor of matrix \code{B}, so a shallow copy is performed. This
+means that the description of matrix \code{out} is copied to \code{B},
+including a pointer to the \code{Storage} object. Matrix \code{out} is
+then destructed, with the net result being that \code{B} has
+``stolen'' the data in the matrix from \code{out} without it having
+been copied, thus avoiding unnecessary allocation of memory on the
+heap, followed by copying and deallocation.
+
+The fact that \Adept\ copy constructors perform shallow copies leads
+to two sorts of behaviour that users may not be expecting. Firstly, if
+an array is initialized from another array in either of the following
+two ways:
+\begin{lstlisting}
+ Matrix M(3,4);
+ Matrix A(M);   // Call copy constructor
+ Matrix B = M;  // Call copy constructor
+\end{lstlisting}
+then the result is that \code{A}, \code{B} and \code{M} share the same
+data, rather than a copy being made.  To make a deep copy, it is
+necessary to do the following:
+\begin{lstlisting}
+ Matrix M(3,4);
+ Matrix A;      // Create empty matrix
+ A = M;         // Call assignment operator for deep copy
+\end{lstlisting}
+Secondly, arrays passed to functions ``by value'' behave as if they
+were passed ``by reference'':
+\begin{lstlisting}
+ void sqr_in_place(Matrix& A) { // Pass A by reference
+   A *= A;
+ }
+ void sqr_in_place2(Matrix A) { // Pass A by value
+   A *= A;
+ }
+ Matrix B(100,100);
+ sqr_in_place2(B); 
+\end{lstlisting}
+These two functions behave the same to the user: the second function
+creates a shallow copy of \code{B} in \code{A}, and thus any
+modifications to \code{A} are also made to \code{B}.
+
+The question of how to implement copy constructors is a classical C++
+problem, solved in C++11 with ``move semantics'': the compiler can
+tell when an object is about to be destructed, in which case it
+performs a shallow ``move'' rather than a deep ``copy''.  The
+\Adept\ approach is compatible with older C++ compilers that do not
+implement move semantics.
+
+
+\section{Array reduction operations}
+\label{sec:reduce}
+A family of functions return a result that is reduced in rank compared
+to their argument, and operate in the same way as Fortran functions
+of the same name.  Consider the \code{sum} function, which can be used
+either to sum all the elements in an array expression and return a
+scalar, or to sum elements along the dimension specified in the second
+argument and return an array whose rank is one less than the first argument:
+\begin{lstlisting}
+ Array A(3,4);
+ Real x = sum(A);     // Sum all elements of matrix A
+ Vector v = sum(A,1); // Sum along the row dimension returning a vector of length 3
+\end{lstlisting}
+Functions that are used in the same way are \code{mean},
+\code{product}, \code{minval}, \code{maxval} and \code{norm2} (the
+square-root of the sum of the squares of each element).  Note the
+difference between \code{maxval} and \code{max}: the behaviour of
+\code{max} is outlined in section \ref{sec:operators}. Three further
+functions operate in the same way but on boolean arrays: \code{all}
+returns \code{true} only if all elements are \code{true}, \code{any}
+returns \code{true} if any element is \code{true} (and \code{false}
+otherwise), while \code{count}\footnote{Not yet implemented.} returns
+the number of \code{true} elements.  Each of these can work on an
+individual dimension as with \code{sum} and friends.
+
+A further function, \code{dot\_product(a,b)}, takes two arguments that
+must be rank-1 arrays of the same length and returns the dot
+product. This is essentially the same as \code{sum(a*b)}.
+
+\section{Conditional operations}
+\label{sec:conditional}
+There are two main ways to perform an operation on an array depending
+on the result of a boolean expression. The first is similar to the
+Fortran \code{where} construct:
+\begin{lstlisting}
+ Array A(3,4);
+ Array B(3,4);
+ A.where(B > 0.0)   = 2.0 * B;            // Only assign to A if B > 0
+ A.where(!isnan(B)) = either_or(-B, 0.0); // Read from either one expression or the other
+\end{lstlisting}
+In the first example, \code{A} is only assigned if a condition is met,
+and therefore \code{A} must be of the same size and rank of the
+boolean expression. In the second example \code{A} is filled with
+elements from the first argument of \code{either\_or} if the boolean
+expression is \code{true}, or from the second argument otherwise; if
+\code{A} is empty then it will be resized to the size of the boolean
+expression. In both cases, the expressions on the right-hand-side may
+be scalars or array expressions of the same size as the boolean
+expression.  Equivalent expressions are possible replacing the
+assignment operator with the \code{+=}, \code{-=}, \code{*=} and
+\code{/=} operators, in which case \code{A} must already be the same
+size as the boolean expression.
+
+An alternative approach that works with only vectors uses the
+\code{find} function. This is similar to the equivalent Matlab
+function and returns an \code{IntVector} containing indices to the
+\code{true} elements of the vector:
+\begin{lstlisting}
+ Vector v(10), w(10);
+ v(find(v > 5.0)) = 3.0;
+ IntVector index = find(v > 5.0);
+ v(index) = 2.0 * u(index);
+\end{lstlisting}
+This will work if none if no \code{true} elements are found:
+\code{find} will return an empty array, and when \code{v} is indexed
+by an empty vector, no action will be taken.  In general, \code{find}
+is less efficient than \code{where}.
+
+\section{Fixed-size arrays}
+\label{sec:fixed}
+The size of the \code{Array} class is dynamic, which is somewhat
+sub-optimal for small arrays whose dimensions are known at compile
+time. \Adept\ provides an alternative class template for an array
+whose size is known at compile time and whose data are stored on the
+stack. It has the following declaration:
+\begin{lstlisting}
+ namespace adept {
+   template <typename Type, bool IsActive, int Dim0, int Dim1 = 0, ...>
+   class FixedArray;
+ }
+\end{lstlisting}
+The type (e.g.\ \code{double}) and activeness are specified by the
+first two template arguments, while the remaining template arguments
+provide the size of the dimensions, up to 7.  Only as many sizes need
+to be specified as there are dimensions.  A user working with arrays
+of a particular size could use \code{typedef} to provide convenient
+names; for example:
+\begin{lstlisting}
+ typedef FixedArray<double,false,4>   Vector4;
+ typedef FixedArray<double,false,4,4> Matrix44;
+ typedef FixedArray<double,true,4>    aVector4;
+ typedef FixedArray<double,true,4,4>  aMatrix44;
+\end{lstlisting}
+In the \code{adept} namespace, \Adept\ defines \code{Vector2},
+\code{Vector3}, \code{Matrix22}, \code{Matrix33} and their active
+counterparts.
+
+Fixed arrays have all the same capabilities as dynamic arrays, with a
+few exceptions:
+\begin{itemize}
+\item Since their size is fixed, there are no member functions
+  \code{resize}, \code{clear} or \code{in\_place\_transpose}.
+\item Since for the lifetime of the object it is associated with data
+  on the stack, it cannot link to other data.  This means that there
+  is no member function \code{link}, and also if it is passed by value
+  to a function then the contents of the array will be copied, rather
+  than the behaviour of the \code{Array} class where the receiving
+  function links to the original data.
+\end{itemize}
+All the same slicing operations are available as discussed in section
+\ref{sec:slice}, and they return the same types when applied to fixed
+arrays as they do when applied to dynamic arrays.  Thus most
+operations return an \code{Array} object that links to a subset of the
+data within the \code{FixedArray} object.
+
+\section{Special square matrices}
+\label{sec:square}
+\Adept\ offers several special types of square matrix that can
+participate in array expressions.  They are more efficient than
+\code{Array}s in certain operations such as matrix multiplication and
+assignment, but less efficient in operations such as accessing
+individual elements. All use an internal storage scheme compatible
+with BLAS (Basic Linear Algebra Subprograms).  All are specializations
+of the \code{SpecialMatrix} class template, which has the following
+declaration:
+\begin{lstlisting}
+ namespace adept {
+   template <typename Type, class Engine, bool IsActive = false>
+   class SpecialMatrix;
+ }
+\end{lstlisting}
+The first template argument is the numerical type, the second provides
+the functionality specific to the type of matrix being simulated, and
+the third states whether the matrix participates in the
+differentiation of an algorithm. The specific types of special matrix
+are as follows:
+\begin{description}
+\item[Square matrices.] \code{SquareMatrix} provides a dense square
+  matrix of type \code{Real} with \code{aSquareMatrix} its active
+  counterpart. Its functionality is similar to a rank-2 \code{Array},
+  except that its dimensions are always equal and the data along its
+  fastest varying dimension are always contiguous in memory, which may
+  make it faster than \code{Array} in some instances.
+\item[Symmetric matrices.] \code{SymmMatrix} provides a symmetric
+  matrix of type \code{Real}, and \code{aSymmMatrix} is its active
+  equivalent. Internally this type uses row-major unpacked storage
+  with the data held in the lower triangle of the array and zeros in
+  the upper triangle (equivalent to column-major storage with data in
+  the upper triangle). If the oposite configuration is required then
+  it is available by specifying different template arguments to the
+  \code{SpecialMatrix} class template.  Note that with normal access
+  methods, the storage scheme is opaque to the user; for example,
+  \code{S(1,2)=2.0} and \code{S(2,1)=2.0} have the same effect.
+\item[Triangular matrices.] \code{LowerMatrix} and \code{UpperMatrix}
+  (and their active equivalents prefixed by ``\code{a}'') provide
+  triangular matrices of type \code{Real}. Internally they use
+  row-major unpacked storage, although column-major storage is
+  available by specifying different template arguments to the
+  \code{SpecialMatrix} class template.
+\item[Band diagonal matrices.] \code{DiagMatrix}, \code{TridiagMatrix}
+  and \code{PentadiagMatrix} provide diagonal, tridiagonal and
+  pentadiagonal \code{Real} matrices, respectively (with their active
+  equivalents prefixed by ``\code{a}''). Internally, row-major
+  BLAS-type band storage is used such that an $n$-by-$n$ tridiagonal
+  matrix stores $3n$ rather than $n^2$ elements. \Adept\ supports
+  arbitrary numbers of sub-diagonals and super-diagonals, accessible
+  by specifying different template arguments to the
+  \code{SpecialMatrix} class template.
+\end{description}
+A \code{SpecialMatrix} can be constructed and resized as for
+\code{Array}s (see section \ref{sec:array}), with the following
+additions:
+\begin{lstlisting}
+ SymmMatrix S(4);  // Initialize a 4-by-4 symmetric matrix
+ S.resize(5);      // Resize to a 5-by-5 matrix
+\end{lstlisting}
+These are applicable to all types of \code{SpecialMatrix}.
+
+In terms of array indexing and slicing, the member functions \code{T},
+\code{diag} and \code{diag\_submatrix} described in section
+\ref{sec:slice} are all available, but if you index a
+\code{SpecialMatrix} with \code{S(a,b)} then \code{a} and \code{b} must
+be scalars or scalar expressions. For triangular or band-diagonal
+matrices, if the requested element is one of the zero parts of the
+matrix then it can only be used as an rvalue in an expression. If you
+wish to extract arbitrary subarrays from a \code{SpecialMatrix} then it
+must first be converted to a \code{Matrix}:
+\begin{lstlisting}
+ SymmMatrix S(6);
+ intVector index(3);
+ index << 2, 3, 5;
+ Matrix M = Matrix(S)(index,stride(0,4,2));
+\end{lstlisting}
+
+
+\section{Matrix multiplication}
+\label{sec:matmul}
+Matrix multiplication may be invoked in two equivalent ways: using the
+\code{matmul} function or the ``\code{**}'' pseudo-operator. Following
+Fortran, the two arguments may be either rank-1 or rank-2, but at
+least one argument must be of rank-2. The orientation of any rank-1
+argument is inferred from whether it is the first or second argument,
+as shown here:
+\begin{lstlisting}
+ Matrix A(3,5), B(5,3), C;
+ Vector v(5), w;
+ C = matmul(A,B); // Matrix-matrix multiplication: return a 3x3 matrix
+ w = matmul(v,B); // Interpret v as a row vector: return a vector of length 3
+ w = matmul(A,v); // Interpret v as a column vector: return a vector of length 3
+\end{lstlisting}
+In this way it is never necessary to transpose a vector; the
+appropriate orientation to use is inferred from the context.  You may
+find it clearer to use ``\code{**}'' for matrix multiplication as
+illustrated here:\footnote{A drawback of the \code{**} interface with
+  the orientation of vector arguments being inferred is that in an
+  expression like \code{A**v**B} (where \code{A} and \code{B} are
+  matrices and \code{v} is a vector), \code{v} is interpreted as a
+  column vector in \code{A**v}, which returns a column vector result,
+  but this result is then implicitly transposed when it is used as the
+  left-hand argument of the matrix multiplication with \code{B}.
+  Moreover, the order of precedence affects the result, since this
+  expression will not give the same answer as \code{A**(v**B)}. I may
+  consider introducing additional constraints and features in future
+  versions to require users to more explicitly state what they mean in
+  such situations, to reduce the chance of accidental mistakes.}
+\begin{lstlisting}
+ Matrix A(3,5), B;
+ SymmMatrix S(5);                // 5-by-5 symmetric matrix
+ Vector c, x(5);
+ c = A **  log(S) ** x;          // Returns a vector of length 3
+ c = matmul(matmul(A,log(S)),x); // Equivalent to the previous line but using matmul
+ c = A ** (log(S) ** x);         // As the previous example but more efficient
+ B = 2.0 * S ** A.T();           // Returns a 5-by-3 matrix
+ B = 2.0 * S ** A;               // Run-time error: inner dimensions don't match
+\end{lstlisting}
+The ``\code{**}'' pseudo-operator has been implemented in \Adept\ by
+overloading the dereference operator such that ``\code{*A}'' returns a
+special type when applied to array expressions, and overloading the
+multiply operator to perform matrix multiplication when one of these
+types is on the right-hand-side. This means that \code{**} has the
+same precedence as ordinary multiplication, and both will be applied
+in order of left to right.  Thus, in the first example above,
+matrix-matrix multiplication is performed followed by matrix-vector
+multiplication. The second example shows how to make this more
+efficient with parentheses to specify that the rightmost matrix
+multiplication should be applied first, leading to two matrix-vector
+multiplications.  The final example shows an expression that would
+fail at runtime with an \code{inner\_dimension\_mismatch} exception
+due to the matrix multiplication being applied to matrices whose inner
+dimensions do not match.
+
+In order to get the best performance, \Adept\ does not use expression
+templates for matrix multiplication but rather calls the appropriate
+level-2 BLAS function for matrix-vector multiplication and level-3
+BLAS function for matrix-matrix multiplication. For matrix
+multiplication involving active vectors and matrices, \Adept\ first
+uses BLAS to perform the matrix multiplication and then stores the
+equivalent differential statements. There are therefore a few factors
+that users should be aware of in order to get the best performance:
+\begin{itemize}
+\item If an array expression rather than an array is provided as an
+  argument to matrix multiplication, it will first be converted to an
+  \code{Array} of the same rank. Therefore, if the same expression is
+  used more than once in a sequence of matrix multiplications, better
+  performance will be obtained by precomputing the array expression
+  and storing it in a temporary matrix:
+\begin{lstlisting}
+ Matrix A(5,5), B(5,5), C(5,5), D(5,5)
+ // Slow implementation:
+ C = transpose(2.0*A*B) ** (2.0*A*B);
+ D = (2.0*A*B) ** C;
+ // Faster implementation:
+ {
+   Matrix tmp = 2.0*A*B;
+   C = tmp.T() ** tmp;
+   D = tmp ** C;
+ } // "tmp" goes out of scope here
+\end{lstlisting}
+\item If the left-hand argument of a matrix multiplication is a
+  symmetric, triangular or band matrix then a specialist BLAS function
+  will be used that is faster than the one for general dense
+  matrices. \Adept\ may not be able to tell if the result of an array
+  expression is symmetric, triangular or has a band structure, and so
+  may not call the most efficient BLAS function. The user can help as
+  follows:
+\begin{lstlisting}
+ SymmetricMatrix S(5,5)
+ Matrix A(5,5), B(5,5)
+ B = (2.0*exp(S)) ** A;           // Slower
+ B = SymmMatrix(2.0*exp(S)) ** A; // Faster
+\end{lstlisting}
+\item BLAS requires that the fastest-varying dimension of input
+  matrices are contiguous and increasing. This is always the case for
+  the special square matrices described in section \ref{sec:square},
+  but not necessarily for a \code{Matrix} or an \code{aMatrix}, which are
+  particular cases of the general \code{Array} type. If the
+  fastest-varying dimension of such a matrix is not contiguous and
+  increasing then \Adept\ will copy it to a temporary matrix before
+  invoking matrix multiplications, as in the following example:
+\begin{lstlisting}
+ Matrix A(5,5), B, C(5,5);
+ B.link(A(__, stride(end,1,-1)); // Fastest varying dim is contiguous but decreasing
+ C = A ** A; // Matrix multiplication applied directly with A
+ C = B ** B; // Adept will copy B to a temporary matrix before multiplication
+\end{lstlisting}
+\end{itemize}
+
+A final member function to mention in this section is
+\code{in\_place\_transpose()}, which is only applicable to
+matrices. It transposes the matrix by swapping the dimensions and the
+offsets to each dimension, but leaving the actual data untouched.
+This means that a matrix with row-major storage will be changed to
+column-major, and vice versa.
+
+\section{Linear algebra}
+\label{sec:la}
+\Adept\ provides the functions \code{solve} and \code{inv} to solve
+systems of linear equations and to invert a matrix, respectively,
+which themselves call the most appropriate function from
+LAPACK.\footnote{Statements involving \code{solve} and \code{inv}
+  cannot yet be automatically differentiated.}
+\begin{lstlisting}
+ Matrix A(5,5), Ainv(5,5), X(5,5), B(5,5);
+ SymmMatrix S(5), Sinv(5);
+ Vector x(5), b(5);
+ Ainv = inv(A);     // Invert general square matrices using LU decomposition
+ Sinv = inv(S);     // Invert symmetric matrices using Cholesky decomposition
+ x = solve(A,b);    // Solve general system of linear equations
+ X = solve(S,B);    // Solve symmetric system of linear equations with matrix right-hand-side
+\end{lstlisting}
+\iffalse
+As for matrix multiplication described in section \ref{sec:matmul}, if
+the arguments to \code{solve} and \code{inv} are not matrices with
+fastest-varying dimensions that are contiguous and increasing, then
+\Adept\ will first convert them to temporary matrices before
+performing the operation.
+\fi
+
+
+\section{Bounds and alias checking}
+\label{sec:bounds}
+When encountering an array or active expression, \Adept\ performs
+several checks to test the validity of the expression both at compile
+time and at runtime:
+\begin{description}
+\item[Activeness check.] An expression in which an active expression
+  is assigned to an inactive array will fail to compile.
+\item[Rank check.] An expression will fail to compile if the rank of
+  the array on the left-hand-side of the ``\code{=}'' operator (or the
+  operators ``\code{+=}'', ``\code{*=}'', etc.) does not match the
+  rank of the array expression on the right-hand-side. However, a
+  scalar (rank-0) expression can be assigned to an array of any rank;
+  its value will be assigned to all elements of the
+  array. Compile-time rank checks are also performed for each binary
+  operation (binary operators such as ``\code{+}'' and binary
+  functions such as \code{pow}) making up an array expression:
+  compilation will fail if the two arguments do not have the same rank
+  and neither is of rank 0.
+\item[Dimension check.] When a binary operation is applied to two
+  array expressions of rank $n$ then \Adept\ checks at run-time that
+  each of the $n$ dimensions has the same length. Otherwise, a
+  \code{size\_mismatch} exception is thrown.
+\item[Alias check.] \Adept\ checks to see whether the memory
+  referenced in the array object on the left-hand-side of a statement
+  overlaps with the memory referenced by any of the objects on the
+  right-hand-side, as in this example of a shift-right operation:
+\begin{lstlisting}
+ Vector v(6);
+ v(range(1,end)) = v(range(0,end-1));
+\end{lstlisting}
+  In order to prevent the right-hand-side changing during the
+  operation, \Adept\ copies the expression on the right-hand-side to a
+  temporary array and then assigns the left-hand-side array to this
+  temporary, which is equivalent to the following
+\begin{lstlisting}
+ {
+   Vector tmp;
+   tmp = v(range(0,end-1));
+   v(range(1,end)) = tmp;
+ } // tmp goes out of scope here
+\end{lstlisting}
+  However, for speed \Adept\ does not check to see whether individual
+  memory locations are shared, which means that for certain strided
+  operations this copying to a temporary array is unnecessary.  Nor is
+  it necessary if elements of an array will be accessed in exactly the
+  same order on the left-hand-side as the right-hand-side. If the user
+  is sure that alias checking is not necessary then he or she can
+  override alias checking for part or all of an array expression using
+  the \code{noalias} function, as follows:
+\begin{lstlisting}
+ v(stride(1,end,2)) = noalias(v(stride(0,end-1,2))); // No overlap between RHS and LHS
+ v = 1.0 + noalias(exp(v));                          // LHS & RHS accessed in same order 
+\end{lstlisting}
+\item[Bounds check.] If the preprocessor variable
+  \code{ADEPT\_BOUNDS\_CHECKING} is defined then additional run-time
+  checks will be performed when an array is indexed or sliced using
+  the methods described in section \ref{sec:slice}; if an index is
+  ount of bounds then a \code{index\_out\_of\_bounds} exception will
+  be thrown.  This makes indexing and slicing of arrays slower so
+  would normally only be used for debugging.
+\end{description}
+
+\chapter{General considerations}
+\label{chap:gen}
+
+\section{Setting and checking the global configuration}
+\label{sec:settings}
+\noindent The following non-member functions are provided in the
+\code{adept} namespace:
+\begin{description}
+\citem{std::string version()} Returns a string containing the version
+number of the \Adept\ library (e.g. ``\code{1.9.8}'').
+\citem{std::string compiler\_version()} Returns a string containing
+the compiler name and version used to compile the \Adept\ library.
+\citem{std::string compiler\_flags()} Returns a string containing the
+compiler flags used when compiling the \Adept\ library.
+\citem{std::string configuration()} Returns a multi-line string
+listing numerous aspects of the way \Adept\ has been configured.
+\citem{int set\_max\_blas\_threads(int n)} Set the maximum number of
+threads used for matrix operations by the BLAS library, or zero to use
+the upper limit on your system. The number returned is the number
+actually used.  
+\citem{int num\_blas\_threads(int n)} Return the maximum number of
+threads available for matrix operations by the BLAS library.
+%
+\end{description}
+
+
+\section{Parallelizing \Adept\ programs}
+\Adept\ currently has limited built-in support for parallelization. If
+the algorithms that you wish to differentiate are individually small
+enough to be treated by a single processor core, and you wish to
+differentiate multiple algorithms independently (or the same algorithm
+but with multiple sets of inputs) then parallelization is
+straightforward. This is because the global variable containing a
+pointer to the \Adept\ stack uses thread-local storage.  This means
+that if a process spawns multiple threads (e.g.\ using OpenMP or
+Pthreads) then each thread can declare one \code{adept::Stack} object
+and all \code{adouble} operations will result in statements being
+stored on the stack object specific to that thread.  The
+\Adept\ package contains a test program \code{test\_thread\_safe} that
+demonstrates this approach in OpenMP.
+
+If your problem is larger and you wish to use parallelism to speed-up
+the differentiation of a single large algorithm then the build-in
+support is more limited. Provided your program and the \Adept\ library
+were compiled with OpenMP enabled (which is the default for the
+\Adept\ library if your compiler supports OpenMP), the computation of
+Jacobian matrices will be parallelized.  By default, the maximum
+number of concurrent threads will be equal to the number of available
+cores, but this can be overridden with the
+\code{set\_max\_jacobian\_threads} member function of the \code{Stack}
+class.  Note that the opportunity for speed-up depends on the size of
+your Jacobian matrix: for an $m\times n$ matrix, the number of
+independent passes through the stored data is $\mathrm{min}(m,n)$ and
+each thread treats \code{ADEPT\_MULTIPASS\_SIZE} of them (see section
+\ref{sec:configuring_lib}), so the maximum number of threads that can
+be exploited is $\mathrm{min}(m,n)/$\code{ADEPT\_MULTIPASS\_SIZE}.
+Again, the \code{test\_thread\_safe} program can demonstrate the
+parallelization of Jacobian calculations.  Note, however, that if the
+\code{jacobian} function is called from within an OpenMP thread
+(e.g.\ if the program already uses OpenMP with each thread containing
+its own \code{adept::Stack} object), then the program is likely not to
+be able to spawn more threads to assist with the Jacobian calculation.
+
+If you need Jacobian matrices then the ability to parallelize the
+calculation of them is useful since this tends to be more
+computationally costly than recording the original algorithm.  If you
+only require the tangent-linear or adjoint calculations (equivalent to
+a Jacobian calculation with $n=1$ or $m=1$, respectively), then
+unfortunately you are stuck with single threading. It is intended that
+a future version of \Adept\ will enable all aspects of differentiating
+an algorithm to be parallelized with either or both of OpenMP and MPI.
+
+If your BLAS library has support for parallelization then be aware
+that the performance may be poor if other parts of the program are
+parallelized.  This occurs with OpenBLAS, which uses Pthreads, if you
+also use parallelized Jacobian calculations, which use OpenMP.  In
+this instance you can turn off parallelization of array operations
+with the \code{set\_max\_blas\_threads(1)} function in the
+\code{adept} namespace.  The number of available threads for array
+operations is returned by the \code{max\_blas\_threads()} function.
+Alternatively, you can use the \code{OPENBLAS\_NUM\_THREADS}
+environment variable to control the number of threads used by
+OpenBLAS, and the \code{OMP\_NUM\_THREADS} environment variable to
+control the number used in Jacobian calculations.
+
+
+\section{Tips for the best performance}
+\label{sec:tips}
+\begin{itemize}
+\item If you are working with single-threaded code, or in a
+  multi-threaded program but with only one thread using a Stack
+  object, then you can get slightly faster code by compiling all of
+  your code with \code{-DADEPT\_STACK\_THREAD\_UNSAFE}. This uses a
+  standard (i.e. non-thread-local) global variable to point to the
+  currently active stack object, which is slightly faster to access.
+\item If you compile with the \code{-g} option to store debugging
+  symbols, your object files and executable will be much larger
+  because every mathematical statement in the file will have the name
+  of its associated templated type stored in the file, and these names
+  can be long. Once you have debugged your code, you may wish to omit
+  debugging symbols from production versions of the executable.  There
+  appears to be no performance penalty associated with the debugging
+  symbols, at least with the GNU C++ compiler.
+\item A high compiler optimization setting is recommended to inline
+  the function calls associated with mathematical expressions.  On the
+  GNU C++ compiler, the \code{-O3} setting is recommended.
+\item By default the Jacobian functions are compiled to process a
+  strip of rows or columns of the Jacobian matrix at once. The optimum
+  width of the strip depends on your platform, and you may wish to
+  change it. To make the Jacobian functions process \textit{n} rows or
+  columns at once, recompile the \Adept\ library with
+  \code{-DADEPT\_MULTIPASS\_SIZE=}\textit{n}.
+\item If you suspect memory usage is a problem, you may investigate
+  the memory used by \Adept\ by simply sending your \code{Stack} object to a
+  stream, e.g. ``\code{std::cout \textless\textless\ stack}''. You may
+  also use the \code{memory()} member function, which returns the
+  total number of bytes used. Further details of similar functions is
+  given in section \ref{sec:stack}.
+\end{itemize}
+
+\section{Exceptions thrown by the \Adept\ library}
+\label{sec:exceptions}
+Some functions in the \Adept\ library can throw exceptions, and the
+exceptions that can be thrown are typically derived from either
+\code{adept::autodiff\_exception} or
+\code{adept::array\_exception}. These classes are derived from
+\code{adept::exception}, which is itself derived from
+\code{std::exception}. Most indicate an error in the users code,
+usually associated with calling \Adept\ functions in the wrong order.
+
+An overly comprehensive exception-catching implementation that takes
+different actions depending on whether a specific \Adept\ exception,
+an exception related to automatic differentiation, a general
+\Adept\ exception, or a non-\Adept\ exception is thrown, could have
+the following form:
+%
+\begin{lstlisting}
+ try {
+   adept::Stack stack;
+   // ... Code using the Adept library goes here ...
+ }
+ catch (adept::stack_already_active& e) {
+   // Catch a specific Adept exception
+   std::cerr << "Error: " << e.what() << std::endl;
+   // ... any further actions go here ...
+ }
+ catch (adept::autodiff_exception& e) {
+   // Catch any Adept exception related to automatic differentiation not yet caught
+   std::cerr << "Error: " << e.what() << std::endl;
+   // ... any further actions go here ...
+ }
+ catch (adept::exception& e) {
+   // Catch any other Adept exception not yet caught
+   std::cerr << "Error: " << e.what() << std::endl;
+   // ... any further actions go here ...
+ }
+ catch (...) {
+   // Catch any exceptions not yet caught
+   std::cerr << "An error occurred" << std::endl;
+   // ... any further actions go here ...
+ }
+\end{lstlisting}
+%
+All exceptions implement the \code{what()} member function, which
+returns a \code{const char*} containing an error message. 
+
+\subsection{General exceptions}
+The following exceptions are not specific to arrays or automatic
+differentiation and inherit directly from \code{adept::exception}::
+\begin{description}
+\citem{feature\_not\_available} This exception is thrown by deprecated
+functions, such as \code{Stack::start()}. It is also thrown by
+functions that are not available because a certain library is not
+being used, such as \code{inv} if LAPACK was not available at compile
+time.
+\end{description}
+
+\subsection{Automatic-differentiation exceptions}
+The following exceptions relate to automatic differentiation (the
+functionality described in chapter \ref{chap:ad}), and all are in the
+\code{adept} namespace:
+\begin{description}
+\citem{gradient\_out\_of\_range} This exception can be thrown by the
+\code{adouble::get\_gradient} member function if the index to its
+gradient is larger than the number of gradients stored.  This can
+happen if the \code{adouble} object was created after the first
+\code{adouble::set\_gradient} call since the last
+\code{Stack::new\_recording} call. The first
+\code{adouble::set\_gradient} call signals to the \Adept\ stack that
+the main algorithm has completed and so memory can be allocated to
+store the gradients ready for a forward or reverse pass through the
+differential statements. If further \code{adouble} objects are created
+then they may have a gradient index that is out of range of the memory
+allocated.
+%
+\citem{gradients\_not\_initialized} This exception can be thrown by
+functions that require the list of working gradients to have been
+initialized (particularly the functions
+\code{Stack::compute\_tangent\_linear} and
+\code{Stack::compute\_adjoint}). This initialization occurs when
+\code{adouble::set\_gradient} is called.
+%
+\citem{stack\_already\_active} This exception is thrown when an
+attempt is made to make a particular \code{Stack} object ``active'',
+but there already is an active stack in this thread. This can be
+thrown by the \code{Stack} constructor or the \code{Stack::activate}
+member function.
+%
+\citem{dependents\_or\_independents\_not\_identified} This exception
+is thrown when an attempt is made to compute a Jacobian but the
+independents and/or dependents have not been identified.
+%
+\citem{wrong\_gradient} This exception is thrown by the
+\code{adouble::append\_derivative\_dependence} if the \code{adouble}
+object that it is called from is not the same as that of the most
+recent \code{adouble::add\_derivative\_dependence}. 
+%
+\citem{non\_finite\_gradient} This exception is thrown if the users
+code is compiled with the preprocessor variable
+\code{ADEPT\_TRACK\_NON\_FINITE\_GRADIENTS} defined, and a
+mathematical operation is carried out for which the derivative is not
+finite. This is useful to locate the source of non-finite derivatives
+coming out of an algorithm.
+\end{description}
+
+\subsection{Array exceptions}
+\label{sec:array_exceptions}
+The following exceptions relate to arrays (the functionality described
+in chapter \ref{chap:arrays}), and all are in the \code{adept}
+namespace:
+\begin{description}
+\citem{size\_mismatch} A mathematical operation taking two arguments
+has been applied to array expressions that are not of the same
+size. The same exception is thrown if an array expression is applied
+to an array of a different size.
+\citem{inner\_dimension\_mismatch} Matrix multiplication has been
+attempted with arrays whose inner dimensions don't agree.
+\citem{empty\_array} An empty array has been used in an operation when
+a non-empty array is required; for example, if an attempt is made to
+link an array to an empty array (see section \ref{sec:array} for more
+information on linking).
+\citem{invalid\_dimension} Attempt to create an array with a negative
+dimension.
+\citem{index\_out\_of\_bounds} An element or range of elements has
+been requested from an array but one of the indices provided is out of
+range; for a dimension of length $n$, the index is not in the range
+$0$ to $n-1$. Note that bounds checking is only applied if the
+preprocessor variable \code{ADEPT\_BOUNDS\_CHECKING} is defined.
+%\citem{invalid\_lvalue}
+\citem{invalid\_operation} An invalid operation has been performed
+that can only be detected at run-time, for example, calling the
+\code{diag\_submatrix} member function of a non-square rank-2
+\code{Array}.
+\citem{matrix\_ill\_conditioned} An attempt has been made to factorize
+an ill-conditioned matrix (either via \code{solve} or \code{inv}).
+\end{description}
+
+\section{Configuring the behaviour of \Adept}
+\label{sec:configuring}
+The behaviour of the \Adept\ library can be changed by defining one or
+more of the \Adept\ preprocessor variables. This can be done either by
+editing the \code{adept/base.h} file and uncommenting the relevant
+\code{\#define} lines, or by compiling your code with \code{-Dxxx}
+compiler options (replacing \code{xxx} by the relevant preprocessor
+variable. There are two types of preprocessor variable: the first
+types only apply to the compilation of user code, while the second
+types require the \Adept\ library to be recompiled.
+
+\subsection{Modifications not requiring a library recompile}
+\label{sec:configuring_no_lib}
+The preprocessor variables that apply only to user code and do not
+require the \Adept\ library to be recompiled are as follows:
+\begin{description}
+\citem{ADEPT\_STACK\_THREAD\_UNSAFE} If this variable is defined, the
+currently active stack is stored as a global variable but is not
+defined to be ``thread-local''. This is slightly faster, but means
+that you cannot use multi-threaded code with separate threads holding
+their own active \code{Stack} object. Note that although defining this
+variable does not require a library recompile, all source files that
+make up a single executable must be compiled with this option (or all
+not be).
+%
+\citem{ADEPT\_RECORDING\_PAUSABLE} This option enables an algorithm to
+be run both with and without automatic differentiation from within the
+same program via the functions \code{Stack::pause\_recording()} and
+\code{Stack::continue\_recording()}.  Note that although defining this
+variable does not require a library recompile, all source files that
+make up a single executable must be compiled with this option (or all
+not be). Further details on this option are provided in section
+\ref{sec:pausable}.
+%
+\citem{ADEPT\_NO\_AUTOMATIC\_DIFFERENTIATION} This option turns off
+automatic differentiation by treating \code{adouble} objects as
+\code{double}. It is useful if you want to compile one source file
+twice to produce versions with and without automatic
+differentiation. Further details on this option are provided in
+section \ref{sec:multipleobjects}.
+%
+\citem{ADEPT\_TRACK\_NON\_FINITE\_GRADIENTS} Often when an algorithm
+is first converted to use an operator-overloading automatic
+differentiation library, the gradients come out as Not-a-Number or
+Infinity. The reason is often that the algorithm contains operations
+for which the derivative is not finite (e.g.\ $\sqrt{a}$ for $a=0$),
+or constructions where a non-finite value is produced but subsequently
+made finite (e.g.\ $\exp(-1.0/a)$ for $a=0$). Usually the algorithm
+can be recoded to avoid these problems, if the location of the
+problematic operations can be identified. By defining this
+preprocessor variable, a \code{non\_finite\_gradient} exception will
+be thrown if any operation results in a non-finite derivative. Running
+the program within a debugger (and ensuring that the exception is not
+caught within the program) enables the offending line to be
+identified.
+%
+\citem{ADEPT\_INITIAL\_STACK\_LENGTH} This preprocessor variable is
+set to an integer, and is used as the default initial amount of memory
+allocated for the recording, in terms of the number of statements and
+operations.
+%
+\citem{ADEPT\_REMOVE\_NULL\_STATEMENTS} If many variables in your code
+are likely to be zero then redundant operations will be added to the
+list of differential statements. For example, the assignment
+$a=b\times c$ with active variables $b$ and $c$ both being zero
+results in the differential statement $\delta a=0\times\delta
+b+0\times\delta c$. This preprocessor variable checks for zeros and
+removes terms on the right-hand-side of differential statements if it
+finds them. In this case it would put $\delta a=0$ on the stack
+instead. This option slows down the recording stage, but speeds up the
+subsequent use of the recorded stack for adjoint and Jacobian
+calculations. The speed up of the latter is only likely to exceed the
+slow down of the former if your code contains many zeros. For most
+codes, this option causes a net slow down.
+%
+\citem{ADEPT\_COPY\_CONSTRUCTOR\_ONLY\_ON\_RETURN\_FROM\_FUNCTION}
+(not recommended!) If copy constructors for \code{adouble} objects are
+only used in the return values for functions, then defining this
+preprocessor variable will lead to slightly faster code, because it
+will be assumed that when a copy constructor is called, the index to
+its gradient can simply be copied because the object being copied will
+shortly be destructed (otherwise communication with the \code{Stack}
+object is required to unregister one and immediately register the
+other). You need to be sure that the code being compiled with this
+option does not invoke the copy constructor in any other
+circumstances. Specifically, it must not include either of these
+constructions: ``\code{adouble x = y;}'' or ``\code{adouble x(y);}'',
+where \code{y} is an \code{adouble} object. If it does, then strange
+errors will occur.
+%
+\citem{ADEPT\_BOUNDS\_CHECKING} If this variable is defined, check
+that all array indices are within the bounds of the array throwing an
+\code{index\_out\_of\_bounds} exception if necessary.  If this
+variable is not defined then these checks are not performed, which is
+faster but means that attempts to access arrays out of bounds will
+result either of corruption of other memory used by the process, or a
+segmentation fault. 
+\end{description}
+
+\subsection{Modifications requiring a library recompile}
+\label{sec:configuring_lib}
+\noindent The preprocessor variables that require the \Adept\ library
+to be recompiled are as follows. Note that if these variables are used
+they must be the same when compiling both the library and the user
+code. This is safest to implement by editing section 2 of the
+\code{adept/base.h} header file.
+\begin{description}
+\citem{ADEPT\_FLOATING\_POINT\_TYPE} If you want to compile \Adept\ to
+use a precision other than double for the \code{Real} type, and hence
+for automatic differentiation, then define this preprocessor variable
+to be the floating-point type required, e.g. \code{float} or
+\code{long double}. To use from the compiler command-line, use the
+argument \code{-DADEPT\_FLOATING\_POINT\_TYPE=float} or
+\code{-DADEPT\_FLOATING\_POINT\_TYPE="long double"}.
+%
+\citem{ADEPT\_STACK\_STORAGE\_STL} Use the C++ standard template
+library \code{vector} or \code{valarray} classes for storing the
+recording and the list of gradients, rather than dynamically allocated
+arrays. In practice, this tends to slow down the code.
+%
+\citem{ADEPT\_MULTIPASS\_SIZE} This is set to an integer, invariably a
+power of two, specifying the number of rows or columns of a Jacobian
+that are calculated at once. The optimum value depends on the platform
+and the capability of the compiler to optimize loops whose length is
+known at compile time.
+% 
+\citem{ADEPT\_MULTIPASS\_SIZE\_ZERO\_CHECK} This is also set to an
+integer; if it is greater than \codebf{ADEPT\_MULTIPASS\_SIZE}, then
+the \code{Stack::jacobian\_reverse} function checks gradients are
+non-zero before using them in a multiplication.
+%
+\citem{ADEPT\_THREAD\_LOCAL} This can be used to specify the way that
+thread-local storage is declared by your compiler.  Thread-local
+storage is used to ensure that the \Adept\ library is thread-safe. By
+default this variable is not defined initially, and then later in
+\code{adept/base.h} it is set to \code{\_\_declspec(thread)} on
+Microsoft Visual C++, an empty declaration on Mac (since thread-local
+storage is not available on many Mac platforms) and \code{\_\_thread}
+otherwise (appropriate for at least the GCC, Intel, Sun and IBM
+compilers). To override the default behaviour, define this variable
+yourself in \code{adept/base.h}.
+\end{description}
+
+\section{Frequently asked questions}
+\label{sec:faq}
+\begin{description}
+\item[Why are all the gradients coming out of the automatic
+  differentiation zero?] You have almost certainly omitted or
+  misplaced the call of the \code{adept::Stack} member function
+  ``\code{new\_recording()}''. It should be placed \emph{after} the
+  independent variables in the algorithm have been initialized, but
+  before any subsequent calculations are performed on these
+  variables. If it is omitted or placed before the point where the
+  independent variables are initialized, the differential statements
+  corresponding to this initialization (which are all of the form
+  $\delta x=0$), will be placed in the list of differential statements
+  and will unhelpfully set to zero all your gradients right at the
+  start of a forward pass (resulting from a call to \code{forward()})
+  or set them to zero right at the end of a reverse pass (resulting
+  from a call to \code{reverse()}).
+\item[Why are the gradients coming out of the automatic
+  differentiation NaN or Inf (even though the value is correct)?] This
+  can occur if the algorithm contains operations for which the
+  derivative is not finite (e.g.\ $\sqrt{a}$ for $a=0$), or
+  constructions where a non-finite value is produced but subsequently
+  made finite (e.g.\ $\exp(-1.0/a)$ for $a=0$). Usually the algorithm
+  can be recoded to avoid these problems, if the location of the
+  problematic operations can be identified. The simplest way to locate
+  the offending statement is to recompile your code with the \code{-g}
+  option and the \code{ADEPT\_TRACK\_NON\_FINITE\_GRADIENTS}
+  preprocessor variable set (see section
+  \ref{sec:configuring_no_lib}). Run the program within a debugger and
+  a \code{non\_finite\_gradient} exception will be thrown, which if
+  not caught within the program will enable you to locate the line in
+  your code where the problem originated.  You may need to turn
+  optimizations off (compile with \code{-O0}) for the line
+  identification to be accurate. Another approach is to add the
+  following in a C++ source file:
+\begin{lstlisting}
+#include <fenv.h>
+int _feenableexcept_status = feenableexcept(FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
+\end{lstlisting}
+  This will cause a floating point exception to be thrown when a
+  \code{NaN} or \code{Inf} is generated, which can again be located in
+  a debugger.
+\item[Why are the gradients coming out of the automatic
+  differentiation wrong?] Before suspecting a bug in \Adept, note that
+  round-off error can lead to incorrect gradients even in hand-coded
+  differential code. Consider the following:
+\begin{lstlisting}
+int main() {
+  Stack stack;
+  adouble a = 1.0e-26, b;
+  stack.new_recording();
+  b = sin(a) / a;
+  b.set_gradient(1.0);
+  stack.compute_adjoint();
+  std::cout << "a=" << a << ", b=" << b << ", db/da=" << a.get_gradient() << "\n";
+}
+\end{lstlisting}
+  We know that near \code{a=0} we should have \code{b=1} and the
+  gradient should be \code{0}.  But running the program above will
+  give a gradient of \code{1.71799e+10}. If you hand-code the
+  gradient, i.e.
+\begin{lstlisting}
+double A = 1.0e-26;
+double dB_dA = cos(A)/A - sin(A) / (A*A);
+\end{lstlisting}
+  you will you will also get the wrong gradient.  You can see that the
+  answer is the difference of two very large numbers and so subject to
+  round-off error.  This example is therefore not a bug of \Adept, but
+  a limitation of finite-precision machines.  To check this, try
+  compiling your code using either the ADOL-C or CppAD automatic
+  differentiation tools; I have always found these tools to give
+  exactly the same gradient as \Adept. Unfortunately, round-off error
+  can build up over many operations to give the wrong result, so there
+  may not be a simple solution in your case.
+\item[Can \Adept\ reuse a stored tape for multiple runs of the same
+  algorithm but with different inputs?] No. \Adept\ does not store the
+  full algorithm in its stack (as ADOL-C does in its tapes, for
+  example), only the derivative information.  So from the stack alone
+  you cannot rerun the function with different inputs.  However,
+  rerunning the algorithm including recomputing the derivative
+  information is fast using \Adept, and is still faster than libraries
+  that store enough information in their tapes to enable a tape to be
+  reused with different inputs.  It should be stressed that for any
+  algorithm that includes different paths of execution (``if''
+  statements) based on the values of the inputs, such a tape would
+  need to be rerecorded anyway. This includes any algorithm containing
+  a look-up table.
+\item[Why does my code crash with a segmentation fault?] This means it
+  is trying to access a memory address not belonging to your program,
+  and the first thing to do is to run your program in a debugger to
+  find out at what point in your code this occurs. If it is in the
+  \code{adept::aReal} constructor (note that \code{aReal} is synonymous with
+  \code{adouble}), then it is very likely that you have tried to
+  initiate an \code{adept::adouble} object before initiating an
+  \code{adept::Stack} object. As described in section
+  \ref{sec:stack_setup}, there are good reasons why you need to
+  initialize the \code{adept::Stack} object first.
+\item[How can I interface \Adept\ with a matrix library such as
+  Eigen?]  Unfortunately the use of expression templates in
+  \Adept\ means that it does not work optimally (if it works at all)
+  with third-party matrix libraries that use expression
+  templates. This is the reason why Adept 2.0 combines array
+  functionality with automatic differentiation in a single
+  expression-template framework.
+\item[Do you have plans to enable \Adept\ to produce Hessian
+  matrices?]  Not in the near future; refining the array functionality
+  is a higher priority at the moment.  However, if your objective
+  function $J(\x)$ (also known as a cost function or penalty function)
+  has a quadratic dependence on each of the elements of $\y(\x)$,
+  where $\y$ is a nonlinear function of the independent variables
+  $\x$, then the Hessian matrix $\nabla_\x^2 J$ can be computed from
+  the Jacobian matrix ${\bf H}=\partial\y/\partial\x$. This is the
+  essence of the Gauss-Newton and Levenberg-Marquardt
+  algorithms. Consider the optimization problem of finding the
+  parameters $\x$ of nonlinear model $\y(\x)$ that provides the
+  closest match to a set of ``observations'' $\y^o$ in a least-squares
+  sense.  For maximum generality we add constraints that penalize
+  differences between $\x$ and a set of \emph{a~priori} values $\x^a$,
+  as well as a regularization term.  In this case the objective
+  function could be written as \def\myspace{~~}
+\begin{equation}
+J(\x) \myspace =\myspace \left[\y(\x)-\y^o\right]^\mathrm{T}{\bf
+  R}^{-1}\left[\y(\x)-\y^o\right]
+\myspace+\myspace\left[\x-\x^a\right]^\mathrm{T}{\bf
+  B}^{-1}\left[\x-\x^a\right]
+\myspace+\myspace\x^\mathrm{T}{\bf T}\x.\nonumber
+\label{eq:objective}
+\end{equation}
+  Here, all vectors are treated as column vectors, ${\bf R}$ is the
+  error covariance matrix of the observations, ${\bf B}$ is the error
+  covariance matrix of the \emph{a~priori} values, and ${\bf T}$ is a
+  Twomey-Tikhonov matrix that penalizes either spatial gradients or
+  curvature in $\x$.  The Hessian matrix is then given by
+\begin{equation}
+\nabla_\x^2J \myspace=\myspace {\bf H}^\mathrm{T}{\bf
+  R}^{-1}{\bf H}\nonumber
+\myspace+\myspace {\bf B}^{-1} \myspace+\myspace {\bf T},
+\label{eq:hessian}
+\end{equation}
+  which can be coded up using \Adept\ to compute ${\bf H}$. Each term
+  on the right-hand-side of (\ref{eq:hessian}) has its corresponding
+  term in (\ref{eq:objective}), so it is easy to work out what the
+  Hessian would look like if only a subset of the terms in
+  (\ref{eq:objective}) were present.
+\item[Why doesn't the ternary operator work?] Some compilers will fail
+  to compile the following function:
+\begin{lstlisting}
+adept::adouble piecewise(adept::adouble x) {
+  return x < 1.0 ? x*x : 2.0*x-1.0;
+}
+\end{lstlisting}%
+The reason is that these compilers require that the two possible
+outcomes of the ternary operator have the same type, but due to the
+use of expression templates, the types of these mathematical
+expressions are actually different.  The ternary operator cannot be
+overloaded to allow such arguments. The solution is to explicitly
+convert the outcomes to \code{adouble}:
+\begin{lstlisting}
+adept::adouble piecewise(adept::adouble x) {
+  return x < 1.0 ? adept::adouble(x*x) : adept::adouble(2.0*x-1.0);
+}
+\end{lstlisting}
+\item[Why is my executable so huge?]  Probably you are including
+  debugging symbols by compiling with the \code{-g} option. Expression
+  templates need long strings to describe them, so this extra content
+  can increase the size of object files and executables by a factor of
+  ten.  This does not slow down execution, but for production code you
+  may wish to compile without debugging symbols.
+\end{description}
+
+\section{Copyright and license for \Adept\ software}
+\label{sec:license}
+Versions 1.9 of \Adept\ and later are owned and copyrighted jointly by
+the University of Reading and the European Centre for Medium Range
+Weather Forecasts. The copyright to versions 1.1 and earlier is held
+solely by the University of Reading.
+
+Since version 1.1, the \Adept\ library is released under the Apache
+License, Version 2.0, which is available at
+\url{http://www.apache.org/licenses/LICENSE-2.0}.  In short, this
+free-software license permits you to use the library for any purpose,
+and to modify it and combine it with other software to form a larger
+work.  If you choose, you may release the modified software in either
+source code or object code form, so may use \Adept\ in both
+open-source software and non-free proprietary software. However,
+distributed versions must retain copyright notices and also distribute
+both the information in the NOTICES file and a copy of the Apache
+License.  Different license terms may be applied to your distributed
+software, although they must include the conditions on redistribution
+provided in the Apache License.  This is a just short summary; if in
+doubt, consult the text of the license.
+
+In addition to the legally binding terms of the license, it is
+\emph{requested} that:
+\begin{itemize}
+\item You cite \cite{Hogan2014} in publications describing algorithms
+  and software that make use of the \Adept\ library. While not not a
+  condition of the license, this is good honest practice in science
+  and engineering.
+\item If you make modifications to the \Adept\ library that might be
+  useful to others, you release your modifications under the terms of
+  the Apache License, Version 2.0, so that they are available to
+  others and could also be merged into a future official version of
+  \Adept. If you do not state the license applied to your
+  modifications then by default they will be under the terms of the
+  Apache License. You will retain copyright of your modifications, but
+  if your modifications are written in the course of employment then
+  under almost all circumstances (including employment by a
+  University) it is your employer who holds the copyright.  Therefore
+  you should obtain permission from them to release your modifications
+  under the Apache License.
+\end{itemize}
+
+Note that other source files in the \Adept\ package used for
+demonstrating and benchmarking \Adept\ are released under the GNU
+all-permissive license\footnote{The GNU all-permissive license reads:
+  \emph{Copying and distribution of this file, with or without
+    modification, are permitted in any medium without royalty provided
+    the copyright notice and this notice are preserved.  This file is
+    offered as-is, without any warranty.}}, which is specified at the
+top of all files it applies to.
+
+\Adept\ version 1.0 was released under the terms of the GNU General
+Public License (GPL) and so could not be released as part of a larger
+work unless the entire work was released under the conditions of the
+GPL.  It is hoped that the switch to the Apache License will
+facilitate wider use of \Adept.
+
+\section*{Acknowledgments}
+Adept 1.0 was developed by Robin Hogan at the University of Reading
+with funding from European Space Agency contract
+40001041528/11/NL/CT. Some of the modifications to produce version 1.1
+were funded by a National Centre for Earth Observation Mission Support
+grant (Natural Environment Research Council grant NE/H003894/1). Dr
+Brian Tse is thanked for his work exploring different parallelization
+strategies during this period. Subsequent development has been carried
+out under employment at the European Centre for Medium Range Weather
+Forecasts.
+
+\begin{thebibliography}{00}
+\markright{References}
+\harvarditem{Bell}{2007}{Bell2007}Bell, B., 2007: CppAD: A package for C++
+algorithmic differentiation. \url{http://www.coin-or.org/CppAD}
+% 
+\harvarditem{Liu and Nocedal}{1989}{Liu+1989}Liu, D. C., and Nocedal,
+  J., 1989: On the limited memory method for large scale
+optimization. \emph{Math.\ Programming B,} {\bf 45,} 503--528.
+%
+\harvarditem{Gay}{2005}{Gay2005}Gay, D. M., 2005: Semiautomatic
+differentiation for efficient gradient computations.  In
+\emph{Automatic Differentiation: Applications, Theory, and
+  Implementations}, H. M. B\"ucker, G. F. Corliss, P.  Hovland,
+U. Naumann and B. Norris (eds.), Springer, 147--158.
+%
+\harvarditem{Griewank et~al.}{1996}{Griewank+1996}Griewank, A.,
+  Juedes, D., and Utke, J., 1996:  Algorithm 755: ADOL-C: a package for the
+automatic differentiation of algorithms written in C/C++. \textit{ACM
+  Trans.\ Math.\ Softw.,} \textbf{22,} 131--167.
+\harvarditem{Hogan}{2014}{Hogan2014}Hogan, R. J., 2014: Fast reverse-mode
+  automatic differentiation using expression templates in
+  C++. \textit{ACM Trans.\ Math.\ Softw.,} \textbf{40,} 26:1-26:16.
+\harvarditem{Veldhuizen}{1995}{Veldhuizen1995}Veldhuizen, T., 1995:
+Expression templates. {\it C++ Report,} {\bf 7,} 26--31.
+\end{thebibliography}
+
+\end{document}
