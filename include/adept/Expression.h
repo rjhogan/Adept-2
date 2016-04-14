@@ -19,6 +19,7 @@
 #include <adept/Stack.h>
 #include <adept/ScratchVector.h>
 #include <adept/VectorOrientation.h>
+//#include <adept/Packet.h>
 
 namespace adept {
 
@@ -64,6 +65,13 @@ namespace adept {
     static const bool is_active = A::is_active_;
     static const bool is_multidimensional = (rank > 1);
     static const bool is_lvalue = A::is_lvalue_;
+
+    // An expression is currently vectorizable only if it is of
+    // floating point type, all arrays have the same type, and if the
+    // only mathematical operators and functions can be treated by
+    // hardware vector operations (+-*/sqrt)
+    //    static const bool is_vectorizable = A::is_vectorizable_;
+
     static const VectorOrientation vector_orientation = A::vector_orientation_;
 
     // Classes derived from this one that do not define how many
@@ -155,6 +163,18 @@ namespace adept {
     bool is_aliased(const Type* mem1, const Type* mem2) const {
       return cast().is_aliased_(mem1, mem2);
     }
+
+    // Return true if the fastest varying dimension of all the arrays
+    // in the expression are contiguous and increasing.  If so, we can
+    // more simply increment their indices.
+    bool all_arrays_contiguous() const {
+      return cast().all_arrays_contiguous_();
+    }
+
+    // By default, arrays are contiguous (this fall-back used for
+    // objects that aren't arrays)
+    bool all_arrays_contiguous_() const { return true; }
+
     // If the sub-expression is of a different type from that
     // requested then we assume there must be no aliasing.
     template <typename MyType>
@@ -217,9 +237,18 @@ namespace adept {
     Type next_value(ExpressionSize<NArrays>& index) const {
       Type val = cast().template value_at_location_<0>(index);
       cast().template advance_location_<0>(index);
-      //      ++index;
       return val;
     }
+    // If all arrays are have an inner dimension that is contiguous
+    // and increasing then their indices may be incremented all
+    // together, which is more efficient
+    template <int NArrays>
+    Type next_value_contiguous(ExpressionSize<NArrays>& index) const {
+      Type val = cast().template value_at_location_<0>(index);
+      ++index;
+      return val;
+    }
+
     template <int NArrays>
     Type value_at_location(ExpressionSize<NArrays>& index) const {
       return cast().template value_at_location_<0>(index);
@@ -300,6 +329,7 @@ namespace adept {
       }
 
       bool is_aliased_(const Type* mem1, const Type* mem2) const { return false; }
+      bool all_arrays_contiguous_() const { return true; }
 
       Type value_with_len_(const Index& j, const Index& len) const
       { return val_; }
@@ -390,6 +420,9 @@ namespace adept {
 
       bool is_aliased_(const Type* mem1, const Type* mem2) const {
 	return arg.is_aliased(mem1, mem2);
+      }
+      bool all_arrays_contiguous_() const {
+	return arg.all_arrays_contiguous_();
       }
 
       /*
@@ -587,6 +620,9 @@ namespace adept {
 
       bool is_aliased_(const Type* mem1, const Type* mem2) const {
 	return false;
+      }
+      bool all_arrays_contiguous_() const {
+	return arg.all_arrays_contiguous_(); 
       }
 
       template <int Rank>
@@ -802,6 +838,9 @@ namespace adept {
       bool is_aliased_(const bool* mem1, const bool* mem2) const {
 	return false;
       }
+      bool all_arrays_contiguous_() const {
+	return arg.all_arrays_contiguous_(); 
+      }
 
       template <int Rank>
       Type value_with_len_(Index i, Index len) const {
@@ -1003,6 +1042,10 @@ namespace adept {
 
       bool is_aliased_(const Type* mem1, const Type* mem2) const {
 	return left.is_aliased(mem1, mem2) || right.is_aliased(mem1, mem2);
+      }
+      bool all_arrays_contiguous_() const { 
+	return left.all_arrays_contiguous_()
+	  &&  right.all_arrays_contiguous_();
       }
 
       Type value_with_len_(const Index& j, const Index& len) const {
@@ -1229,6 +1272,9 @@ namespace adept {
       bool is_aliased_(const Type* mem1, const Type* mem2) const {
 	return right.is_aliased(mem1, mem2);
       }
+      bool all_arrays_contiguous_() const {
+	return right.all_arrays_contiguous_(); 
+      }
 
       Type value_with_len_(const Index& j, const Index& len) const {
 	return operation(left, right.value_with_len(j,len));
@@ -1404,6 +1450,9 @@ namespace adept {
 
       bool is_aliased_(const Type* mem1, const Type* mem2) const {
 	return left.is_aliased(mem1, mem2);
+      }
+      bool all_arrays_contiguous_() const {
+	return left.all_arrays_contiguous_(); 
       }
 
       Type value_with_len_(const Index& j, const Index& len) const {

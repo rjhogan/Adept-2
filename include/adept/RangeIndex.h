@@ -214,6 +214,8 @@ namespace adept {
 	return false;
       }
 
+      bool all_arrays_contiguous_() const { return true; }
+
       // When this object is used as an index to another, the
       // following version of the function is called, in which the
       // "len" element is specified in order for the "end" index

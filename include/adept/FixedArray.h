@@ -1584,6 +1584,10 @@ namespace adept {
 	return false;
       }
     }
+
+    // By design, FixedArrays are row-major and row-wise access is
+    // contiguous
+    bool all_arrays_contiguous_() const { return true; }
   
     Type value_with_len_(const Index& j, const Index& len) const {
       ADEPT_STATIC_ASSERT(rank_ == 1, CANNOT_USE_VALUE_WITH_LEN_ON_ARRAY_OF_RANK_OTHER_THAN_1);

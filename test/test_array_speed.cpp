@@ -1,6 +1,9 @@
 #include <iostream>
+#define ADEPT_NO_AUTOMATIC_DIFFERENTIATION
 #include <adept_arrays.h>
 #include "Timer.h"
+
+#define OPERATOR +
 
 using namespace adept;
 
@@ -8,8 +11,10 @@ int main()
 {
   Timer timer;
   timer.print_on_exit();
-  int n = 50;
-  static const int rep = 1000;
+  int n = 100;
+  bool do_jacobian = false;
+
+  static const int rep = 10000;
   //  static const int rep = 10;
 
   Stack stack;
@@ -41,25 +46,26 @@ int main()
   for (int irep = 0; irep < rep; ++irep) {
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-	Mc[i][j] += Pc[i][j]/(Qc[i][j]+0.5);
+	Mc[i][j] += Pc[i][j] OPERATOR (Qc[i][j]+0.5);
       }
     }
   }
   timer.stop();
-  std::cout << stack;
+  //  std::cout << stack;
 
   stack.new_recording();
   timer.start(t_c_style);
   for (int irep = 0; irep < rep; ++irep) {
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-	Mc[i][j] += Pc[i][j]/(Qc[i][j]+0.5);
+	Mc[i][j] += Pc[i][j] OPERATOR (Qc[i][j]+0.5);
       }
     }
   }
   timer.stop();
-  std::cout << stack;
+  //  std::cout << stack;
 
+#ifndef ADEPT_NO_AUTOMATIC_DIFFERENTIATION
   stack.independent(&Pc[0][0], n*n);
   stack.dependent(&Mc[0][0], n*n);
 
@@ -72,6 +78,7 @@ int main()
   timer.start(t_jacobian);
   stack.jacobian_forward(jac);
   timer.stop();
+#endif
 
 
   //  std::cout << Mc[0][0] << " " << Mc[10][10] << "\n";
@@ -79,21 +86,23 @@ int main()
   stack.new_recording();
   timer.start(t_adept_w);
   for (int irep = 0; irep < rep; ++irep) {
-    //    M += noalias(P/(Q+0.5));
-    M += P/(Q+0.5);
-    //    M = P/(Q);
+    //    M += noalias(P OPERATOR (Q+0.5));
+    M += P OPERATOR (Q+0.5);
+    //    M = P OPERATOR (Q);
   }
   timer.stop();
-  std::cout << stack;
+  //  std::cout << stack;
 
   stack.new_recording();
   timer.start(t_adept);
   for (int irep = 0; irep < rep; ++irep) {
-    //    M += noalias(P/(Q+0.5));
-    M += P/(Q+0.5);
+    //    M += noalias(P OPERATOR (Q+0.5));
+    M += P OPERATOR (Q+0.5);
   }
   timer.stop();
-  std::cout << stack;
+  //  std::cout << stack;
+
+#ifndef ADEPT_NO_AUTOMATIC_DIFFERENTIATION
 
   stack.clear_independents();
   stack.clear_dependents();
@@ -110,18 +119,19 @@ int main()
   timer.start(t_jacobian_array);
   stack.jacobian_forward(jac);
   timer.stop();
+#endif
 
   stack.new_recording();
   timer.start(t_adept_container_w);
   for (int irep = 0; irep < rep; ++irep) {
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-	M(i,j) += P(i,j)/(Q(i,j)+0.5);
+	M(i,j) += P(i,j) OPERATOR (Q(i,j)+0.5);
       }
     }
   }
   timer.stop();
-  std::cout << stack;
+  //  std::cout << stack;
   //  std::cout << M;
 
   stack.new_recording();
@@ -129,10 +139,10 @@ int main()
   for (int irep = 0; irep < rep; ++irep) {
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-	M(i,j) += P(i,j)/(Q(i,j)+0.5);
+	M(i,j) += P(i,j) OPERATOR (Q(i,j)+0.5);
       }
     }
   }
   timer.stop();
-  std::cout << stack;
+  //  std::cout << stack;
 }

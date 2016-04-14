@@ -1,3 +1,9 @@
+version 1.9.9
+	- Put on GitHub as rjhogan/Adept-2
+	- Added Expression::next_value_contiguous for faster inner loops
+	in the case that all expressions have a contiguous and increasing
+	inner dimension
+
 version 1.9.8 (April 2017):
 	- Completed FixedArray.h and tested for active arguments
 	- Added array_shortcuts for FixedArrays: (a)VectorX, (a)MatrixXX

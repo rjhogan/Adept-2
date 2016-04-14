@@ -1816,7 +1816,8 @@ namespace adept {
 	return false;
       }
     }
-  
+    bool all_arrays_contiguous_() const { return offset_[Rank-1] == 1; }
+
     Type value_with_len_(const Index& j, const Index& len) const {
       ADEPT_STATIC_ASSERT(Rank == 1, CANNOT_USE_VALUE_WITH_LEN_ON_ARRAY_OF_RANK_OTHER_THAN_1);
       return data_[j*offset_[0]];
@@ -2430,16 +2431,32 @@ namespace adept {
       Index index = 0;
       int rank;
       static const int last = LocalRank-1;
-      do {
-	i[last] = 0;
-	rhs.set_location(i, ind);
-	// Innermost loop
-	for ( ; i[last] < dimensions_[last]; ++i[last],
-	       index += offset_[last]) {
-	  data_[index] = rhs.next_value(ind);
-	}
-	advance_index(index, rank, i);
-      } while (rank >= 0);
+      if (rhs.all_arrays_contiguous()) {
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, ind);
+	  // Innermost loop
+	  for ( ; i[last] < dimensions_[last]; ++i[last],
+		  index += offset_[last]) {
+	    // Note that this is faster as we know that all indices
+	    // need to be incremented by 1
+	    data_[index] = rhs.next_value_contiguous(ind);
+	  }
+	  advance_index(index, rank, i);
+	} while (rank >= 0);
+      }
+      else {
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, ind);
+	  // Innermost loop
+	  for ( ; i[last] < dimensions_[last]; ++i[last],
+		  index += offset_[last]) {
+	    data_[index] = rhs.next_value(ind);
+	  }
+	  advance_index(index, rank, i);
+	} while (rank >= 0);
+      }
     }
 
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>

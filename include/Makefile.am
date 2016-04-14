@@ -11,7 +11,7 @@ pkginclude_HEADERS = adept/Active.h adept/ActiveReference.h adept/Allocator.h \
 	adept/interp.h adept/ActiveConstReference.h adept/cppblas.h \
 	adept/inv.h adept/oriented_vector.h adept/reduce.h \
 	adept/scalar_shortcuts.h adept/solve.h adept/traits.h adept/where.h \
-	adept/vector_utilities.h adept/FixedArray.h
+	adept/vector_utilities.h adept/FixedArray.h adept/Packet.h
 
 EXTRA_DIST = Timer.h create_adept_source_header adept_source.h
 

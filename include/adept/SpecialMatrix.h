@@ -1482,6 +1482,9 @@ namespace adept {
       }
     }
   
+    // Cannot traverse a full row just by incrementing an index by 1
+    bool all_arrays_contiguous_() const { return false; }
+
     Type value_with_len_(const Index& j, const Index& len) const {
       ADEPT_STATIC_ASSERT(false, CANNOT_USE_VALUE_WITH_LEN_ON_ARRAY_OF_RANK_OTHER_THAN_1);
       return 0;
