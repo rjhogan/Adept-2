@@ -19,12 +19,12 @@ which is mature.
 
 For further information see:
 * The [Adept-2 web site] (http://www.met.reading.ac.uk/clouds/adept2/)
-* A detailed [User Guide] (http://www.met.reading.ac.uk/clouds/adept2/adept_documentation.pdf)
-* [A paper published in ACM TOMS] (http://www.met.reading.ac.uk/clouds/publications/adept.pdf) describing the automatic differentiation capability
+* A detailed [User Guide] (http://www.met.reading.ac.uk/clouds/adept2/adept_documentation_v2.pdf)
+* [A paper published in ACM TOMS] (http://www.met.reading.ac.uk/~swrhgnrj/publications/adept.pdf) describing the automatic differentiation capability
 
 To build Adept from a GitHub snapshot, do the following:
 
-   autoreconf -i
+    autoreconf -i
 
 Then the normal make sequence:
 
