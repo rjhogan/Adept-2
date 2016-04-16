@@ -17,8 +17,12 @@
 #define AdeptPacket_H 1
 
 #ifdef __SSE2__
-#include  "mmintrin.h"
-#include "emmintrin.h"
+//#include  <mmintrin.h>
+#include <emmintrin.h>
+#endif
+
+#ifdef __AVX__
+#include <immintrin.h>
 #endif
 
 namespace adept {
@@ -71,7 +75,19 @@ namespace adept {
   INT_TYPE sqrt(const Packet<TYPE>& x)			\
   { return SQRT(x.data); }
 
-#ifdef __SSE2__
+#ifdef __AVX__
+  // AVX deals with 32-byte vectors, which may contain 8x 4-byte
+  // floats...
+  ADEPT_DEF_PACKET_TYPE(float, __mm256, 8, 
+			_mm256_load_ps, _mm256_set1_ps, _mm256_store_ps,
+			_mm256_add_ps, _mm256_sub_ps,
+			_mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps);
+  // ...or 4x 8-byte doubles.
+  ADEPT_DEF_PACKET_TYPE(double, __mm256d, 4, 
+			_mm256_load_pd, _mm256_set1_pd, _mm256_store_pd,
+			_mm256_add_pd, _mm256_sub_pd,
+			_mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd);
+#elseif defined(__SSE2__)
   // SSE2 deals with 16-byte vectors, which may contain 4x 4-byte
   // floats...
   ADEPT_DEF_PACKET_TYPE(float, __m128, 4, 
@@ -84,6 +100,7 @@ namespace adept {
 			_mm_add_pd, _mm_sub_pd,
 			_mm_mul_pd, _mm_div_pd, _mm_sqrt_pd);
 #endif
+
 #undef ADEPT_DEF_PACKET_TYPE
 
 };
