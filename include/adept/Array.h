@@ -163,6 +163,7 @@ namespace adept {
     static const int  n_active_  = IsActive * (1 + is_complex<Type>::value);
     static const int  n_scratch_ = 0;
     static const int  n_arrays_  = 1;
+    static const bool is_vectorizable_ = true;
 
     // -------------------------------------------------------------------
     // Array: 2. Constructors
@@ -1818,6 +1819,14 @@ namespace adept {
     }
     bool all_arrays_contiguous_() const { return offset_[Rank-1] == 1; }
 
+    // Return the number of unaligned elements before reaching the
+    // first element on an alignment boundary, which is in units of
+    // "n" Types.
+    template <int n>
+    int alignment_offset_() const {
+      return (reinterpret_cast<unsigned long long int>(reinterpret_cast<void*>(data_))/sizeof(Type)) % n;
+    }
+
     Type value_with_len_(const Index& j, const Index& len) const {
       ADEPT_STATIC_ASSERT(Rank == 1, CANNOT_USE_VALUE_WITH_LEN_ON_ARRAY_OF_RANK_OTHER_THAN_1);
       return data_[j*offset_[0]];
@@ -2207,6 +2216,10 @@ namespace adept {
     Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
       return data_[loc[MyArrayNum]];
     }
+    template <int MyArrayNum, int NArrays>
+    Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
+      return Packet<Type>(data_+loc[MyArrayNum]);
+    }
 
     Type& lvalue_at_location(const Index& loc) {
       return data_[loc];
@@ -2423,7 +2436,7 @@ namespace adept {
     // advantage in specialist behaviour depending on the rank of the
     // array
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
-    typename enable_if<!LocalIsActive,void>::type
+    typename enable_if<!LocalIsActive && !E::is_vectorizable,void>::type
     assign_expression_(const E& rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<LocalRank> i(0);
@@ -2440,6 +2453,73 @@ namespace adept {
 		  index += offset_[last]) {
 	    // Note that this is faster as we know that all indices
 	    // need to be incremented by 1
+	    data_[index] = rhs.next_value_contiguous(ind);
+	  }
+	  advance_index(index, rank, i);
+	} while (rank >= 0);
+      }
+      else {
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, ind);
+	  // Innermost loop
+	  for ( ; i[last] < dimensions_[last]; ++i[last],
+		  index += offset_[last]) {
+	    data_[index] = rhs.next_value(ind);
+	  }
+	  advance_index(index, rank, i);
+	} while (rank >= 0);
+      }
+    }
+
+    // Vectorized version
+    template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
+    typename enable_if<!LocalIsActive && E::is_vectorizable,void>::type
+    assign_expression_(const E& rhs) {
+      ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
+      ExpressionSize<LocalRank> i(0);
+      ExpressionSize<E::n_arrays> ind(0);
+      Index index = 0;
+      int rank;
+      static const int last = LocalRank-1;
+      
+      /*
+      std::cout << "Packet<double>::size = " << Packet<Type>::size << "\n";
+      std::cout << "offset_[last] = " << offset_[last] << "\n";
+      std::cout << "all arrays contiguous = " << rhs.all_arrays_contiguous() << "\n";
+      */
+
+      if (dimensions_[last] >= Packet<Type>::size
+	  && offset_[last] == 1
+	  && rhs.all_arrays_contiguous()) {
+	int iendvec;
+	int istartvec = rhs.alignment_offset();
+	if (istartvec < 0) {
+	  istartvec = iendvec = 0;
+	}
+	else {
+	  iendvec = (dimensions_[last]-istartvec);
+	  iendvec -= (iendvec % Packet<Type>::size);
+	  iendvec += istartvec;
+	}
+
+	//	std::cout << "istartvec=" << istartvec << " iendvec=" << iendvec << "\n";
+
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, ind);
+	  // Innermost loop
+	  for ( ; i[last] < istartvec; ++i[last], ++index) {
+	    // Scalar version
+	    data_[index] = rhs.next_value_contiguous(ind);
+	  }
+	  for ( ; i[last] < iendvec; i[last] += Packet<Type>::size,
+		  index += Packet<Type>::size) {
+	    // Vectorized version
+	    rhs.next_packet(ind).put(data_+index);
+	  }
+	  for ( ; i[last] < dimensions_[last]; ++i[last], ++index) {
+	    // Scalar version
 	    data_[index] = rhs.next_value_contiguous(ind);
 	  }
 	  advance_index(index, rank, i);

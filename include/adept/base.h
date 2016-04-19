@@ -211,7 +211,7 @@ namespace adept {
   // By default everything is double precision, but this precision can
   // be changed by defining ADEPT_FLOATING_POINT_TYPE
 #ifdef ADEPT_FLOATING_POINT_TYPE
-  typedef ADEPT_FLOATING_POINT_TYPE Real
+  typedef ADEPT_FLOATING_POINT_TYPE Real;
 #else
   typedef double Real;
 #endif

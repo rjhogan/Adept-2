@@ -20,11 +20,22 @@
 
 #include <string>
 #include <sstream>
+#include <new>
+#ifdef __unix__
+// Define _POSIX_VERSION
+#include <unistd.h>
+#endif
+#include <stdlib.h>
+
+// Windows needs _aligned_malloc
+#ifdef _MSC_VER
+#include <malloc.h>
+#endif
 
 #include <adept/exception.h>
 #include <adept/base.h>
 #include <adept/Stack.h>
-
+#include <adept/Packet.h>
 
 namespace adept {
 
@@ -36,12 +47,65 @@ namespace adept {
     // of Storage objects that are created and destroyed
     extern Index n_storage_objects_created_;
     extern Index n_storage_objects_deleted_;
+
+    // -------------------------------------------------------------------
+    // Aligned allocation and freeing of memory
+    // -------------------------------------------------------------------
+    template <typename Type>
+    inline
+    Type* alloc_aligned(Index n) {
+      int n_align = Packet<Type>::alignment_bytes;
+      if (n_align <= 1) {
+	return new Type[n];
+      }
+      else {
+	int status;
+	Type* result;
+#ifdef _POSIX_VERSION
+#if _POSIX_VERSION >= 200112L
+	if (posix_memalign(reinterpret_cast<void**>(&result), n_align, n*sizeof(Type)) != 0) {
+	  throw std::bad_alloc();
+	}
+#else
+	result = new Type[n];
+#endif
+#elif defined(_MSC_VER)
+	result = reinterpret_cast<Type*>(_aligned_malloc(n*sizeof(Type), n_align));
+	if (result == 0) {
+	  throw std::bad_alloc();
+	}
+#else
+	result = new Type[n];	
+#endif
+      return result;
+      }
+    }
+    
+    template <typename Type>
+    inline
+    void free_aligned(Type* data) {
+      if (Packet<Type>::alignment_bytes <= 1) {
+	delete[] data;
+      }
+      else { 
+#ifdef _POSIX_VERSION
+#if _POSIX_VERSION >= 200112L   
+	free(data);
+#else
+	delete[] data;
+#endif
+#elif defined(_MSC_VER)
+	_aligned_free(ptr);
+#endif
+      }
+    }
+
   }
 
   // -------------------------------------------------------------------
   // Definition of Storage class
   // -------------------------------------------------------------------
-  template<typename Type>
+  template <typename Type>
   class Storage {
   public:
     // -------------------------------------------------------------------
@@ -53,8 +117,9 @@ namespace adept {
     // an integer representing the index to the gradients stored in
     // the stack.
     Storage(Index n, bool IsActive = false)
-      : n_(n), n_links_(1), gradient_index_(-1)
-    { data_ = new Type[n]; internal::n_storage_objects_created_++; 
+      : n_(n), n_links_(1), gradient_index_(-1) {
+      data_ = internal::alloc_aligned<Type>(n);
+      internal::n_storage_objects_created_++; 
       if (IsActive) {
 	gradient_index_ = ADEPT_ACTIVE_STACK->register_gradients(n);
       }
@@ -62,8 +127,8 @@ namespace adept {
     
   protected:
     // Only allow the class to destroy itself by putting in "protected"
-    ~Storage() 
-    { delete[] data_;
+    ~Storage() {
+      internal::free_aligned(data_);
       if (gradient_index_ >= 0) {
 	ADEPT_ACTIVE_STACK->unregister_gradients(gradient_index_, n_);
       }

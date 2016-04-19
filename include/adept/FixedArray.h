@@ -87,6 +87,7 @@ namespace adept {
     static const int  n_active_  = IsActive * (1 + is_complex<Type>::value);
     static const int  n_scratch_ = 0;
     static const int  n_arrays_  = 1;
+    static const bool is_vectorizable_ = true;
 
   protected:
     /*
@@ -1589,6 +1590,11 @@ namespace adept {
     // contiguous
     bool all_arrays_contiguous_() const { return true; }
   
+    template <int n>
+    int alignment_offset_() const {
+      return (reinterpret_cast<long long int>(data_)/sizeof(Type)) % n; 
+    }
+
     Type value_with_len_(const Index& j, const Index& len) const {
       ADEPT_STATIC_ASSERT(rank_ == 1, CANNOT_USE_VALUE_WITH_LEN_ON_ARRAY_OF_RANK_OTHER_THAN_1);
       return data_[j];
@@ -1839,52 +1845,56 @@ namespace adept {
     // FixedArray: 6. Member functions accessed by the Expression class
     // -------------------------------------------------------------------
 
-    template <int MyFixedArrayNum, int NFixedArrays>
+    template <int MyArrayNum, int NArrays>
     void set_location_(const ExpressionSize<rank_>& i, 
-		       ExpressionSize<NFixedArrays>& index) const {
-      index[MyFixedArrayNum] = index_(i);
+		       ExpressionSize<NArrays>& index) const {
+      index[MyArrayNum] = index_(i);
     }
     
-    template <int MyFixedArrayNum, int NFixedArrays>
-    Type value_at_location_(const ExpressionSize<NFixedArrays>& loc) const {
-      return data_[loc[MyFixedArrayNum]];
+    template <int MyArrayNum, int NArrays>
+    Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
+      return data_[loc[MyArrayNum]];
+    }
+    template <int MyArrayNum, int NArrays>
+    Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
+      return Packet<Type>(data_+loc[MyArrayNum]);
     }
 
     Type& lvalue_at_location(const Index& loc) {
       return data_[loc];
     }
 
-    template <int MyFixedArrayNum, int MyScratchNum, int NFixedArrays, int NScratch>
-    Type value_at_location_store_(const ExpressionSize<NFixedArrays>& loc,
+    template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
+    Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				  ScratchVector<NScratch>& scratch) const {
-      return data_[loc[MyFixedArrayNum]];
+      return data_[loc[MyArrayNum]];
 
     }
 
-    template <int MyFixedArrayNum, int MyScratchNum, int NFixedArrays, int NScratch>
-    Type value_stored_(const ExpressionSize<NFixedArrays>& loc,
+    template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
+    Type value_stored_(const ExpressionSize<NArrays>& loc,
 		       const ScratchVector<NScratch>& scratch) const {
-      return data_[loc[MyFixedArrayNum]];
+      return data_[loc[MyArrayNum]];
     }
 
-    template <int MyFixedArrayNum, int NFixedArrays>
-    void advance_location_(ExpressionSize<NFixedArrays>& loc) const {
-      loc[MyFixedArrayNum] += offset_<rank_-1>::value;
+    template <int MyArrayNum, int NArrays>
+    void advance_location_(ExpressionSize<NArrays>& loc) const {
+      loc[MyArrayNum] += offset_<rank_-1>::value;
     }
 
     // If an expression leads to calc_gradient being called on an
     // active object, we push the multiplier and the gradient index on
     // to the operation stack (or 1.0 if no multiplier is specified
-    template <int MyFixedArrayNum, int MyScratchNum, int NFixedArrays, int NScratch>
-    void calc_gradient_(Stack& stack, const ExpressionSize<NFixedArrays>& loc,
+    template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
+    void calc_gradient_(Stack& stack, const ExpressionSize<NArrays>& loc,
 			const ScratchVector<NScratch>& scratch) const {
-      stack.push_rhs(1.0, gradient_index() + loc[MyFixedArrayNum]);
+      stack.push_rhs(1.0, gradient_index() + loc[MyArrayNum]);
     }
-    template <int MyFixedArrayNum, int MyScratchNum, int NFixedArrays, int NScratch, typename MyType>
-    void calc_gradient_(Stack& stack, const ExpressionSize<NFixedArrays>& loc,
+    template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, typename MyType>
+    void calc_gradient_(Stack& stack, const ExpressionSize<NArrays>& loc,
 			const ScratchVector<NScratch>& scratch,
 			const MyType& multiplier) const {
-      stack.push_rhs(multiplier, gradient_index() + loc[MyFixedArrayNum]);
+      stack.push_rhs(multiplier, gradient_index() + loc[MyArrayNum]);
     }
   
 

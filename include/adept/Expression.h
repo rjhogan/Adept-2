@@ -18,10 +18,12 @@
 #include <adept/exception.h>
 #include <adept/Stack.h>
 #include <adept/ScratchVector.h>
-#include <adept/VectorOrientation.h>
-//#include <adept/Packet.h>
+//#include <adept/VectorOrientation.h>
+#include <adept/Packet.h>
 
 namespace adept {
+
+  using internal::Packet;
 
   // ---------------------------------------------------------------------
   // SECTION 0: Forward declarations 
@@ -70,9 +72,14 @@ namespace adept {
     // floating point type, all arrays have the same type, and if the
     // only mathematical operators and functions can be treated by
     // hardware vector operations (+-*/sqrt)
-    //    static const bool is_vectorizable = A::is_vectorizable_;
+    static const bool is_vectorizable
+      = A::is_vectorizable_ && Packet<Type>::is_vectorized;
 
-    static const VectorOrientation vector_orientation = A::vector_orientation_;
+    // Fall-back position is that an expression is not vectorizable:
+    // only those that are need to define is_vectorizable_.
+    static const bool is_vectorizable_ = false;
+
+    //    static const VectorOrientation vector_orientation = A::vector_orientation_;
 
     // Classes derived from this one that do not define how many
     // scratch variables, active variables or arrays they contain are
@@ -86,7 +93,7 @@ namespace adept {
     // bool if they are
     static const bool is_lvalue_ = false;
 
-    static const VectorOrientation vector_orientation_ = UNSPECIFIED_VECTOR_ORIENTATION;
+    //    static const VectorOrientation vector_orientation_ = UNSPECIFIED_VECTOR_ORIENTATION;
 
     // The presence of _adept_expression_flag is used to define the
     // adept::is_not_expression trait
@@ -175,6 +182,28 @@ namespace adept {
     // objects that aren't arrays)
     bool all_arrays_contiguous_() const { return true; }
 
+    // In order to perform optimal vectorization, the first memory
+    // addresses of each inner dimension must be aligned
+    // appropriately, or they should all have the same offset so that
+    // this number of scalar operations can be performed at the start
+    // before begining on vector instructions.  This function returns
+    // the offset of the data in any arrays in the expression, or -1 if
+    // there is a clash in offsets.
+    int alignment_offset() const {
+      int val = cast().alignment_offset_<Packet<Type>::size>();
+      if (val < Packet<Type>::size) {
+	return val;
+      }
+      else {
+	return 0;
+      }
+    }
+    
+    // Fall-back position is that alignment doesn't matter for this
+    // object, which is encoded by returning n
+    template <int n>
+    int alignment_offset_() const { return n; }
+
     // If the sub-expression is of a different type from that
     // requested then we assume there must be no aliasing.
     template <typename MyType>
@@ -250,6 +279,14 @@ namespace adept {
     }
 
     template <int NArrays>
+    Packet<Type> next_packet(ExpressionSize<NArrays>& index) const {
+      Packet<Type> val
+	= cast().template packet_at_location_<0>(index);
+      index += Packet<Type>::size;
+      return val;
+    }
+
+    template <int NArrays>
     Type value_at_location(ExpressionSize<NArrays>& index) const {
       return cast().template value_at_location_<0>(index);
     }
@@ -317,6 +354,7 @@ namespace adept {
       static const int  n_active_ = 0;
       static const int  n_arrays_ = 0;
       static const bool is_active_ = false;
+      static const bool is_vectorizable_ = true;
 
       Scalar(const Type& value) : val_(value) { }
 
@@ -329,7 +367,6 @@ namespace adept {
       }
 
       bool is_aliased_(const Type* mem1, const Type* mem2) const { return false; }
-      bool all_arrays_contiguous_() const { return true; }
 
       Type value_with_len_(const Index& j, const Index& len) const
       { return val_; }
@@ -340,6 +377,11 @@ namespace adept {
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const
       { return val_; }
+
+      template <int MyArrayNum, int NArrays>
+      Packet<Type>
+      packet_at_location_(const ExpressionSize<NArrays>& loc) const
+      { return Packet<Type>(val_); }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
       Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
@@ -391,7 +433,9 @@ namespace adept {
       // FIX! Only store if active and if needed
       static const int  n_scratch_ = 1 + R::n_scratch;
       static const int  n_arrays_ = R::n_arrays;
-      static const VectorOrientation vector_orientation_ = R::vector_orientation;
+      //      static const VectorOrientation vector_orientation_ = R::vector_orientation;
+      // Will need to modify this for sqrt:
+      static const bool is_vectorizable_ = false;
 
       using Op<Type>::operation;
       using Op<Type>::operation_string;
@@ -424,6 +468,8 @@ namespace adept {
       bool all_arrays_contiguous_() const {
 	return arg.all_arrays_contiguous_();
       }
+      template <int n>
+      int alignment_offset_() const { return arg.alignment_offset_<n>(); }
 
       /*
       template <int Rank>
@@ -597,7 +643,8 @@ namespace adept {
       static const int  n_active_  = R::n_active;
       static const int  n_scratch_ = R::n_scratch;
       static const int  n_arrays_  = R::n_arrays;
-      
+      static const bool is_vectorizable_ = R::is_vectorizable;
+
       const R& arg;
 
       NoAlias(const Expression<Type, R>& arg_)
@@ -624,6 +671,8 @@ namespace adept {
       bool all_arrays_contiguous_() const {
 	return arg.all_arrays_contiguous_(); 
       }
+      template <int n>
+      int alignment_offset_() const { return arg.alignment_offset_<n>(); }
 
       template <int Rank>
       Type value_with_len_(Index i, Index len) const {
@@ -638,6 +687,10 @@ namespace adept {
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
 	return arg.value_at_location_<MyArrayNum>(loc);
+      }
+      template <int MyArrayNum, int NArrays>
+      Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
+	return arg.packet_at_location_<MyArrayNum>(loc);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
@@ -841,6 +894,8 @@ namespace adept {
       bool all_arrays_contiguous_() const {
 	return arg.all_arrays_contiguous_(); 
       }
+      template <int n>
+      int alignment_offset_() const { return arg.alignment_offset_<n>(); }
 
       template <int Rank>
       Type value_with_len_(Index i, Index len) const {
@@ -952,8 +1007,12 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + L::n_scratch + R::n_scratch;
       static const int  n_arrays_ = L::n_arrays + R::n_arrays;
-      static const VectorOrientation vector_orientation_ 
-	= combined_orientation<L::vector_orientation,R::vector_orientation>::value;
+      //      static const VectorOrientation vector_orientation_ 
+      //	= combined_orientation<L::vector_orientation,R::vector_orientation>::value;
+
+      static const bool is_vectorizable_
+	= L::is_vectorizable && R::is_vectorizable 
+	&& is_same<typename L::type,typename R::type>::value;
 
       using Op::is_operator;
       using Op::operation;
@@ -1047,6 +1106,22 @@ namespace adept {
 	return left.all_arrays_contiguous_()
 	  &&  right.all_arrays_contiguous_();
       }
+      template <int n>
+      int alignment_offset_() const {
+	int l = left.alignment_offset_<n>();
+	int r = right.alignment_offset_<n>();
+	if (l == r) {
+	  return l;
+	}
+	else if (l == n) {
+	  return r;
+	} else if (r == n) {
+	  return l;
+	}
+	else {
+	  return -1;
+	}
+      }
 
       Type value_with_len_(const Index& j, const Index& len) const {
 	return operation(left.value_with_len(j,len), 
@@ -1064,6 +1139,20 @@ namespace adept {
 	return operation(left .value_at_location_<MyArrayNum>(loc),
 			 right.value_at_location_<MyArrayNum+L::n_arrays>(loc));
       }
+      template <int MyArrayNum, int NArrays>
+      Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
+	/*
+	std::cout << left .packet_at_location_<MyArrayNum>(loc)
+		  << operation_string()
+		  << right.packet_at_location_<MyArrayNum+L::n_arrays>(loc)
+		  << "=" << operation(left .packet_at_location_<MyArrayNum>(loc),
+				      right.packet_at_location_<MyArrayNum+L::n_arrays>(loc))
+		  << "\n";
+	*/
+	return operation(left .packet_at_location_<MyArrayNum>(loc),
+			 right.packet_at_location_<MyArrayNum+L::n_arrays>(loc));
+      }
+
 
       // Adept-1.x did not store for addition and subtraction!
       // Moreover, we should ideally not ask inactive arguments to
@@ -1238,13 +1327,14 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + R::n_scratch;
       static const int  n_arrays_ = R::n_arrays;
+      static const bool is_vectorizable_ = R::is_vectorizable;
 
       using Op::is_operator;
       using Op::operation;
       using Op::operation_string;
       
       // DATA
-      L left;
+      Packet<L> left;
       const R& right;
 
       BinaryOpScalarLeft(L left_,  const Expression<typename R::type, R>& right_)
@@ -1259,11 +1349,11 @@ namespace adept {
       std::string expression_string_() const {
 	std::stringstream s;
 	if (is_operator) {
-	  s << "(" << left << operation_string()
+	  s << "(" << left.value << operation_string()
 	    << right.expression_string() << ")";
 	}
 	else {
-	  s << operation_string() << "(" << left << ","
+	  s << operation_string() << "(" << left.value << ","
 	    << static_cast<const R*>(&right)->expression_string() << ")";
 	}
 	return s.str();
@@ -1275,9 +1365,11 @@ namespace adept {
       bool all_arrays_contiguous_() const {
 	return right.all_arrays_contiguous_(); 
       }
+      template <int n>
+      int alignment_offset_() const { return right.alignment_offset_<n>(); }
 
       Type value_with_len_(const Index& j, const Index& len) const {
-	return operation(left, right.value_with_len(j,len));
+	return operation(left.value, right.value_with_len(j,len));
       }
 
       template <int MyArrayNum, int NArrays>
@@ -1287,7 +1379,12 @@ namespace adept {
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return operation(left, right.value_at_location_<MyArrayNum>(loc));
+	return operation(left.value, right.value_at_location_<MyArrayNum>(loc));
+      }
+      template <int MyArrayNum, int NArrays>
+      Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
+	return operation(left, 
+			 right.packet_at_location_<MyArrayNum>(loc));
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
@@ -1308,7 +1405,7 @@ namespace adept {
       typename enable_if<StoreResult == 1, Type>::type
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
-	return scratch[MyScratchNum] = operation(left,
+	return scratch[MyScratchNum] = operation(left.value,
 		      right.value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch));
       }
       template <int StoreResult, int MyArrayNum, int MyScratchNum, 
@@ -1316,7 +1413,7 @@ namespace adept {
       typename enable_if<StoreResult == 2, Type>::type
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
-	return scratch[MyScratchNum] = Op::operation_store(left,
+	return scratch[MyScratchNum] = Op::operation_store(left.value,
 	       right.value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch),
 	       scratch[MyScratchNum+1]);
       }
@@ -1333,7 +1430,7 @@ namespace adept {
       typename enable_if<StoreResult == 0, Type>::type
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
-	return operation(left,
+	return operation(left.value,
 	     right.value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch));
       }
 
@@ -1341,7 +1438,7 @@ namespace adept {
       typename enable_if<StoreResult == 0, Type>::type
       my_value_stored_(const ExpressionSize<NArrays>& loc,
 		       const ScratchVector<NScratch>& scratch) const {
-	return operation(left,right.value_at_location_<MyArrayNum>(loc));
+	return operation(left.value,right.value_at_location_<MyArrayNum>(loc));
       }
     
 
@@ -1374,7 +1471,7 @@ namespace adept {
       typename enable_if<RType::is_active,void>::type
       calc_right_(Stack& stack, const RType& right, const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch) const {
-	Op::template calc_right<MyArrayNum, MyScratchNum>(stack, Scalar<L>(left), right, loc, scratch);
+	Op::template calc_right<MyArrayNum, MyScratchNum>(stack, Scalar<L>(left.value), right, loc, scratch);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class RType>
@@ -1386,7 +1483,7 @@ namespace adept {
       typename enable_if<RType::is_active,void>::type
       calc_right_(Stack& stack, const RType& right, const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch, MyType multiplier) const {
-	Op::template calc_right<MyArrayNum, MyScratchNum>(stack, Scalar<L>(left), right, loc, scratch, multiplier);
+	Op::template calc_right<MyArrayNum, MyScratchNum>(stack, Scalar<L>(left.value), right, loc, scratch, multiplier);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class RType, typename MyType>
@@ -1416,6 +1513,7 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + L::n_scratch;
       static const int  n_arrays_ = L::n_arrays;
+      static const bool is_vectorizable_ = L::is_vectorizable;
 
       using Op::is_operator;
       using Op::operation;
@@ -1423,7 +1521,7 @@ namespace adept {
       
       // DATA
       const L& left;
-      R right;
+      Packet<R> right;
 
       BinaryOpScalarRight(const Expression<typename L::type, L>& left_, R right_)
 	: left(left_.cast()), right(right_) { 
@@ -1438,12 +1536,12 @@ namespace adept {
 	std::stringstream s;
 	if (is_operator) {
 	  s << "(" << left.expression_string() << operation_string()
-	    << right << ")";
+	    << right.value << ")";
 	}
 	else {
 	  s << operation_string() << "("
 	    << static_cast<const L*>(&left)->expression_string() << ","
-	    << right << ")";
+	    << right.value << ")";
 	}
 	return s.str();
       }
@@ -1454,9 +1552,11 @@ namespace adept {
       bool all_arrays_contiguous_() const {
 	return left.all_arrays_contiguous_(); 
       }
+      template <int n>
+      int alignment_offset_() const { return left.alignment_offset_<n>(); }
 
       Type value_with_len_(const Index& j, const Index& len) const {
-	return operation(left.value_with_len(j,len), right);
+	return operation(left.value_with_len(j,len), right.value);
       }
 
       template <int MyArrayNum, int NArrays>
@@ -1466,7 +1566,20 @@ namespace adept {
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return operation(left.value_at_location_<MyArrayNum>(loc), right);
+	return operation(left.value_at_location_<MyArrayNum>(loc), right.value);
+      }
+      template <int MyArrayNum, int NArrays>
+      Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
+	/*
+	std::cout << left.packet_at_location_<MyArrayNum>(loc)
+		  << operation_string()
+		  << Packet<Type>(right)
+		  << "=" << operation(left.packet_at_location_<MyArrayNum>(loc),
+			 Packet<Type>(right))
+		  << "\n";
+	*/
+	return operation(left.packet_at_location_<MyArrayNum>(loc),
+			 right);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
@@ -1488,7 +1601,7 @@ namespace adept {
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
 	return scratch[MyScratchNum] = operation(
-	   left.value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch), right);
+	   left.value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch), right.value);
       }
 
       template <int StoreResult, int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
@@ -1504,14 +1617,14 @@ namespace adept {
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
 	return operation(left.value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch), 
-			 right);
+			 right.value);
       }
 
       template <int StoreResult, int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
       typename enable_if<StoreResult == 0, Type>::type
       my_value_stored_(const ExpressionSize<NArrays>& loc,
 		       const ScratchVector<NScratch>& scratch) const {
-	return operation(left.value_at_location_<MyArrayNum>(loc), right);
+	return operation(left.value_at_location_<MyArrayNum>(loc), right.value);
       }
     
 
@@ -1544,7 +1657,7 @@ namespace adept {
       typename enable_if<LType::is_active,void>::type
       calc_left_(Stack& stack, const LType& left, const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch) const {
-	Op::template calc_left<MyArrayNum, MyScratchNum>(stack, left, Scalar<R>(right), loc, scratch);
+	Op::template calc_left<MyArrayNum, MyScratchNum>(stack, left, Scalar<R>(right.value), loc, scratch);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class LType>
@@ -1556,14 +1669,14 @@ namespace adept {
       typename enable_if<LType::is_active,void>::type
       calc_left_(Stack& stack, const LType& left, const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch, MyType multiplier) const {
-	Op::template calc_left<MyArrayNum, MyScratchNum>(stack, left, Scalar<R>(right), loc, scratch, multiplier);
+	Op::template calc_left<MyArrayNum, MyScratchNum>(stack, left, Scalar<R>(right.value), loc, scratch, multiplier);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class LType, typename MyType>
       typename enable_if<!LType::is_active,void>::type
       calc_left_(Stack& stack, const LType& left, const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch, MyType multiplier) const { }
-    };
+	};
  
   } // End namespace internal
 

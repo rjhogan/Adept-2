@@ -117,7 +117,7 @@ algorithm_noad.o: algorithm.cpp *.h ../include/adept.h
 
 # All other object files created by compiling the corresponding source
 # file without this flag
-%.o: %.cpp *.h ../include/adept.h
+%.o: %.cpp *.h ../include/*.h ../include/adept/*.h
 	$(CXX) $(COMPILE_FLAGS) $(INCLUDES) -c $<
 
 # Remove all object files and executables

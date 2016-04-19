@@ -121,6 +121,14 @@ namespace adept {
       }
       return *this;
     }
+    ExpressionSize& operator+=(Index inc) {
+      for (int i = 0; i < Rank; ++i) {
+	dim[i] += inc;
+      }
+      return *this;
+    }
+
+
     bool operator==(const ExpressionSize<Rank>& rhs) const {
       for (int i = 0; i < Rank; i++) {
 	if (dim[i] != rhs[i]) {
