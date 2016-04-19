@@ -19,7 +19,6 @@
 #include <iostream>
 
 #ifdef __SSE2__
-//#include  <mmintrin.h>
 #include <emmintrin.h>
 #endif
 
@@ -105,7 +104,7 @@ namespace adept {
   { return SQRT(x.data); }
   */
 
-#ifndef PANTS
+#ifdef ADEPT_BLEEDING_EDGE
 
 #ifdef __AVX__
     // AVX deals with 32-byte vectors, which may contain 8x 4-byte
