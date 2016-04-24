@@ -14,10 +14,80 @@
 #endif
 
 #include "adept/Stack.h"
+#include "adept/Packet.h"
 
 namespace adept {
 
   using namespace internal;
+
+  /*
+  void
+  Stack::jacobian_forward_kernel(Real* gradient_multipass_b) const
+  {
+    static const int PACKET_SIZE = Packet<Real>::size;
+
+    // Loop forward through the derivative statements
+    for (uIndex ist = 1; ist < n_statements_; ist++) {
+      const Statement& statement = statement_[ist];
+      // We copy the LHS to "a" in case it appears on the RHS in any
+      // of the following statements
+      Block<PACKET_SIZE,Real> a; // Initialized to zero automatically
+      
+      // Loop through operations
+      for (uIndex iop = statement_[ist-1].end_plus_one;
+	   iop < statement.end_plus_one; iop++) {
+	Real* __restrict grad = gradient_multipass_b+index_[iop]*PACKET_SIZE;
+	// Loop through columns within this block; we hope the
+	// compiler can optimize this loop. Note that it is faster
+	// to always use PACKET_SIZE, always known at
+	// compile time, than to use block_size, which is not, even
+	// though in the last iteration this may involve redundant
+	// computations.
+	if (multiplier_[iop] == 1.0) {
+	  //	    if (__builtin_expect(multiplier_[iop] == 1.0,0)) {
+	  for (uIndex i = 0; i < PACKET_SIZE; i++) {
+	    //	      for (uIndex i = 0; i < block_size; i++) {
+	    a[i] += grad[i];
+	  }
+	}
+	else {
+	  for (uIndex i = 0; i < PACKET_SIZE; i++) {
+	    //	      for (uIndex i = 0; i < block_size; i++) {
+	    a[i] += multiplier_[iop]*grad[i];
+	  }
+	}
+      }
+      // Copy the results
+      for (uIndex i = 0; i < PACKET_SIZE; i++) {
+	gradient_multipass_b[statement.index*PACKET_SIZE+i] = a[i];
+      }
+    } // End of loop over statements
+  }    
+  */
+
+  void
+  Stack::jacobian_forward_kernel(Real* gradient_multipass_b) const
+  {
+    static const int PACKET_SIZE = Packet<Real>::size;
+
+    // Loop forward through the derivative statements
+    for (uIndex ist = 1; ist < n_statements_; ist++) {
+      const Statement& statement = statement_[ist];
+      // We copy the LHS to "a" in case it appears on the RHS in any
+      // of the following statements
+      Packet<Real> a; // Zeroed automatically
+      // Loop through operations
+      for (uIndex iop = statement_[ist-1].end_plus_one;
+	   iop < statement.end_plus_one; iop++) {
+	Packet<Real> g(gradient_multipass_b+index_[iop]*PACKET_SIZE);
+	ScalarPacket<Real> m(multiplier_[iop]);
+	a += m * g;
+      }
+      // Copy the results
+      a.put(gradient_multipass_b+statement.index*PACKET_SIZE);
+    } // End of loop over statements
+  }    
+
 
 
   // Compute the Jacobian matrix, parallelized using OpenMP. Normally
@@ -34,94 +104,67 @@ namespace adept {
   // fastest. This is implemented using a forward pass, appropriate
   // for m>=n.
   void
-  Stack::jacobian_forward_openmp(Real* jacobian_out)
+  Stack::jacobian_forward_openmp(Real* jacobian_out) const
   {
+    static const int PACKET_SIZE = Packet<Real>::size;
+
     if (independent_index_.empty() || dependent_index_.empty()) {
       throw(dependents_or_independents_not_identified());
     }
 
     // Number of blocks to cycle through, including a possible last
-    // block containing fewer than ADEPT_MULTIPASS_SIZE variables
-    int n_block = (n_independent() + ADEPT_MULTIPASS_SIZE - 1)
-      / ADEPT_MULTIPASS_SIZE;
-    uIndex n_extra = n_independent() % ADEPT_MULTIPASS_SIZE;
+    // block containing fewer than PACKET_SIZE variables
+    int n_block = (n_independent() + PACKET_SIZE - 1)
+      / PACKET_SIZE;
+    uIndex n_extra = n_independent() % PACKET_SIZE;
     
     int iblock;
     
 #pragma omp parallel
     {
-      std::vector<Block<ADEPT_MULTIPASS_SIZE,Real> > 
-	gradient_multipass_b(max_gradient_);
+      //      std::vector<Block<PACKET_SIZE,Real> > 
+      //	gradient_multipass_b(max_gradient_);
+      uIndex gradient_multipass_size = max_gradient_*PACKET_SIZE;
+      Real* __restrict gradient_multipass_b 
+	= alloc_aligned<Real>(gradient_multipass_size);
       
 #pragma omp for
       for (iblock = 0; iblock < n_block; iblock++) {
 	// Set the index to the dependent variables for this block
-	uIndex i_independent =  ADEPT_MULTIPASS_SIZE * iblock;
+	uIndex i_independent =  PACKET_SIZE * iblock;
 	
-	uIndex block_size = ADEPT_MULTIPASS_SIZE;
+	uIndex block_size = PACKET_SIZE;
 	// If this is the last iteration and the number of extra
 	// elements is non-zero, then set the block size to the number
 	// of extra elements. If the number of extra elements is zero,
 	// then the number of independent variables is exactly divisible
-	// by ADEPT_MULTIPASS_SIZE, so the last iteration will be the
+	// by PACKET_SIZE, so the last iteration will be the
 	// same as all the rest.
 	if (iblock == n_block-1 && n_extra > 0) {
 	  block_size = n_extra;
 	}
 	
 	// Set the initial gradients all to zero
-	for (std::size_t i = 0; i < gradient_multipass_b.size(); i++) {
-	  gradient_multipass_b[i].zero();
+	for (std::size_t i = 0; i < gradient_multipass_size; i++) {
+	  gradient_multipass_b[i] = 0.0;
 	}
 	// Each seed vector has one non-zero entry of 1.0
 	for (uIndex i = 0; i < block_size; i++) {
-	  gradient_multipass_b[independent_index_[i_independent+i]][i] = 1.0;
+	  gradient_multipass_b[independent_index_[i_independent+i]*PACKET_SIZE+i] = 1.0;
 	}
-	// Loop forward through the derivative statements
-	for (uIndex ist = 1; ist < n_statements_; ist++) {
-	  const Statement& statement = statement_[ist];
-	  // We copy the LHS to "a" in case it appears on the RHS in any
-	  // of the following statements
-	  Block<ADEPT_MULTIPASS_SIZE,Real> a; // Initialized to zero
-					      // automatically
 
-	  // Loop through operations
-	  for (uIndex iop = statement_[ist-1].end_plus_one;
-	       iop < statement.end_plus_one; iop++) {
-	    // Loop through columns within this block; we hope the
-	    // compiler can optimize this loop. Note that it is faster
-	    // to always use ADEPT_MULTIPASS_SIZE, always known at
-	    // compile time, than to use block_size, which is not, even
-	    // though in the last iteration this may involve redundant
-	    // computations.
-	    if (multiplier_[iop] == 1.0) {
-	    //	    if (__builtin_expect(multiplier_[iop] == 1.0,0)) {
-	      for (uIndex i = 0; i < ADEPT_MULTIPASS_SIZE; i++) {
-		//	      for (uIndex i = 0; i < block_size; i++) {
-		a[i] += gradient_multipass_b[index_[iop]][i];
-	      }
-	    }
-	    else {
-	      for (uIndex i = 0; i < ADEPT_MULTIPASS_SIZE; i++) {
-		//	      for (uIndex i = 0; i < block_size; i++) {
-		a[i] += multiplier_[iop]*gradient_multipass_b[index_[iop]][i];
-	      }
-	    }
-	  }
-	  // Copy the results
-	  for (uIndex i = 0; i < ADEPT_MULTIPASS_SIZE; i++) {
-	    gradient_multipass_b[statement.index][i] = a[i];
-	  }
-	} // End of loop over statements
+	jacobian_forward_kernel(gradient_multipass_b);
+
 	// Copy the gradients corresponding to the dependent variables
 	// into the Jacobian matrix
 	for (uIndex idep = 0; idep < n_dependent(); idep++) {
 	  for (uIndex i = 0; i < block_size; i++) {
 	    jacobian_out[(i_independent+i)*n_dependent()+idep]
-	      = gradient_multipass_b[dependent_index_[idep]][i];
+	      = gradient_multipass_b[dependent_index_[idep]*PACKET_SIZE+i];
 	  }
 	}
       } // End of loop over blocks
+      free_aligned(gradient_multipass_b);
     } // End of parallel section
   } // End of jacobian function
 
@@ -141,7 +184,7 @@ namespace adept {
   // fastest. This is implemented using a reverse pass, appropriate
   // for m<n.
   void
-  Stack::jacobian_reverse_openmp(Real* jacobian_out)
+  Stack::jacobian_reverse_openmp(Real* jacobian_out) const
   {
     if (independent_index_.empty() || dependent_index_.empty()) {
       throw(dependents_or_independents_not_identified());

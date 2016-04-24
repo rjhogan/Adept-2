@@ -340,8 +340,8 @@ namespace adept {
 
     // Return the number of independent and dependent variables that
     // have been identified
-    uIndex n_independent() { return independent_index_.size(); }
-    uIndex n_dependent() { return dependent_index_.size(); }
+    uIndex n_independent() const { return independent_index_.size(); }
+    uIndex n_dependent() const { return dependent_index_.size(); }
 
     // Compute the Jacobian matrix; note that jacobian_out must be
     // allocated to be of size m*n, where m is the number of dependent
@@ -700,8 +700,13 @@ namespace adept {
     // OpenMP versions of the forward and reverse Jacobian functions,
     // which are called from the jacobian_forward and jacobian_reverse
     // if OpenMP is enabled
-    void jacobian_forward_openmp(Real* jacobian_out);
-    void jacobian_reverse_openmp(Real* jacobian_out);
+    void jacobian_forward_openmp(Real* jacobian_out) const;
+    void jacobian_reverse_openmp(Real* jacobian_out) const;
+
+    // The core code for computing Jacobians, used in both OpenMP and
+    // non-OpenMP versions
+    void jacobian_forward_kernel(Real* gradient_multipass_b) const;
+    void jacobian_reverse_kernel(Real* gradient_multipass_b) const;
 
     // -------------------------------------------------------------------
     // Stack: 5. Data

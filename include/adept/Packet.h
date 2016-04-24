@@ -137,6 +137,7 @@ namespace adept {
         = sizeof(INT_TYPE) / sizeof(TYPE);			\
       static const int alignment_bytes = sizeof(INT_TYPE);	\
       static const bool is_vectorized = true;			\
+      Packet()              : data(SET0())  { }			\
       Packet(const TYPE* d) : data(LOAD(d)) { }			\
       Packet(TYPE d)        : data(SET1(d)) { }			\
       Packet(INT_TYPE d)    : data(d) { }			\
@@ -256,7 +257,9 @@ namespace adept {
         = sizeof(INT_TYPE) / sizeof(TYPE);			\
       static const int alignment_bytes = sizeof(INT_TYPE);	\
       static const bool is_vectorized = true;			\
-      Packet(const TYPE* d) : data0(LOAD(d)), data1(LOAD(d)) {}	\
+      Packet() : data0(SET0()), data1(SET0()) { }		\
+      Packet(const TYPE* d) : data0(LOAD(d)),			\
+			      data1(LOAD(d+intrinsic_size)) {}	\
       Packet(TYPE d)        : data0(SET1(d)), data1(SET1(d)) {}	\
       Packet(INT_TYPE d0,INT_TYPE d1) : data0(d0), data1(d1) {}	\
       void put(TYPE* d) const					\
@@ -264,6 +267,7 @@ namespace adept {
       void operator=(INT_TYPE d) { data0=d; data1=d; }		\
       void operator=(const Packet<TYPE>& __restrict d)		\
       { data0=d.data0; data1=d.data1; }				\
+      void zero() { data0 = SET0(); data1 = SET0(); }		\
       void operator+=(const Packet<TYPE>& __restrict d)		\
       { data0 = ADD(data0, d.data0);				\
 	data1 = ADD(data1, d.data1); }				\
