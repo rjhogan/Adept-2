@@ -20,17 +20,6 @@
 
 #include <string>
 #include <sstream>
-#include <new>
-#ifdef __unix__
-// Define _POSIX_VERSION
-#include <unistd.h>
-#endif
-#include <stdlib.h>
-
-// Windows needs _aligned_malloc
-#ifdef _MSC_VER
-#include <malloc.h>
-#endif
 
 #include <adept/exception.h>
 #include <adept/base.h>
@@ -47,59 +36,6 @@ namespace adept {
     // of Storage objects that are created and destroyed
     extern Index n_storage_objects_created_;
     extern Index n_storage_objects_deleted_;
-
-    // -------------------------------------------------------------------
-    // Aligned allocation and freeing of memory
-    // -------------------------------------------------------------------
-    template <typename Type>
-    inline
-    Type* alloc_aligned(Index n) {
-      int n_align = Packet<Type>::alignment_bytes;
-      if (n_align <= 1) {
-	return new Type[n];
-      }
-      else {
-	int status;
-	Type* result;
-#ifdef _POSIX_VERSION
-#if _POSIX_VERSION >= 200112L
-	if (posix_memalign(reinterpret_cast<void**>(&result), n_align, n*sizeof(Type)) != 0) {
-	  throw std::bad_alloc();
-	}
-#else
-	result = new Type[n];
-#endif
-#elif defined(_MSC_VER)
-	result = reinterpret_cast<Type*>(_aligned_malloc(n*sizeof(Type), n_align));
-	if (result == 0) {
-	  throw std::bad_alloc();
-	}
-#else
-	result = new Type[n];	
-#endif
-      return result;
-      }
-    }
-    
-    template <typename Type>
-    inline
-    void free_aligned(Type* data) {
-      if (Packet<Type>::alignment_bytes <= 1) {
-	delete[] data;
-      }
-      else { 
-#ifdef _POSIX_VERSION
-#if _POSIX_VERSION >= 200112L   
-	free(data);
-#else
-	delete[] data;
-#endif
-#elif defined(_MSC_VER)
-	_aligned_free(ptr);
-#endif
-      }
-    }
-
   }
 
   // -------------------------------------------------------------------
