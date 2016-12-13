@@ -274,7 +274,7 @@ namespace adept {
 			      const uIndex& n);
 
 
-  private:
+  protected:
     uIndex do_register_gradients(const uIndex& n);
 
     // Unregister a gradient that is not at the top of the stack
@@ -683,19 +683,21 @@ namespace adept {
     }
 
     // -------------------------------------------------------------------
-    // Stack: 4. Private member functions
+    // Stack: 4. Protected member functions
     // -------------------------------------------------------------------
-
+  protected:
     // Initialize the vector of gradients ready for the adjoint
     // calculation
     void initialize_gradients();
 
     // Set to zero the gradients required by a Jacobian calculation
+    /*
     void zero_gradient_multipass() {
       for (std::size_t i = 0; i < gradient_multipass_.size(); i++) {
 	gradient_multipass_[i].zero();
       }
     }
+    */
 
     // OpenMP versions of the forward and reverse Jacobian functions,
     // which are called from the jacobian_forward and jacobian_reverse
@@ -705,13 +707,17 @@ namespace adept {
 
     // The core code for computing Jacobians, used in both OpenMP and
     // non-OpenMP versions
-    void jacobian_forward_kernel(Real* gradient_multipass_b) const;
-    void jacobian_reverse_kernel(Real* gradient_multipass_b) const;
+    void jacobian_forward_kernel(Real* __restrict gradient_multipass_b) const;
+    void jacobian_forward_kernel_packet(Real* __restrict gradient_multipass_b) const;
+    void jacobian_forward_kernel_extra(Real* __restrict gradient_multipass_b, uIndex) const;
+    void jacobian_reverse_kernel(Real* __restrict gradient_multipass_b) const;
+    void jacobian_reverse_kernel_packet(Real* __restrict gradient_multipass_b) const;
+    void jacobian_reverse_kernel_extra(Real* __restrict gradient_multipass_b, uIndex) const;
 
     // -------------------------------------------------------------------
     // Stack: 5. Data
     // -------------------------------------------------------------------
-  private:
+  protected:
 
 #ifdef ADEPT_STACK_STORAGE_STL
     // Data are stored using standard template library containers
@@ -723,7 +729,7 @@ namespace adept {
 #endif
     // For Jacobians we process multiple rows/columns at once so need
     // what is essentially a 2D array
-    std::vector<Block<ADEPT_MULTIPASS_SIZE,Real> > gradient_multipass_;
+    //    std::vector<Block<ADEPT_MULTIPASS_SIZE,Real> > gradient_multipass_;
     // uIndexs of the independent and dependent variables
     std::vector<uIndex> independent_index_;
     std::vector<uIndex> dependent_index_;

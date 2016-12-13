@@ -73,7 +73,8 @@ namespace adept {
     // only mathematical operators and functions can be treated by
     // hardware vector operations (+-*/sqrt)
     static const bool is_vectorizable
-      = A::is_vectorizable_ && Packet<Type>::is_vectorized;
+    = false;
+    //      = A::is_vectorizable_ && Packet<Type>::is_vectorized;
 
     // Fall-back position is that an expression is not vectorizable:
     // only those that are need to define is_vectorizable_.
@@ -1012,7 +1013,8 @@ namespace adept {
 
       static const bool is_vectorizable_
 	= L::is_vectorizable && R::is_vectorizable 
-	&& is_same<typename L::type,typename R::type>::value;
+	&& is_same<typename L::type,typename R::type>::value
+	&& Op::is_operator;
 
       using Op::is_operator;
       using Op::operation;

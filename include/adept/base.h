@@ -133,6 +133,7 @@
 // Jacobian calculation will try to remove redundant loops involving
 // zeros; note that this may inhibit auto-vectorization
 #define ADEPT_MULTIPASS_SIZE_ZERO_CHECK 64
+#define PACKET_SIZE_ZERO_CHECK 64
 
 // By default the precision of differentiated expressions is "double".
 // To override this, define ADEPT_FLOATING_POINT_TYPE to the type
@@ -211,9 +212,23 @@ namespace adept {
   // By default everything is double precision, but this precision can
   // be changed by defining ADEPT_FLOATING_POINT_TYPE
 #ifdef ADEPT_FLOATING_POINT_TYPE
-  typedef ADEPT_FLOATING_POINT_TYPE Real;
-#else
+#undef ADEPT_FLOATING_POINT_TYPE
+#error ADEPT_FLOATING_POINT_TYPE is deprecated: use ADEPT_REAL_TYPE_SIZE instead
+#endif
+
+#ifndef ADEPT_REAL_TYPE_SIZE
+#define ADEPT_REAL_TYPE_SIZE 8
+#endif
+
+#if ADEPT_REAL_TYPE_SIZE == 4
+  typedef float Real;
+#elif ADEPT_REAL_TYPE_SIZE == 8
   typedef double Real;
+#elif ADEPT_REAL_TYPE_SIZE == 16
+  typedef long double Real;
+#else
+#undef ADEPT_REAL_TYPE_SIZE
+#error If defined, ADEPT_REAL_TYPE_SIZE must be 4 (float), 8 (double) or 16 (long double)
 #endif
 
   // By default sizes of arrays, indices to them, and indices in the

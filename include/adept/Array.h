@@ -2444,7 +2444,8 @@ namespace adept {
       Index index = 0;
       int rank;
       static const int last = LocalRank-1;
-      if (rhs.all_arrays_contiguous()) {
+      // FIX!!!
+      if (false) { //rhs.all_arrays_contiguous()) {
 	do {
 	  i[last] = 0;
 	  rhs.set_location(i, ind);

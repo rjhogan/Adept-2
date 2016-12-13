@@ -38,27 +38,41 @@
 #include <malloc.h> // Provides _aligned_malloc on Windows
 #endif
 
+#include "base.h"
+
 // -------------------------------------------------------------------
 // Determine how many floating point values will be held in a packet
 // -------------------------------------------------------------------
 
-#ifndef ADEPT_FLOAT_PACKET_LENGTH
+#ifndef ADEPT_FLOAT_PACKET_SIZE
 #  ifdef __AVX__
-#    define ADEPT_FLOAT_PACKET_LENGTH 8
+#    define ADEPT_FLOAT_PACKET_SIZE 8
 #  elif defined(__SSE2__)
-#    define ADEPT_FLOAT_PACKET_LENGTH 4
+#    define ADEPT_FLOAT_PACKET_SIZE 4
 #  else
-#    define ADEPT_FLOAT_PACKET_LENGTH 1
+#    define ADEPT_FLOAT_PACKET_SIZE 1
 #  endif
 #endif
-#ifndef ADEPT_DOUBLE_PACKET_LENGTH
+#ifndef ADEPT_DOUBLE_PACKET_SIZE
 #  ifdef __AVX__
-#    define ADEPT_DOUBLE_PACKET_LENGTH 4
+#    define ADEPT_DOUBLE_PACKET_SIZE 4
 #  elif defined(__SSE2__)
-#    define ADEPT_DOUBLE_PACKET_LENGTH 2
+#    define ADEPT_DOUBLE_PACKET_SIZE 2
 #  else
-#    define ADEPT_DOUBLE_PACKET_LENGTH 1
+#    define ADEPT_DOUBLE_PACKET_SIZE 1
 #  endif
+#endif
+
+// -------------------------------------------------------------------
+// Determine how many floating point values will be held in packet of Real
+// -------------------------------------------------------------------
+
+#if ADEPT_REAL_TYPE_SIZE == 4
+#define ADEPT_REAL_PACKET_SIZE ADEPT_FLOAT_PACKET_SIZE
+#elif ADEPT_REAL_TYPE_SIZE == 8
+#define ADEPT_REAL_PACKET_SIZE ADEPT_DOUBLE_PACKET_SIZE
+#else
+#define ADEPT_REAL_PACKET_SIZE 1
 #endif
 
 namespace adept {
@@ -94,10 +108,11 @@ namespace adept {
       static const int size = 1;
       static const int alignment_bytes = 1;
       static const bool is_vectorized = false;
+      Packet() : data(0.0) { }
       explicit Packet(const T* d) : data(*d) { }
       explicit Packet(T d) : data(d) { }
       void put(T* d) const { *d = data; }
-      void operator=(T d) { data=d; }
+      void operator=(T d)  { data=d; }
       void operator+=(T d) { data+=d; }
       void operator-=(T d) { data-=d; }
       void operator*=(T d) { data*=d; }
@@ -387,51 +402,51 @@ namespace adept {
     // -------------------------------------------------------------------
 #ifdef __AVX__
 
-#if ADEPT_FLOAT_PACKET_LENGTH == 4
+#if ADEPT_FLOAT_PACKET_SIZE == 4
     // Need to use SSE2
     ADEPT_DEF_PACKET_TYPE(float, __m128, _mm_setzero_ps, 
 			  _mm_load_ps, _mm_set1_ps,
 			  _mm_store_ps, _mm_storeu_ps,
 			  _mm_add_ps, _mm_sub_ps,
 			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps); 
-#elif ADEPT_FLOAT_PACKET_LENGTH == 8
+#elif ADEPT_FLOAT_PACKET_SIZE == 8
     // Use AVX
     ADEPT_DEF_PACKET_TYPE(float, __m256, _mm256_setzero_ps,
 			  _mm256_load_ps, _mm256_set1_ps,
 			  _mm256_store_ps, _mm256_storeu_ps,
 			  _mm256_add_ps, _mm256_sub_ps,
 			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps);
-#elif ADEPT_FLOAT_PACKET_LENGTH == 16
+#elif ADEPT_FLOAT_PACKET_SIZE == 16
     ADEPT_DEF_PACKET2_TYPE(float, __m256, _mm256_setzero_ps,
 			  _mm256_load_ps, _mm256_set1_ps,
 			  _mm256_store_ps, _mm256_storeu_ps,
 			  _mm256_add_ps, _mm256_sub_ps,
 			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps);
-#elif ADEPT_FLOAT_PACKET_LENGTH != 1
-#error With AVX, ADEPT_FLOAT_PACKET_LENGTH must be 1, 4, 8 or 16
+#elif ADEPT_FLOAT_PACKET_SIZE != 1
+#error With AVX, ADEPT_FLOAT_PACKET_SIZE must be 1, 4, 8 or 16
 #endif
 
 #elif __SSE2__
 
-#if ADEPT_FLOAT_PACKET_LENGTH == 4
+#if ADEPT_FLOAT_PACKET_SIZE == 4
     ADEPT_DEF_PACKET_TYPE(float, __m128, _mm_setzero_ps, 
 			  _mm_load_ps, _mm_set1_ps,
 			  _mm_store_ps, _mm_storeu_ps,
 			  _mm_add_ps, _mm_sub_ps,
 			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps); 
-#elif ADEPT_FLOAT_PACKET_LENGTH == 8
+#elif ADEPT_FLOAT_PACKET_SIZE == 8
     ADEPT_DEF_PACKET2_TYPE(float, __m128, _mm_setzero_ps, 
 			  _mm_load_ps, _mm_set1_ps,
 			  _mm_store_ps, _mm_storeu_ps,
 			  _mm_add_ps, _mm_sub_ps,
 			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps); 
-#elif ADEPT_FLOAT_PACKET_LENGTH != 1
-#error With SSE2, ADEPT_FLOAT_PACKET_LENGTH must be 1, 4 or 8
+#elif ADEPT_FLOAT_PACKET_SIZE != 1
+#error With SSE2, ADEPT_FLOAT_PACKET_SIZE must be 1, 4 or 8
 #endif
 
-#elif ADEPT_FLOAT_PACKET_LENGTH > 1
+#elif ADEPT_FLOAT_PACKET_SIZE > 1
 
-#error ADEPT_FLOAT_PACKET_LENGTH > 1 requires SSE2 or AVX
+#error ADEPT_FLOAT_PACKET_SIZE > 1 requires SSE2 or AVX
 
 #endif
 
@@ -440,50 +455,50 @@ namespace adept {
     // -------------------------------------------------------------------
 #ifdef __AVX__
 
-#if ADEPT_DOUBLE_PACKET_LENGTH == 2
+#if ADEPT_DOUBLE_PACKET_SIZE == 2
     // Need to use SSE2
     ADEPT_DEF_PACKET_TYPE(double, __m128d, _mm_setzero_pd, 
 			  _mm_load_pd, _mm_set1_pd,
 			  _mm_store_pd, _mm_storeu_pd,
 			  _mm_add_pd, _mm_sub_pd,
 			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd);
-#elif ADEPT_DOUBLE_PACKET_LENGTH == 4
+#elif ADEPT_DOUBLE_PACKET_SIZE == 4
     ADEPT_DEF_PACKET_TYPE(double, __m256d, _mm256_setzero_pd, 
 			  _mm256_load_pd, _mm256_set1_pd,
 			  _mm256_store_pd, _mm256_storeu_pd,
 			  _mm256_add_pd, _mm256_sub_pd,
 			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd);
-#elif ADEPT_DOUBLE_PACKET_LENGTH == 8
+#elif ADEPT_DOUBLE_PACKET_SIZE == 8
     ADEPT_DEF_PACKET2_TYPE(double, __m256d, _mm256_setzero_pd, 
 			  _mm256_load_pd, _mm256_set1_pd,
 			  _mm256_store_pd, _mm256_storeu_pd,
 			  _mm256_add_pd, _mm256_sub_pd,
 			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd);
-#elif ADEPT_DOUBLE_PACKET_LENGTH != 1
-#error With AVX, ADEPT_DOUBLE_PACKET_LENGTH must be 1, 2, 4 or 8
+#elif ADEPT_DOUBLE_PACKET_SIZE != 1
+#error With AVX, ADEPT_DOUBLE_PACKET_SIZE must be 1, 2, 4 or 8
 #endif
 
 #elif defined(__SSE2__)
 
-#if ADEPT_DOUBLE_PACKET_LENGTH == 2
+#if ADEPT_DOUBLE_PACKET_SIZE == 2
     ADEPT_DEF_PACKET_TYPE(double, __m128d, _mm_setzero_pd, 
 			  _mm_load_pd, _mm_set1_pd,
 			  _mm_store_pd, _mm_storeu_pd,
 			  _mm_add_pd, _mm_sub_pd,
 			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd);
-#elif ADEPT_DOUBLE_PACKET_LENGTH == 4
+#elif ADEPT_DOUBLE_PACKET_SIZE == 4
     ADEPT_DEF_PACKET2_TYPE(double, __m128d, _mm_setzero_pd, 
 			  _mm_load_pd, _mm_set1_pd,
 			  _mm_store_pd, _mm_storeu_pd,
 			  _mm_add_pd, _mm_sub_pd,
 			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd);
-#elif ADEPT_DOUBLE_PACKET_LENGTH != 1
-#error With SSE2, ADEPT_DOUBLE_PACKET_LENGTH must be 1, 2 or 4
+#elif ADEPT_DOUBLE_PACKET_SIZE != 1
+#error With SSE2, ADEPT_DOUBLE_PACKET_SIZE must be 1, 2 or 4
 #endif
 
-#elif ADEPT_DOUBLE_PACKET_LENGTH > 1
+#elif ADEPT_DOUBLE_PACKET_SIZE > 1
 
-#error ADEPT_DOUBLE_PACKET_LENGTH > 1 requires SSE2 or AVX
+#error ADEPT_DOUBLE_PACKET_SIZE > 1 requires SSE2 or AVX
 
 #endif
     
