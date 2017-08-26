@@ -111,7 +111,7 @@ namespace adept {
       Packet() : data(0.0) { }
       explicit Packet(const T* d) : data(*d) { }
       explicit Packet(T d) : data(d) { }
-      void put(T* d) const { *d = data; }
+      void put(T* __restrict d) const { *d = data; }
       void operator=(T d)  { data=d; }
       void operator+=(T d) { data+=d; }
       void operator-=(T d) { data-=d; }
@@ -156,7 +156,7 @@ namespace adept {
       Packet(const TYPE* d) : data(LOAD(d)) { }			\
       Packet(TYPE d)        : data(SET1(d)) { }			\
       Packet(INT_TYPE d)    : data(d) { }			\
-      void put(TYPE* d) const { STORE(d, data); }		\
+      void put(TYPE* __restrict d) const { STORE(d, data); }	\
       void operator=(INT_TYPE d) { data=d; }			\
       void operator=(const Packet<TYPE>& __restrict d)		\
       { data=d.data; }						\
@@ -277,7 +277,7 @@ namespace adept {
 			      data1(LOAD(d+intrinsic_size)) {}	\
       Packet(TYPE d)        : data0(SET1(d)), data1(SET1(d)) {}	\
       Packet(INT_TYPE d0,INT_TYPE d1) : data0(d0), data1(d1) {}	\
-      void put(TYPE* d) const					\
+      void put(TYPE* __restrict d) const					\
       { STORE(d, data0); STORE(d+intrinsic_size,data1); }	\
       void operator=(INT_TYPE d) { data0=d; data1=d; }		\
       void operator=(const Packet<TYPE>& __restrict d)		\

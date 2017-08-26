@@ -295,6 +295,7 @@ namespace adept {
     template <typename EType, class E>
     typename enable_if<E::rank == Rank, Array&>::type
     operator=(const Expression<EType,E>& rhs) {
+      //      asm("# %%% ADEPT OPERATOR=");
       ExpressionSize<Rank> dims;
       if (!rhs.get_dimensions(dims)) {
 	std::string str = "Array size mismatch in "
@@ -309,8 +310,8 @@ namespace adept {
 	str += dims.str() + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
-
       if (!empty()) {
+#ifndef ADEPT_NO_ALIAS_CHECKING
 	// Check for aliasing first
 	Type const * ptr_begin;
 	Type const * ptr_end;
@@ -323,20 +324,16 @@ namespace adept {
 	  assign_expression_<Rank, IsActive, E::is_active>(copy);
 	}
 	else {
+#endif
 	  // Select active/passive version by delegating to a
 	  // protected function
-	  assign_expression_<Rank, IsActive, E::is_active>(rhs);
+	  assign_expression_<Rank, IsActive, E::is_active>(rhs.cast());
+#ifndef ADEPT_NO_ALIAS_CHECKING
 	}
+#endif
       }
 
-      /*
-      if (IsActive) {
-	std::cout << "*** Array expression on " << info_string() << ":\n";
-	std::cout << "*** " << expression_string_() << " = " << rhs.expression_string() << "\n";
-	std::cout << "*** Number of statements: " << adept::active_stack()->n_statements() << "\n";
-      }
-      */
-
+      //      asm("# %%% ADEPT END OPERATOR=");
       return *this;
     }
 
@@ -2473,10 +2470,65 @@ namespace adept {
       }
     }
 
+    // Vectorized version for Rank-1 arrays
+    template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
+    typename enable_if<!LocalIsActive && E::is_vectorizable && LocalRank == 1,void>::type
+    // RJH Removing the reference speeds things up because otherwise E
+    // is dereferenced each loop
+    // assign_expression_(const E& rhs) 
+      assign_expression_(const E rhs) {
+      ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
+      ExpressionSize<1> i(0);
+      ExpressionSize<E::n_arrays> ind(0);
+      Index istartvec = 0;
+      Index iendvec = 0;
+
+      if (dimensions_[0] >= Packet<Type>::size
+	  && offset_[0] == 1
+	  && rhs.all_arrays_contiguous()) {
+	istartvec = rhs.alignment_offset();
+	if (istartvec < 0) {
+	  istartvec = iendvec = 0;
+	}
+	else {
+	  iendvec = (dimensions_[0]-istartvec);
+	  iendvec -= (iendvec % Packet<Type>::size);
+	  iendvec += istartvec;
+	}
+      }
+      i[0] = 0;
+      rhs.set_location(i, ind);
+      
+      Type* const __restrict t = data_; // Avoids an unnecessary load for some reason
+      // Innermost loop
+      for (int index = 0; index < istartvec; ++index) {
+	// Scalar version
+	t[index] = rhs.next_value_contiguous(ind);
+      }
+      asm("# %%% ADEPT NEXT PACKET LOOP");
+      for (int index = istartvec ; index < iendvec;
+	      index += Packet<Type>::size) {
+	// Vectorized version
+	asm("# %%% ADEPT NEXT PACKET PUT");
+	//	    rhs.next_packet(ind).put(data_+index);
+	rhs.next_packet(ind).put(t+index);
+	asm("# %%% ADEPT END NEXT PACKET PUT");
+      }
+      asm("# %%% ADEPT END NEXT PACKET LOOP");
+      for (int index = iendvec ; index < dimensions_[0]; ++index) {
+	// Scalar version
+	t[index] = rhs.next_value_contiguous(ind);
+      }
+    }
+
+
     // Vectorized version
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
-    typename enable_if<!LocalIsActive && E::is_vectorizable,void>::type
-    assign_expression_(const E& rhs) {
+    typename enable_if<!LocalIsActive && E::is_vectorizable && (LocalRank > 1),void>::type
+    // RJH Removing the reference speeds things up because otherwise E
+    // is dereferenced each loop
+    // assign_expression_(const E& rhs) 
+      assign_expression_(const E rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<LocalRank> i(0);
       ExpressionSize<E::n_arrays> ind(0);
@@ -2484,12 +2536,6 @@ namespace adept {
       int rank;
       static const int last = LocalRank-1;
       
-      /*
-      std::cout << "Packet<double>::size = " << Packet<Type>::size << "\n";
-      std::cout << "offset_[last] = " << offset_[last] << "\n";
-      std::cout << "all arrays contiguous = " << rhs.all_arrays_contiguous() << "\n";
-      */
-
       if (dimensions_[last] >= Packet<Type>::size
 	  && offset_[last] == 1
 	  && rhs.all_arrays_contiguous()) {
@@ -2514,11 +2560,17 @@ namespace adept {
 	    // Scalar version
 	    data_[index] = rhs.next_value_contiguous(ind);
 	  }
+	  asm("# %%% ADEPT NEXT PACKET LOOP");
+	  Type* const __restrict t = data_; // Avoids an unnecessary load for some reason
 	  for ( ; i[last] < iendvec; i[last] += Packet<Type>::size,
 		  index += Packet<Type>::size) {
 	    // Vectorized version
-	    rhs.next_packet(ind).put(data_+index);
+	    asm("# %%% ADEPT NEXT PACKET PUT");
+	    //	    rhs.next_packet(ind).put(data_+index);
+	    rhs.next_packet(ind).put(t+index);
+	    asm("# %%% ADEPT END NEXT PACKET PUT");
 	  }
+	  asm("# %%% ADEPT END NEXT PACKET LOOP");
 	  for ( ; i[last] < dimensions_[last]; ++i[last], ++index) {
 	    // Scalar version
 	    data_[index] = rhs.next_value_contiguous(ind);
@@ -2737,7 +2789,7 @@ namespace adept {
     // Array: 8. Data
     // -------------------------------------------------------------------
   protected:
-    Type* data_;                      // Pointer to values
+    Type* __restrict data_;                      // Pointer to values
     Storage<Type>* storage_;          // Pointer to Storage object
     ExpressionSize<Rank> dimensions_; // Size of each dimension
     ExpressionSize<Rank> offset_;     // Memory offset for each dimension

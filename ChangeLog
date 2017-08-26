@@ -6,6 +6,7 @@ version 1.9.9 (April 2016)
 	- Preliminary vectorization via Packet class and
 	Expression::next_packet
 	- Vectorized forward Jacobian calculation using packets
+	- Split Expression.h into also UnaryOperation.h and BinaryOperation.h
 
 version 1.9.8 (April 2016):
 	- Completed FixedArray.h and tested for active arguments

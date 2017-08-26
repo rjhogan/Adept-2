@@ -12,6 +12,8 @@
 #define Adept_H 1
 
 #include <adept/settings.h>
+#include <adept/UnaryOperation.h>
+#include <adept/BinaryOperation.h>
 #include <adept/Active.h>
 #include <adept/scalar_shortcuts.h>
 

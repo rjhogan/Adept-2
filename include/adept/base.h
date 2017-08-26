@@ -156,7 +156,10 @@
 
 // Define the following if you wish to use OpenMP to accelerate array
 // expressions
-#define ADEPT_OPENMP_ARRAY_OPERATIONS 1
+//#define ADEPT_OPENMP_ARRAY_OPERATIONS 1
+
+// Do we disable automatic alias checking in array operations?
+//#define ADEPT_NO_ALIAS_CHECKING
 
 
 // ---------------------------------------------------------------------

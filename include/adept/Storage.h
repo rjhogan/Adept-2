@@ -56,18 +56,22 @@ namespace adept {
       : n_(n), n_links_(1), gradient_index_(-1) {
       data_ = internal::alloc_aligned<Type>(n);
       internal::n_storage_objects_created_++; 
+#ifndef ADEPT_NO_AUTOMATIC_DIFFERENTIATION
       if (IsActive) {
 	gradient_index_ = ADEPT_ACTIVE_STACK->register_gradients(n);
       }
+#endif
     }
     
   protected:
     // Only allow the class to destroy itself by putting in "protected"
     ~Storage() {
       internal::free_aligned(data_);
+#ifndef ADEPT_NO_AUTOMATIC_DIFFERENTIATION
       if (gradient_index_ >= 0) {
 	ADEPT_ACTIVE_STACK->unregister_gradients(gradient_index_, n_);
       }
+#endif
       internal::n_storage_objects_deleted_++; }
 
 
