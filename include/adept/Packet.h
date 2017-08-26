@@ -1,6 +1,6 @@
 /* Packet.h -- Vectorization support
 
-    Copyright (C) 2016 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2016-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -130,7 +130,7 @@ namespace adept {
     // -------------------------------------------------------------------
 
 #define ADEPT_DEF_PACKET_TYPE(TYPE, INT_TYPE, SET0,	        \
-			      LOAD, SET1, STORE, STOREU,	\
+			      LOAD, LOADU, SET1, STORE, STOREU,	\
 			      ADD, SUB, MUL, DIV, SQRT)		\
     template <> struct ScalarPacket<TYPE> {			\
       typedef INT_TYPE intrinsic_type;				\
@@ -153,10 +153,13 @@ namespace adept {
       static const int alignment_bytes = sizeof(INT_TYPE);	\
       static const bool is_vectorized = true;			\
       Packet()              : data(SET0())  { }			\
-      Packet(const TYPE* d) : data(LOAD(d)) { }			\
+      Packet(const TYPE* d) : data(LOAD(d)) { }		\
+      Packet(const TYPE* d, int) : data(LOADU(d)) { }		\
       Packet(TYPE d)        : data(SET1(d)) { }			\
       Packet(INT_TYPE d)    : data(d) { }			\
       void put(TYPE* __restrict d) const { STORE(d, data); }	\
+      void put_unaligned(TYPE* __restrict d) const		\
+      { STOREU(d, data); }					\
       void operator=(INT_TYPE d) { data=d; }			\
       void operator=(const Packet<TYPE>& __restrict d)		\
       { data=d.data; }						\
@@ -187,7 +190,7 @@ namespace adept {
     std::ostream& operator<<(std::ostream& os,			\
 			     const Packet<TYPE>& x) {		\
       TYPE d[Packet<TYPE>::size];				\
-      STORE(d, x.data);						\
+      STOREU(d, x.data);						\
       os << "(";						\
       for (int i = 0; i < Packet<TYPE>::size; ++i) {		\
 	os << " " << d[i];					\
@@ -250,7 +253,7 @@ namespace adept {
     // that Packet contains two SSE2/AVX intrinsic data objects.
     // -------------------------------------------------------------------
 #define ADEPT_DEF_PACKET2_TYPE(TYPE, INT_TYPE, SET0,		\
-                               LOAD, SET1, STORE, STOREU,	\
+                              LOAD, LOADU, SET1, STORE, STOREU,	\
 			       ADD, SUB, MUL, DIV, SQRT)	\
     template <> struct ScalarPacket<TYPE> {			\
       typedef INT_TYPE intrinsic_type;				\
@@ -275,10 +278,14 @@ namespace adept {
       Packet() : data0(SET0()), data1(SET0()) { }		\
       Packet(const TYPE* d) : data0(LOAD(d)),			\
 			      data1(LOAD(d+intrinsic_size)) {}	\
+      Packet(const TYPE* d, int) : data0(LOADU(d)),		\
+			      data1(LOADU(d+intrinsic_size)) {}	\
       Packet(TYPE d)        : data0(SET1(d)), data1(SET1(d)) {}	\
       Packet(INT_TYPE d0,INT_TYPE d1) : data0(d0), data1(d1) {}	\
-      void put(TYPE* __restrict d) const					\
+      void put(TYPE* __restrict d) const			\
       { STORE(d, data0); STORE(d+intrinsic_size,data1); }	\
+      void put_unaligned(TYPE* __restrict d) const		\
+      { STOREU(d, data0); STOREU(d+intrinsic_size,data1); }	\
       void operator=(INT_TYPE d) { data0=d; data1=d; }		\
       void operator=(const Packet<TYPE>& __restrict d)		\
       { data0=d.data0; data1=d.data1; }				\
@@ -319,8 +326,8 @@ namespace adept {
     std::ostream& operator<<(std::ostream& os,			\
 			     const Packet<TYPE>& x) {		\
       TYPE d[Packet<TYPE>::size];				\
-      STORE(d, x.data0);					\
-      STORE(d+Packet<TYPE>::intrinsic_size, x.data0);		\
+      STOREU(d, x.data0);					\
+      STOREU(d+Packet<TYPE>::intrinsic_size, x.data0);		\
       os << "(";						\
       for (int i = 0; i < Packet<TYPE>::size; ++i) {		\
 	os << " " << d[i];					\
@@ -405,20 +412,20 @@ namespace adept {
 #if ADEPT_FLOAT_PACKET_SIZE == 4
     // Need to use SSE2
     ADEPT_DEF_PACKET_TYPE(float, __m128, _mm_setzero_ps, 
-			  _mm_load_ps, _mm_set1_ps,
+			  _mm_load_ps, _mm_loadu_ps, _mm_set1_ps,
 			  _mm_store_ps, _mm_storeu_ps,
 			  _mm_add_ps, _mm_sub_ps,
 			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps); 
 #elif ADEPT_FLOAT_PACKET_SIZE == 8
     // Use AVX
     ADEPT_DEF_PACKET_TYPE(float, __m256, _mm256_setzero_ps,
-			  _mm256_load_ps, _mm256_set1_ps,
+			  _mm256_load_ps, _mm256_loadu_ps, _mm256_set1_ps,
 			  _mm256_store_ps, _mm256_storeu_ps,
 			  _mm256_add_ps, _mm256_sub_ps,
 			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps);
 #elif ADEPT_FLOAT_PACKET_SIZE == 16
     ADEPT_DEF_PACKET2_TYPE(float, __m256, _mm256_setzero_ps,
-			  _mm256_load_ps, _mm256_set1_ps,
+			  _mm256_load_ps, _mm256_loadu_ps, _mm256_set1_ps,
 			  _mm256_store_ps, _mm256_storeu_ps,
 			  _mm256_add_ps, _mm256_sub_ps,
 			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps);
@@ -430,13 +437,13 @@ namespace adept {
 
 #if ADEPT_FLOAT_PACKET_SIZE == 4
     ADEPT_DEF_PACKET_TYPE(float, __m128, _mm_setzero_ps, 
-			  _mm_load_ps, _mm_set1_ps,
+			  _mm_load_ps, _mm_loadu_ps, _mm_set1_ps,
 			  _mm_store_ps, _mm_storeu_ps,
 			  _mm_add_ps, _mm_sub_ps,
 			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps); 
 #elif ADEPT_FLOAT_PACKET_SIZE == 8
     ADEPT_DEF_PACKET2_TYPE(float, __m128, _mm_setzero_ps, 
-			  _mm_load_ps, _mm_set1_ps,
+			  _mm_load_ps, _mm_loadu_ps, _mm_set1_ps,
 			  _mm_store_ps, _mm_storeu_ps,
 			  _mm_add_ps, _mm_sub_ps,
 			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps); 
@@ -458,19 +465,19 @@ namespace adept {
 #if ADEPT_DOUBLE_PACKET_SIZE == 2
     // Need to use SSE2
     ADEPT_DEF_PACKET_TYPE(double, __m128d, _mm_setzero_pd, 
-			  _mm_load_pd, _mm_set1_pd,
+			  _mm_load_pd, _mm_loadu_pd, _mm_set1_pd,
 			  _mm_store_pd, _mm_storeu_pd,
 			  _mm_add_pd, _mm_sub_pd,
 			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd);
 #elif ADEPT_DOUBLE_PACKET_SIZE == 4
     ADEPT_DEF_PACKET_TYPE(double, __m256d, _mm256_setzero_pd, 
-			  _mm256_load_pd, _mm256_set1_pd,
+			  _mm256_load_pd, _mm256_loadu_pd, _mm256_set1_pd,
 			  _mm256_store_pd, _mm256_storeu_pd,
 			  _mm256_add_pd, _mm256_sub_pd,
 			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd);
 #elif ADEPT_DOUBLE_PACKET_SIZE == 8
     ADEPT_DEF_PACKET2_TYPE(double, __m256d, _mm256_setzero_pd, 
-			  _mm256_load_pd, _mm256_set1_pd,
+			  _mm256_load_pd, _mm256_loadu_pd, _mm256_set1_pd,
 			  _mm256_store_pd, _mm256_storeu_pd,
 			  _mm256_add_pd, _mm256_sub_pd,
 			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd);
@@ -482,13 +489,13 @@ namespace adept {
 
 #if ADEPT_DOUBLE_PACKET_SIZE == 2
     ADEPT_DEF_PACKET_TYPE(double, __m128d, _mm_setzero_pd, 
-			  _mm_load_pd, _mm_set1_pd,
+			  _mm_load_pd, _mm_loadu_pd, _mm_set1_pd,
 			  _mm_store_pd, _mm_storeu_pd,
 			  _mm_add_pd, _mm_sub_pd,
 			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd);
 #elif ADEPT_DOUBLE_PACKET_SIZE == 4
     ADEPT_DEF_PACKET2_TYPE(double, __m128d, _mm_setzero_pd, 
-			  _mm_load_pd, _mm_set1_pd,
+			  _mm_load_pd, _mm_loadu_pd, _mm_set1_pd,
 			  _mm_store_pd, _mm_storeu_pd,
 			  _mm_add_pd, _mm_sub_pd,
 			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd);

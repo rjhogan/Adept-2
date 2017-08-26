@@ -1,6 +1,6 @@
 /* ArrayWrapper.h -- Make Arrays work faster in expressions
 
-    Copyright (C) 2016 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2016-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -128,7 +128,7 @@ namespace adept {
 
     template <int Rank, typename Type, bool IsActive>
     struct nested_expression<Array<Rank,Type,IsActive> > {
-      typedef ArrayWrapper<Rank,Type,IsActive> type;
+      typedef const ArrayWrapper<Rank,Type,IsActive> type;
     };
 
     template <class Type, template<class> class Op, class R>

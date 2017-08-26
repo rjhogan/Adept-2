@@ -57,8 +57,8 @@ namespace adept {
       // DATA
       //const L& left;
       //const R& right;
-      typename nested_expression<L>::type left;
-      typename nested_expression<R>::type right;
+      typename const nested_expression<L>::type left;
+      typename const nested_expression<R>::type right;
 
       BinaryOperation(const Expression<typename L::type, L>& left_,
 		      const Expression<typename R::type, R>& right_)
@@ -92,14 +92,10 @@ namespace adept {
       template <bool LIsArray, bool RIsArray, int Rank>
       typename enable_if<LIsArray && RIsArray, bool>::type
       my_get_dimensions(ExpressionSize<Rank>& dim) const {
-	if (left.get_dimensions(dim)) {
-	  ExpressionSize<Rank> right_dim;
-	  if (right.get_dimensions(right_dim)
-	      && compatible(dim, right_dim)) {
-	    return true;
-	  }
-	}
-	return false;
+	ExpressionSize<Rank> right_dim;
+	return left.get_dimensions(dim)
+	  && right.get_dimensions(right_dim)
+	  && compatible(dim, right_dim);
       }
 
       template <bool LIsArray, bool RIsArray, int Rank>

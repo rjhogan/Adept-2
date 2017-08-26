@@ -1,6 +1,6 @@
 /* Array.h -- active or inactive Array of arbitrary rank
 
-    Copyright (C) 2014-2016 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -2483,7 +2483,7 @@ namespace adept {
       Index istartvec = 0;
       Index iendvec = 0;
 
-      if (dimensions_[0] >= Packet<Type>::size
+      if (dimensions_[0] >= Packet<Type>::size*2
 	  && offset_[0] == 1
 	  && rhs.all_arrays_contiguous()) {
 	istartvec = rhs.alignment_offset();
@@ -2510,7 +2510,8 @@ namespace adept {
 	      index += Packet<Type>::size) {
 	// Vectorized version
 	asm("# %%% ADEPT NEXT PACKET PUT");
-	//	    rhs.next_packet(ind).put(data_+index);
+	//	    rhs.next_packet(ind).put(data_+index)
+	// FIX may need unaligned store
 	rhs.next_packet(ind).put(t+index);
 	asm("# %%% ADEPT END NEXT PACKET PUT");
       }
@@ -2536,7 +2537,7 @@ namespace adept {
       int rank;
       static const int last = LocalRank-1;
       
-      if (dimensions_[last] >= Packet<Type>::size
+      if (dimensions_[last] >= Packet<Type>::size*2
 	  && offset_[last] == 1
 	  && rhs.all_arrays_contiguous()) {
 	int iendvec;
@@ -2567,6 +2568,7 @@ namespace adept {
 	    // Vectorized version
 	    asm("# %%% ADEPT NEXT PACKET PUT");
 	    //	    rhs.next_packet(ind).put(data_+index);
+	    // FIX may need unaligned store
 	    rhs.next_packet(ind).put(t+index);
 	    asm("# %%% ADEPT END NEXT PACKET PUT");
 	  }

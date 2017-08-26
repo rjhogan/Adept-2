@@ -1,6 +1,6 @@
 /* ExpressionSize.h -- Class for describing array sizes
 
-    Copyright (C) 2014 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -189,15 +189,22 @@ namespace adept {
     // and neither is zero then the program won't compile.
     template <int LRank, int RRank>
     inline
-    typename enable_if<LRank==RRank && (LRank>0) && (RRank>0), bool>::type
+    typename enable_if<LRank==RRank && (LRank>1), bool>::type
     compatible(const ExpressionSize<LRank>& l, const ExpressionSize<RRank>& r) {
-      for (int i = 0; i < RRank; ++i) {
-	if (l[i] != r[i]) {
-	  return false;
-	}
+      bool result = (l[0] == r[0]);
+      for (int i = 1; i < RRank; ++i) {
+	result = result && (l[i] == r[i]);
       }
-      return true;
+      return result;
     }
+
+    template <int LRank, int RRank>
+    inline
+    typename enable_if<LRank==1 && RRank==1, bool>::type
+    compatible(const ExpressionSize<LRank>& l, const ExpressionSize<RRank>& r) {
+      return l[0] == r[0];
+    }
+
     template <int LRank, int RRank>
     inline
     typename enable_if<LRank==0 || RRank==0, bool>::type
