@@ -330,6 +330,7 @@ main() {
 
   EVAL2("contiguous subarray rvalue", myVector, v, false, myMatrix, M, v = M(__,end));
   EVAL("contiguous subarray lvalue", myMatrix, M, true, M(end-1,__) /= 2.0);
+  EVAL2("contiguous subarray rvalue and lvalue", myMatrix, M, true, myMatrix, N, M(__,1) = N(__,2));
   EVAL2("contiguous subarray rvalue using range", myVector, v, false, myMatrix, M, v = 2.0 * M(1,range(1,2)));
   EVAL2("contiguous subarray lvalue using range", myMatrix, M, true, myVector, v, M(end-1,range(0,1)) = log(v(range(1,2))));
   EVAL2("contiguous subarray rvalue using subset", myMatrix, M, false, myMatrix, N, M = 2.0 * N.subset(1,1,1,2));

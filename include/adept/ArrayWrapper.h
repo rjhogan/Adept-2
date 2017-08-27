@@ -31,7 +31,7 @@ namespace adept {
       static const int  n_arrays_  = 1;
       static const bool is_vectorizable_ = true;
       
-      ArrayWrapper(const MyArray& a) : array(a), data(a.const_data()) { }
+      ArrayWrapper(const MyArray& a) : data(a.const_data()), array(a) { }
       
       bool get_dimensions_(ExpressionSize<Rank>& dim) const {
 	return array.get_dimensions_(dim);

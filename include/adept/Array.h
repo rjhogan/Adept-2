@@ -229,7 +229,7 @@ namespace adept {
       // Active arrays need a gradient index so it is an error for
       // them to get to this point
       GradientIndex<IsActive>::assert_inactive();
-      pack_(); 
+      pack_contiguous_(); 
     }
 
     // Copy constructor: links to the source data rather than copying
@@ -1756,7 +1756,14 @@ namespace adept {
       }
       dimensions_.copy(dim); // Copy dimensions
       pack_();
-      storage_ = new Storage<Type>(size(), IsActive);
+      Index data_vol;
+      if (array_row_major_order) {
+	data_vol = offset_[0]*dimensions_[0];
+      }
+      else {
+	data_vol = size();
+      }
+      storage_ = new Storage<Type>(data_vol, IsActive);
       data_ = storage_->data();
       GradientIndex<IsActive>::set(data_, storage_);
     }
@@ -1801,6 +1808,21 @@ namespace adept {
       Index dim[7] = {m0, m1, m2, m3, m4, m5, m6};
       resize(dim);
     }
+
+    // Vectorization of arrays of rank>1 is possible provided that the
+    // fastest varying dimension has padding, if necessary, to ensure
+    // alignment
+    template <int ARank>
+    typename enable_if<ARank==1 || ((ARank>1)&&!Packet<Type>::is_vectorized), bool>::type
+    columns_aligned_() const {
+      return true;
+    }
+    template <int ARank>
+    typename enable_if<(ARank>1)&&Packet<Type>::is_vectorized,bool>::type
+    columns_aligned_() const {
+      return offset_[Rank-2] % Packet<Type>::size == 0;
+    }
+
   public:
   
     bool is_aliased_(const Type* mem1, const Type* mem2) const {
@@ -1814,7 +1836,7 @@ namespace adept {
 	return false;
       }
     }
-    bool all_arrays_contiguous_() const { return offset_[Rank-1] == 1; }
+    bool all_arrays_contiguous_() const { return offset_[Rank-1] == 1 && columns_aligned_<Rank>(); }
 
     // Return the number of unaligned elements before reaching the
     // first element on an alignment boundary, which is in units of
@@ -2262,13 +2284,24 @@ namespace adept {
     // -------------------------------------------------------------------
   protected:
 
-    // Set the memory offsets from the array dimensions assuming the
-    // array is completely contiguous in memory; either assuming
-    // C++-style row-major order, or Fortran-style column-major order
+    // Set the memory offsets from the array dimensions either
+    // assuming C++-style row-major order, or Fortran-style
+    // column-major order. The pack_() function spaces the data so
+    // that all arrays are aligned to packet boundaries, to facilitate
+    // vectorization.
     void pack_row_major_() {
       offset_[Rank-1] = 1;
-      for (int i = Rank-2; i >= 0; --i) {
-	offset_[i] = dimensions_[i+1]*offset_[i+1];
+      if (Rank > 1) {
+	// Round up to nearest packet size so that all rows are aligned
+	if (dimensions_[Rank-1] >= Packet<Type>::size*2) {
+	  offset_[Rank-2] = ((dimensions_[Rank-1] + Packet<Type>::size - 1) / Packet<Type>::size) * Packet<Type>::size;
+	}
+	else {
+	  offset_[Rank-2] = dimensions_[Rank-1];
+	}
+	for (int i = Rank-3; i >= 0; --i) {
+	  offset_[i] = dimensions_[i+1]*offset_[i+1];
+	}
       }
     }
     void pack_column_major_() {
@@ -2280,6 +2313,24 @@ namespace adept {
     void pack_() {
       if (array_row_major_order) {
 	pack_row_major_();
+      }
+      else {
+	pack_column_major_();
+      }
+    }
+
+    // ...while the pack_contiguous_() function makes sure all data
+    // are contiguous in memory
+    void pack_row_major_contiguous_() {
+      offset_[Rank-1] = 1;
+      for (int i = Rank-2; i >= 0; --i) {
+	offset_[i] = dimensions_[i+1]*offset_[i+1];
+      }
+    }
+
+    void pack_contiguous_() {
+      if (array_row_major_order) {
+	pack_row_major_contiguous_();
       }
       else {
 	pack_column_major_();
@@ -2480,14 +2531,16 @@ namespace adept {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<1> i(0);
       ExpressionSize<E::n_arrays> ind(0);
-      Index istartvec = 0;
-      Index iendvec = 0;
 
       if (dimensions_[0] >= Packet<Type>::size*2
 	  && offset_[0] == 1
 	  && rhs.all_arrays_contiguous()) {
+	// Contiguous source and destination data
+	Index istartvec = 0;
+	Index iendvec = 0;
+
 	istartvec = rhs.alignment_offset();
-	if (istartvec < 0) {
+	if (istartvec < 0 || istartvec != alignment_offset_<Packet<Type>::size>()) {
 	  istartvec = iendvec = 0;
 	}
 	else {
@@ -2495,33 +2548,41 @@ namespace adept {
 	  iendvec -= (iendvec % Packet<Type>::size);
 	  iendvec += istartvec;
 	}
+	i[0] = 0;
+	rhs.set_location(i, ind);
+	Type* const __restrict t = data_; // Avoids an unnecessary load for some reason
+	// Innermost loop
+	for (int index = 0; index < istartvec; ++index) {
+	  // Scalar version
+	  t[index] = rhs.next_value_contiguous(ind);
+	}
+	asm("# %%% ADEPT NEXT PACKET LOOP");
+	for (int index = istartvec ; index < iendvec;
+	     index += Packet<Type>::size) {
+	  // Vectorized version
+	  asm("# %%% ADEPT NEXT PACKET PUT");
+	  //	    rhs.next_packet(ind).put(data_+index)
+	  // FIX may need unaligned store
+	  rhs.next_packet(ind).put(t+index);
+	  asm("# %%% ADEPT END NEXT PACKET PUT");
+	}
+	asm("# %%% ADEPT END NEXT PACKET LOOP");
+	for (int index = iendvec ; index < dimensions_[0]; ++index) {
+	  // Scalar version
+	  t[index] = rhs.next_value_contiguous(ind);
+	}
       }
-      i[0] = 0;
-      rhs.set_location(i, ind);
-      
-      Type* const __restrict t = data_; // Avoids an unnecessary load for some reason
-      // Innermost loop
-      for (int index = 0; index < istartvec; ++index) {
-	// Scalar version
-	t[index] = rhs.next_value_contiguous(ind);
-      }
-      asm("# %%% ADEPT NEXT PACKET LOOP");
-      for (int index = istartvec ; index < iendvec;
-	      index += Packet<Type>::size) {
-	// Vectorized version
-	asm("# %%% ADEPT NEXT PACKET PUT");
-	//	    rhs.next_packet(ind).put(data_+index)
-	// FIX may need unaligned store
-	rhs.next_packet(ind).put(t+index);
-	asm("# %%% ADEPT END NEXT PACKET PUT");
-      }
-      asm("# %%% ADEPT END NEXT PACKET LOOP");
-      for (int index = iendvec ; index < dimensions_[0]; ++index) {
-	// Scalar version
-	t[index] = rhs.next_value_contiguous(ind);
+      else {
+	// Non-contiguous source or destination data
+	i[0] = 0;
+	rhs.set_location(i, ind);
+	Type* const __restrict t = data_; // Avoids an unnecessary load for some reason
+	for (int index = 0; i[0] < dimensions_[0]; ++i[0],
+	       index += offset_[0]) {
+	  t[index] = rhs.next_value(ind);
+	}
       }
     }
-
 
     // Vectorized version
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
@@ -2540,9 +2601,10 @@ namespace adept {
       if (dimensions_[last] >= Packet<Type>::size*2
 	  && offset_[last] == 1
 	  && rhs.all_arrays_contiguous()) {
+	// Contiguous source and destination data
 	int iendvec;
 	int istartvec = rhs.alignment_offset();
-	if (istartvec < 0) {
+	if (istartvec < 0 || istartvec != alignment_offset_<Packet<Type>::size>()) {
 	  istartvec = iendvec = 0;
 	}
 	else {
@@ -2581,6 +2643,7 @@ namespace adept {
 	} while (rank >= 0);
       }
       else {
+	// Non-contiguous source or destination data
 	do {
 	  i[last] = 0;
 	  rhs.set_location(i, ind);

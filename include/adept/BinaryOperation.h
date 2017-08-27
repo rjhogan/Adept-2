@@ -46,7 +46,7 @@ namespace adept {
       //	= combined_orientation<L::vector_orientation,R::vector_orientation>::value;
 
       static const bool is_vectorizable_
-	= L::is_vectorizable && R::is_vectorizable 
+	= L::is_vectorizable && R::is_vectorizable && Op::is_vectorized
 	&& is_same<typename L::type,typename R::type>::value
 	&& Op::is_operator;
 
@@ -57,8 +57,8 @@ namespace adept {
       // DATA
       //const L& left;
       //const R& right;
-      typename const nested_expression<L>::type left;
-      typename const nested_expression<R>::type right;
+      const typename nested_expression<L>::type left;
+      const typename nested_expression<R>::type right;
 
       BinaryOperation(const Expression<typename L::type, L>& left_,
 		      const Expression<typename R::type, R>& right_)
@@ -363,7 +363,7 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + R::n_scratch;
       static const int  n_arrays_ = R::n_arrays;
-      static const bool is_vectorizable_ = R::is_vectorizable;
+      static const bool is_vectorizable_ = R::is_vectorizable && Op::is_vectorized;
 
       using Op::is_operator;
       using Op::operation;
@@ -549,7 +549,7 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + L::n_scratch;
       static const int  n_arrays_ = L::n_arrays;
-      static const bool is_vectorizable_ = L::is_vectorizable;
+      static const bool is_vectorizable_ = L::is_vectorizable && Op::is_vectorized;
 
       using Op::is_operator;
       using Op::operation;
@@ -729,6 +729,7 @@ namespace adept {
     struct Add {
       static const bool is_operator  = true;  // Operator or function for expression_string()
       static const int  store_result = 0;     // Do we need any scratch space?
+      static const bool is_vectorized = true;
 
       const char* operation_string() const { return "+"; } // For expression_string()
       
@@ -770,6 +771,7 @@ namespace adept {
     struct Subtract {
       static const bool is_operator  = true;  // Operator or function for expression_string()
       static const int  store_result = 1;     // Do we need any scratch space?
+      static const bool is_vectorized = true;
 
       const char* operation_string() const { return "-"; } // For expression_string()
       
@@ -812,6 +814,7 @@ namespace adept {
     struct Multiply {
       static const bool is_operator  = true; // Operator or function for expression_string()
       static const int  store_result = 1;    // Do we need any scratch space? (this can be 0 or 1)
+      static const bool is_vectorized = true;
 
       const char* operation_string() const { return "*"; } // For expression_string()
       
@@ -857,6 +860,7 @@ namespace adept {
     struct Divide {
       static const bool is_operator  = true; // Operator or function for expression_string()
       static const int  store_result = 2;    // Do we need any scratch space? (this can be 1 or 2)
+      static const bool is_vectorized = true;
 
       const char* operation_string() const { return "/"; } // For expression_string()
       
@@ -930,6 +934,7 @@ namespace adept {
     struct Pow {
       static const bool is_operator  = false; // Operator or function for expression_string()
       static const int  store_result = 1;     // Do we need any scratch space? (this CANNOT be changed)
+      static const bool is_vectorized = false;
 
       const char* operation_string() const { return "pow"; } // For expression_string()
       
@@ -980,6 +985,7 @@ namespace adept {
     struct Max {
       static const bool is_operator  = false; // Operator or function for expression_string()
       static const int  store_result = 0;    // Do we need any scratch space? (this can be 0 or 1)
+      static const bool is_vectorized = false;
 
       const char* operation_string() const { return "max"; } // For expression_string()
       
@@ -1038,6 +1044,7 @@ namespace adept {
     struct Min {
       static const bool is_operator  = false; // Operator or function for expression_string()
       static const int  store_result = 0;    // Do we need any scratch space? (this can be 0 or 1)
+      static const bool is_vectorized = false;
 
       const char* operation_string() const { return "min"; } // For expression_string()
       
@@ -1177,6 +1184,7 @@ namespace adept {
     struct NAME {							\
       static const bool is_operator  = true;				\
       static const int  store_result = 0;	                        \
+      static const bool is_vectorized = false;				\
       const char* operation_string() const { return OPSTRING; }		\
       									\
       template <class LType, class RType>				\

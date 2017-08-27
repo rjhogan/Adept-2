@@ -92,7 +92,7 @@ namespace adept {
     struct ScalarPacket {
       typedef T intrinsic_type;
       static const int size = 1;
-      static const int alignment_bytes = 1;
+      static const int alignment_bytes = sizeof(T);
       static const bool is_vectorized = false;
       explicit ScalarPacket()    : data(0) { }
       explicit ScalarPacket(T d) : data(d) { }
@@ -106,7 +106,7 @@ namespace adept {
     struct Packet {
       typedef T intrinsic_type;
       static const int size = 1;
-      static const int alignment_bytes = 1;
+      static const int alignment_bytes = sizeof(T);
       static const bool is_vectorized = false;
       Packet() : data(0.0) { }
       explicit Packet(const T* d) : data(*d) { }
@@ -267,7 +267,7 @@ namespace adept {
 	INT_TYPE data;						\
 	TYPE value;						\
       };							\
-  };								\
+    };								\
     template <> struct Packet<TYPE> {				\
       typedef INT_TYPE intrinsic_type;				\
       static const int size =2*sizeof(INT_TYPE) / sizeof(TYPE);	\
@@ -520,11 +520,12 @@ namespace adept {
     inline
     Type* alloc_aligned(Index n) {
       int n_align = Packet<Type>::alignment_bytes;
-      if (n_align <= 1) {
+      if (n_align < sizeof(void*)) {
+	// Note that the requested byte alignment passed to
+	// posix_memalign must be at least sizeof(void*)
 	return new Type[n];
       }
       else {
-	int status;
 	Type* result;
 #ifdef _POSIX_VERSION
 #if _POSIX_VERSION >= 200112L
