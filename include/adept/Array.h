@@ -243,20 +243,31 @@ namespace adept {
       : GradientIndex<IsActive>(rhs.gradient_index()), 
 	data_(rhs.data()), storage_(rhs.storage()), 
 	dimensions_(rhs.dimensions()), offset_(rhs.offset())
-    { if (storage_) storage_->add_link(); }
+    {
+      if (storage_) storage_->add_link(); 
+#ifdef ADEPT_VERBOSE_FUNCTIONS
+      std::cout << "  running constructor Array(Array&)\n";
+#endif
+    }
 
     // Copy constructor with const argument does exactly the same
     // thing
     Array(const Array& rhs) 
       : GradientIndex<IsActive>(rhs.gradient_index()),
 	dimensions_(rhs.dimensions()), offset_(rhs.offset())
-    { link_(const_cast<Array&>(rhs)); }
+    { 
+      link_(const_cast<Array&>(rhs));
+#ifdef ADEPT_VERBOSE_FUNCTIONS
+      std::cout << "  running constructor Array(const Array&)\n";
+#endif
+    }
   private:
     void link_(Array& rhs) {
       data_ = const_cast<Type*>(rhs.data()); 
       storage_ = const_cast<Storage<Type>*>(rhs.storage());
       if (storage_) storage_->add_link();
     }
+
 
   public:
 
@@ -269,7 +280,12 @@ namespace adept {
     Array(const Expression<EType, E>& rhs,
 	  typename enable_if<E::rank == Rank,int>::type = 0)
       : data_(0), storage_(0), dimensions_(0)
-    { *this = rhs; }
+    {
+#ifdef ADEPT_VERBOSE_FUNCTIONS
+      std::cout << "  running constructor Array(const Expression&), implemented by assignment\n";
+#endif
+      *this = rhs; 
+    }
 
     // Destructor: if the data are stored in a Storage object then we
     // tell it that one fewer object is linking to it; if the number
@@ -287,8 +303,11 @@ namespace adept {
     // Expression&) function, but if we don't define a copy assignment
     // operator then C++ will generate a default one :-(
     Array& operator=(const Array& rhs) {
-      *this = static_cast<const Expression<Type,Array>&> (rhs);
-      return *this;
+#ifdef ADEPT_VERBOSE_FUNCTIONS
+      std::cout << "  running Array::operator=(const Array&), implemented with operator=(const Expression&)\n";
+#endif
+      return (*this = static_cast<const Expression<Type,Array>&> (rhs));
+	//      return *this;
     }
 
     // Assignment to an array expression of the same rank
@@ -296,6 +315,9 @@ namespace adept {
     typename enable_if<E::rank == Rank, Array&>::type
     operator=(const Expression<EType,E>& rhs) {
       //      asm("# %%% ADEPT OPERATOR=");
+#ifdef ADEPT_VERBOSE_FUNCTIONS
+      std::cout << "  running Array::operator=(const Expression&)\n";
+#endif
       ExpressionSize<Rank> dims;
       if (!rhs.get_dimensions(dims)) {
 	std::string str = "Array size mismatch in "
@@ -876,8 +898,11 @@ namespace adept {
 				 -i0.begin(dimensions_[0]))
 				/i0.stride(dimensions_[0]));
       ExpressionSize<1> new_offset(i0.stride(dimensions_[0])*offset_[0]);
+#ifdef ADEPT_VERBOSE_FUNCTIONS
+      std::cout << "  running Array::operator()(RANGED)\n";
+#endif
       return Array<1,Type,IsActive>(data_ + i0.begin(dimensions_[0])*offset_[0],
-				    storage_, new_dim, new_offset);
+	storage_, new_dim, new_offset);
     }
     template <typename I0>
     typename enable_if<is_ranged<Rank,I0>::value,
@@ -888,6 +913,9 @@ namespace adept {
 				 -i0.begin(dimensions_[0]))
 				/i0.stride(dimensions_[0]));
       ExpressionSize<1> new_offset(i0.stride(dimensions_[0])*offset_[0]);
+#ifdef ADEPT_VERBOSE_FUNCTIONS
+      std::cout << "  running Array::operator()(RANGED) const\n";
+#endif
       return Array<1,Type,IsActive>(data_ + i0.begin(dimensions_[0])*offset_[0],
 				    storage_, new_dim, new_offset);
     }
@@ -920,7 +948,15 @@ namespace adept {
       new_offset[inew_rank] = i.stride(dimensions_[irank])*offset_[irank];
       ++inew_rank;
     }
-  
+
+    /*
+    // Some Array rvalues need to be references in order to be
+    // accepted by functions
+    Array& reference() { return *this; }
+    const Array& const_reference() { return *this; }
+    const Array& const_reference() const { return *this; }
+    */
+
   public:
 
     // Now the individual overloads for each number of arguments, up

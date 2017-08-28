@@ -30,13 +30,12 @@ main() {
   Stack stack;
   
 #define HEADING(MESSAGE) \
-  std::cout << "====================================================================\n"	\
+  std::cout << "####################################################################\n"	\
 	    << "   TESTING " << MESSAGE << "\n"
 
 #define EVAL(MESSAGE, TYPE, X, INIT, EXPR)				\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "   Testing " << MESSAGE << "\n   " << #EXPR << "\n"	\
-            << "--------------------------------------------------------------------\n"; \
+	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
   try {								\
     TYPE X;								\
     if (INIT) {								\
@@ -65,8 +64,7 @@ main() {
 
 #define EVAL2(MESSAGE, TYPEX, X, INITX, TYPEY, Y, EXPR)			\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "   Testing " << MESSAGE << "\n   " << #EXPR << "\n"		\
-	    << "--------------------------------------------------------------------\n"; \
+	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
   try {									\
     TYPEX X;								\
     if (INITX) {							\
@@ -98,8 +96,7 @@ main() {
 
 #define EVAL3(MESSAGE, TYPEX, X, INITX, TYPEY, Y, TYPEZ, Z, EXPR)	\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "   Testing " << MESSAGE << "\n   " << #EXPR << "\n"		\
-	    << "--------------------------------------------------------------------\n"; \
+	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n"; \
   try {									\
     TYPEX X;								\
     if (INITX) {							\
@@ -132,8 +129,7 @@ main() {
 
 #define EVAL_NO_TRAP(MESSAGE, TYPE, X, INIT, EXPR)				\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "   Testing " << MESSAGE << "\n   " << #EXPR << "\n"	\
-            << "--------------------------------------------------------------------\n"; \
+	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
   {									\
     TYPE X;								\
     if (INIT) {								\
@@ -154,8 +150,7 @@ main() {
 
 #define EVAL2_NO_TRAP(MESSAGE, TYPEX, X, INITX, TYPEY, Y, EXPR)			\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "   Testing " << MESSAGE << "\n   " << #EXPR << "\n"		\
-	    << "--------------------------------------------------------------------\n"; \
+	    << "### Testing " << MESSAGE << "\n###  " << #EXPR << "\n";	\
   {									\
     TYPEX X;								\
     if (INITX) {								\

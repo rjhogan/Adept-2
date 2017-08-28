@@ -22,7 +22,7 @@ OBJECTS = algorithm.o algorithm_noad.o test_checkpoint.o \
 	test_adept.o test_adept_with_and_without_ad.o \
 	test_radiances.o simulate_radiances.o test_thread_safe.o \
 	test_no_lib.o test_misc.o test_arrays.o test_array_speed.o \
-	test_radiances_array.o test_fixed_arrays.o
+	test_radiances_array.o test_fixed_arrays.o test_constructors.o
 GSL_OBJECTS = test_gsl_interface.o state.o rosenbrock_banana_function.o
 
 GSL_LIBS = -lgsl
@@ -44,7 +44,7 @@ MYLIBS = $(LIBS)
 PROGRAMS = test_adept test_adept_with_and_without_ad test_radiances \
 	test_gsl_interface test_misc test_checkpoint test_thread_safe \
 	test_arrays test_array_speed test_no_lib test_radiances_array \
-	test_fixed_arrays
+	test_fixed_arrays test_constructors
 
 all:
 	@echo "********************************************************"
@@ -108,6 +108,9 @@ test_radiances_array: simulate_radiances.o test_radiances_array.o $(LIBADEPT)
 test_fixed_arrays: test_fixed_arrays.o $(LIBADEPT)
 	$(CXXLINK) test_fixed_arrays.o $(MYLIBS)
 
+# Test program 13
+test_constructors: test_constructors.o $(LIBADEPT)
+	$(CXXLINK) test_constructors.o $(MYLIBS)
 
 # The no-automatic-differentiation version of the algorithm: uses the
 # -DADEPT_NO_AUTOMATIC_DIFFERENTIATION to produce a version of the
