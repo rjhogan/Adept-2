@@ -141,6 +141,17 @@ namespace adept {
       return !(*this == rhs);
     }
 
+#ifdef ADEPT_MOVE_SEMANTICS
+    friend void swap(ExpressionSize<Rank>& l, 
+		     ExpressionSize<Rank>& r) noexcept {
+      for (int i = 0; i < Rank; ++i) {
+	Index tmp = l.dim[i];
+	l.dim[i] = r.dim[i];
+	r.dim[i] = tmp;
+      }
+    }
+#endif
+
     // Const and non-const access to elements
     Index& operator[](int i) { return dim[i]; }
     const Index& operator[](int i) const { return dim[i]; }

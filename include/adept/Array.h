@@ -115,6 +115,11 @@ namespace adept {
 				ADEPT_EXCEPTION_LOCATION);
       }
       void unregister(Index n) { ADEPT_ACTIVE_STACK->unregister_gradients(value_, n); }
+      void swap(GradientIndex& rhs) noexcept {
+	Index tmp_value = rhs.get();
+	rhs.set(value_);
+	value_ = tmp_value;
+      }
     private:
       Index value_;
     };
@@ -131,6 +136,7 @@ namespace adept {
       void set(const Type* data, const Storage<Type>* storage) { }
       void assert_inactive() { }
       void unregister(Index) { }
+      void swap(GradientIndex& rhs) noexcept { }
     };
 
 
@@ -268,8 +274,22 @@ namespace adept {
       if (storage_) storage_->add_link();
     }
 
-
   public:
+
+    /*
+#ifdef ADEPT_MOVE_SEMANTICS
+    Array(Array&& rhs) 
+      : GradientIndex<IsActive>(rhs.gradient_index()), 
+	data_(rhs.data()), storage_(rhs.storage()), 
+	dimensions_(rhs.dimensions()), offset_(rhs.offset())
+    {
+      if (storage_) storage_->add_link(); 
+#ifdef ADEPT_VERBOSE_FUNCTIONS
+      std::cout << "  running constructor Array(Array&&)\n";
+#endif
+    }
+#endif
+    */
 
     // Initialize with an expression on the right hand side by
     // evaluating the expression, requiring the ranks to be equal.
@@ -307,8 +327,54 @@ namespace adept {
       std::cout << "  running Array::operator=(const Array&), implemented with operator=(const Expression&)\n";
 #endif
       return (*this = static_cast<const Expression<Type,Array>&> (rhs));
-	//      return *this;
     }
+
+#ifdef ADEPT_MOVE_SEMANTICS
+    Array& operator=(Array&& rhs) {
+#ifdef ADEPT_VERBOSE_FUNCTIONS
+      std::cout << "  running Array::operator=(Array&&)\n";
+#endif
+      if ((!storage_ || storage_->n_links() == 1)
+	  && (!rhs.storage() || rhs.storage()->n_links() == 1)) {
+	// We know that if this object contains data in a Storage
+	// object then it is the only link to it, so we can safely
+	// discard it. Since the RHS will be lost we can implement the
+	// copy by a swap, but first need to check that the dimensions
+	// match.
+	if (empty() || compatible(dimensions_, rhs.dimensions())) {
+	  swap(*this, rhs);
+	}
+	else {
+	  std::string str = rhs.expression_string()
+	    + " assigned to " + expression_string_();
+	  throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
+	}
+      }
+      else {
+	// Need a full copy because other arrays are linked to the
+	// Storage object
+	*this = static_cast<const Expression<Type,Array>&> (rhs);
+      }
+      return *this;
+    }
+
+    friend void swap(Array& l, Array& r) noexcept {
+#ifdef ADEPT_VERBOSE_FUNCTIONS
+      std::cout << "  running swap(Array&,Array&)\n";
+#endif
+      Type* tmp_data = l.data_;
+      l.data_ = r.data_;
+      r.data_ = tmp_data;
+      Storage<Type>* tmp_storage = l.storage_;
+      l.storage_ = r.storage_;
+      r.storage_ = tmp_storage;
+      swap(l.dimensions_, r.dimensions_);
+      swap(l.offset_, r.offset_);
+      static_cast<GradientIndex<IsActive>&>(l).swap(static_cast<GradientIndex<IsActive>&>(r));
+    }
+
+#endif
+
 
     // Assignment to an array expression of the same rank
     template <typename EType, class E>
@@ -2890,7 +2956,7 @@ namespace adept {
     // Array: 8. Data
     // -------------------------------------------------------------------
   protected:
-    Type* __restrict data_;                      // Pointer to values
+    Type* __restrict data_;           // Pointer to values
     Storage<Type>* storage_;          // Pointer to Storage object
     ExpressionSize<Rank> dimensions_; // Size of each dimension
     ExpressionSize<Rank> offset_;     // Memory offset for each dimension

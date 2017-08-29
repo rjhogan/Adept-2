@@ -206,6 +206,13 @@
 #define ADEPT_THREAD_LOCAL_IF_OPENMP
 #endif
 
+// Various C++11 features
+#if __cplusplus > 199711L
+// We can optimize the returning of Arrays from functions with move
+// semantics
+#define ADEPT_MOVE_SEMANTICS 1
+#endif
+
 
 // ---------------------------------------------------------------------
 // 5: Define basic floating-point and integer types
