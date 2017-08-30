@@ -309,7 +309,18 @@ namespace adept {
       //++index;
       return val;
     }
+    template <int NArrays>
+    Type next_value_and_gradient_contiguous(Stack& stack,
+				 ExpressionSize<NArrays>& index) const {
+      internal::ScratchVector<n_scratch> scratch;
+      Type val = cast().template value_at_location_store_<0,0>(index, scratch);
+      cast().template calc_gradient_<0,0>(stack, index, scratch);
+      //cast().template advance_location_<0>(index);
+      ++index;
+      return val;
+    }
 
+    /*
     template <int NArrays, typename MyType>
     Type next_value_and_gradient(Stack& stack,
 				 ExpressionSize<NArrays>& index,
@@ -320,6 +331,7 @@ namespace adept {
       cast().template advance_location_<0>(index);
       return val;
     }
+    */
 
     // This is used in norm2()
     template <int NArrays, typename MyType>

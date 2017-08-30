@@ -419,6 +419,8 @@ namespace adept {
 #endif
 	  // Select active/passive version by delegating to a
 	  // protected function
+	  // The cast() is needed because assign_expression_ accepts
+	  // its argument by value
 	  assign_expression_<Rank, IsActive, E::is_active>(rhs.cast());
 #ifndef ADEPT_NO_ALIAS_CHECKING
 	}
@@ -2642,9 +2644,9 @@ namespace adept {
     // Vectorized version for Rank-1 arrays
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
     typename enable_if<!LocalIsActive && E::is_vectorizable && LocalRank == 1,void>::type
-    // RJH Removing the reference speeds things up because otherwise E
-    // is dereferenced each loop
-    // assign_expression_(const E& rhs) 
+      // Removing the reference speeds things up because otherwise E
+      // is dereferenced each loop
+      //  assign_expression_(const E& __restrict rhs) {
       assign_expression_(const E rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<1> i(0);
@@ -2705,9 +2707,9 @@ namespace adept {
     // Vectorized version
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
     typename enable_if<!LocalIsActive && E::is_vectorizable && (LocalRank > 1),void>::type
-    // RJH Removing the reference speeds things up because otherwise E
+    // Removing the reference speeds things up because otherwise E
     // is dereferenced each loop
-    // assign_expression_(const E& rhs) 
+    //  assign_expression_(const E& rhs) 
       assign_expression_(const E rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<LocalRank> i(0);
@@ -2777,7 +2779,8 @@ namespace adept {
 
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
     typename enable_if<LocalIsActive && EIsActive,void>::type
-    assign_expression_(const E& rhs) {
+  //    assign_expression_(const E& rhs) {
+    assign_expression_(const E rhs) {
       // If recording has been paused then call the inactive version
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (!ADEPT_ACTIVE_STACK->is_recording()) {
@@ -2792,17 +2795,37 @@ namespace adept {
       static const int last = LocalRank-1;
 
       ADEPT_ACTIVE_STACK->check_space(E::n_active * size());
-      do {
-	i[last] = 0;
-	rhs.set_location(i, ind);
-	// Innermost loop
-	for ( ; i[last] < dimensions_[last]; ++i[last],
-	       index += offset_[last]) {
-	  data_[index] = rhs.next_value_and_gradient(*ADEPT_ACTIVE_STACK, ind);
-	  ADEPT_ACTIVE_STACK->push_lhs(gradient_index()+index); // What if RHS not active?
-	}
-	advance_index(index, rank, i);
-      } while (rank >= 0);
+
+      if (E::is_vectorizable && rhs.all_arrays_contiguous()) {
+	// Contiguous source and destination data
+	Type* const __restrict t = data_; // Avoids an unnecessary load for some reason
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, ind);
+	  // Innermost loop
+	  for ( ; i[last] < dimensions_[last]; ++i[last],
+		  index += offset_[last]) {
+	    t[index] = rhs.next_value_and_gradient_contiguous(*ADEPT_ACTIVE_STACK, ind);
+	    ADEPT_ACTIVE_STACK->push_lhs(gradient_index()+index); // What if RHS not active?
+	  }
+	  advance_index(index, rank, i);
+	} while (rank >= 0);
+      }
+      else {
+	// Non-contiguous source or destination data
+	Type* const __restrict t = data_; // Avoids an unnecessary load for some reason
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, ind);
+	  // Innermost loop
+	  for ( ; i[last] < dimensions_[last]; ++i[last],
+		  index += offset_[last]) {
+	    t[index] = rhs.next_value_and_gradient(*ADEPT_ACTIVE_STACK, ind);
+	    ADEPT_ACTIVE_STACK->push_lhs(gradient_index()+index); // What if RHS not active?
+	  }
+	  advance_index(index, rank, i);
+	} while (rank >= 0);
+      }
     }
 
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
