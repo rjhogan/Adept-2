@@ -115,11 +115,13 @@ namespace adept {
 				ADEPT_EXCEPTION_LOCATION);
       }
       void unregister(Index n) { ADEPT_ACTIVE_STACK->unregister_gradients(value_, n); }
+#ifdef ADEPT_MOVE_SEMANTICS
       void swap(GradientIndex& rhs) noexcept {
 	Index tmp_value = rhs.get();
 	rhs.set(value_);
 	value_ = tmp_value;
       }
+#endif
     private:
       Index value_;
     };
@@ -136,7 +138,9 @@ namespace adept {
       void set(const Type* data, const Storage<Type>* storage) { }
       void assert_inactive() { }
       void unregister(Index) { }
+#ifdef ADEPT_MOVE_SEMANTICS
       void swap(GradientIndex& rhs) noexcept { }
+#endif
     };
 
 
@@ -1713,8 +1717,20 @@ namespace adept {
       return *this;
     }
   
-    // Linking to a constant reference does the same
+
+#ifndef ADEPT_MOVE_SEMANTICS
+    // A common pattern is to link to a subset of another Array,
+    // e.g. vec1.link(vec2(range(2,4))), but the problem is that the
+    // argument to link is a temporary so will not bind to Array&. In
+    // C++98 we therefore need a function taking const Array& and then
+    // cast away the const-ness. This has the unfortunate side effect
+    // that a non-const Array can be linked to a const Array.
     Array& link(const Array& rhs) { return link(const_cast<Array&>(rhs)); }
+#else
+    // But in C++11 we can solve this problem and only bind to
+    // temporary non-const Arrays
+    Array& link(Array&& rhs) { return link(const_cast<Array&>(rhs)); }
+#endif
 
     // STL-like size() returns total length of array
     Index size() const {
