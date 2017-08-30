@@ -1,7 +1,7 @@
 /* Storage.h -- store array of active or inactive data
 
     Copyright (C) 2012-2014 University of Reading
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -87,11 +87,11 @@ namespace adept {
     // -------------------------------------------------------------------  
   public:
     // Add link to an existing storage object
-    void add_link() const
+    void add_link()
     { n_links_++; } 
     
     // Remove link as follows
-    void remove_link() const {
+    void remove_link() {
       if (n_links_ == 0) {
 	throw invalid_operation("Attempt to remove more links to a storage object than set"
 				ADEPT_EXCEPTION_LOCATION);
@@ -140,7 +140,7 @@ namespace adept {
     // Number of links to the storage object allowing for arrays and
     // array slices to point to the same data. If this falls to zero
     // the Storage object will destruct itself
-    mutable int n_links_;
+    int n_links_;
     // For active variables, this s the gradient index of the first
     // element.  It would be better to only store this if Type is
     // floating point.
