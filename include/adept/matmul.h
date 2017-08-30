@@ -1,6 +1,6 @@
 /* matmul.h -- Matrix multiplication capability
 
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -68,7 +68,14 @@ namespace adept {
 
       Index stride;
       BLAS_ORDER order;
-      if (left.is_row_contiguous()) {
+      if (!left.is_row_contiguous() && !left.is_column_contiguous()) {
+	// Matrix is strided in both directions so needs to be copied
+	// first
+	Array<2,T,LIsActive> left_;
+	left_ = left;
+	return matmul_(left_, right);
+      }
+      else if (left.is_row_contiguous()) {
 	order = BlasRowMajor;
 	stride = left.offset(0);
       }

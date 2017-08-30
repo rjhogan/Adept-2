@@ -106,8 +106,9 @@ main() {
     else {								\
       std::cout << #TYPEX << " " << #X << " = " << X << "\n";		\
     }									\
-    TYPEY Y; Y = test. Y;						\
-    TYPEZ Z; Z = test. Z;						\
+    TYPEY Y; Y.link( test. Y );						\
+    TYPEZ Z; Z.link( test. Z );						\
+    std::cout << #Y << ".info = " << Y.info_string() << "\n";		\
     std::cout << #TYPEY << " " << #Y << " = " << Y << "\n";		\
     std::cout << #TYPEZ << " " << #Z << " = " << Z << "\n";		\
     std::cout << "Evaluating " << #EXPR << "\n";			\
@@ -223,6 +224,7 @@ main() {
     myReal x;
     myVector v, w;
     myMatrix M, N;
+    myMatrix Mstrided;
     myMatrix S;
     mySymmMatrix O, P;
     myDiagMatrix D, E;
@@ -238,6 +240,8 @@ main() {
       v.resize(3);
       w.resize(3);
       M.resize(2,3);
+      myMatrix Mtmp(6,6);
+      Mstrided.link(Mtmp(stride(0,end,3),stride(0,end,2)));
       N.resize(2,3);
       S.resize(3,3);
       O.resize(3);
@@ -247,6 +251,7 @@ main() {
       w(0) = 7; w(1) = 11; w(2) = 13;
       M(0,0) = 2; M(0,1) = 3; M(0,2) = 5;
       M(1,0) = 7; M(1,1) = 11; M(1,2) = 13;
+      Mstrided = M;
       N(0,0) = 17; N(0,1) = 19; N(0,2) = 23;
       N(1,0) = 29; N(1,1) = 31; N(1,2) = 37;
       S(0,0) = 2; S(0,1) = 3; S(0,2) = 5;
@@ -435,6 +440,8 @@ main() {
 #ifndef MARVEL_STYLE
   HEADING("MATRIX MULTIPLICATION");
   //EVAL2("inner product", myReal, x, true, myVector, w, x = w.T() ** w);
+  EVAL3("Matrix-Vector multiplication", myVector, w, false, myMatrix, M, myVector, v, w = M ** v);
+  EVAL3("Matrix-Vector multiplication with strided matrix", myVector, w, false, myMatrix, Mstrided, myVector, v, w = Mstrided ** v);
   EVAL2("Matrix-Matrix multiplication", myMatrix, M, false, myMatrix, N, M = N.T() ** N);
   EVAL2("Matrix-Matrix multiplication with matmul", myMatrix, M, false, myMatrix, N, M = matmul(N.T(), N));
 

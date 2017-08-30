@@ -1,4 +1,4 @@
-version 1.9.9 (April 2016)
+version 1.9.9 (September 2017)
 	- Put on GitHub as rjhogan/Adept-2
 	- Added Expression::next_value_contiguous for faster inner loops
 	in the case that all expressions have a contiguous and increasing
@@ -7,6 +7,9 @@ version 1.9.9 (April 2016)
 	Expression::next_packet
 	- Vectorized forward Jacobian calculation using packets
 	- Split Expression.h into also UnaryOperation.h and BinaryOperation.h
+	- Fixed bug in matmul.h that causes failure if matrix in
+	matrix-vector multiplication is strided in both dimensions
+	- Added move semantics if C++11 enabled
 
 version 1.9.8 (April 2016):
 	- Completed FixedArray.h and tested for active arguments
