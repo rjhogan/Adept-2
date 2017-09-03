@@ -18,6 +18,10 @@
 
 #include <adept/base.h>
 
+#ifdef ADEPT_CXX11_FEATURES
+#include <initializer_list>
+#endif
+
 namespace adept {
 
   // Forward declaration of "Active"
@@ -43,6 +47,7 @@ namespace adept {
     // 13. rank_compatible
     // 14. is_same
     // 15. remove_reference
+    // 16. initializer_list_rank
     // --------------------
 
     // ---------------------------------------------------------------------
@@ -75,7 +80,6 @@ namespace adept {
     do { struct ERROR_##msg : public ::adept::internal::compile_time_check<(condition)> { }; \
 	typedef typename ERROR_##msg ::STATIC_ASSERTION_HAS_FAILED type; \
     } while (0)
-
 
     // ---------------------------------------------------------------------
     // 2. enable_if
@@ -355,6 +359,44 @@ namespace adept {
     // Remove reference from a type if present
     template<typename T>  struct remove_reference { typedef T type; };
     template<typename T>  struct remove_reference<T&> { typedef T type; };
+
+
+    // ---------------------------------------------------------------------
+    // 16. initializer_list_rank
+    // ---------------------------------------------------------------------
+#ifdef ADEPT_CXX11_FEATURES
+
+    // initializer_link_rank<T>::value returns 0 if T is not a
+    // std:initializer_list, otherwise it returns the number of nested
+    // std::initializer_list's
+    template <typename T> struct is_initializer_list 
+    { static const bool value = false; };
+    template <typename T> struct is_initializer_list<std::initializer_list<T> >
+    { static const bool value = true; };
+
+    template <typename T, class Enable = void>
+    struct initializer_list_rank { };
+
+    template <typename T>
+    struct initializer_list_rank<T,
+				 typename enable_if<!is_initializer_list<T>::value>::type>
+    { typedef T type;
+      static const int value = 0; };
+    
+    template <typename T>
+    struct initializer_list_rank<std::initializer_list<T>,
+				 typename enable_if<!is_initializer_list<T>::value>::type>
+    { typedef T type;
+      static const int value = 1; };
+
+    template <typename T>
+    struct initializer_list_rank<std::initializer_list<T>,
+				 typename enable_if<is_initializer_list<T>::value>::type>
+    { typedef typename initializer_list_rank<T>::type type;
+      static const int value = 1 + initializer_list_rank<T>::value; };
+
+#endif
+
 
   } // End namespace internal
 

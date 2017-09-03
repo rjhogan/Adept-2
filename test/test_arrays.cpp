@@ -33,6 +33,8 @@ main() {
   std::cout << "####################################################################\n"	\
 	    << "   TESTING " << MESSAGE << "\n"
 
+#define COMMA ,
+
 #define EVAL(MESSAGE, TYPE, X, INIT, EXPR)				\
   std::cout << "--------------------------------------------------------------------\n" \
 	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
@@ -300,6 +302,29 @@ main() {
   should_fail=false;
 
   EVAL("Array \"clear\" member function", myMatrix, M, true, M.clear());
+
+#ifdef ADEPT_CXX11_FEATURES
+  HEADING("INITIALIZER LISTS (C++11 ONLY)");
+  EVAL("Vector assignment to initializer list from empty", myVector, v,
+       false, v = {1 COMMA 2});
+  EVAL("Vector assignment to initializer list with underfill", myVector, v,
+       true, v = {1.0 COMMA 2.0});
+  should_fail = true;
+  EVAL("Vector assignment to initializer list with overfill (SHOULD FAIL)", myVector, v,
+    true, v = {1.0 COMMA 2.0 COMMA 3.0 COMMA 4.0});
+  should_fail = false;
+  EVAL("Matrix assignment to initializer list from empty", myMatrix, M,
+    false, M = { {1 COMMA 2} COMMA {3 COMMA 4} });
+  EVAL("Matrix assignment to initializer list with underfill", myMatrix, M,
+    true, M = { {1.0 COMMA 2.0} COMMA {3.0 COMMA 4.0} });
+  should_fail = true;
+  EVAL("Matrix assignment to initializer list with overfill (SHOULD FAIL)", myMatrix, M,
+    true, M = { {1.0 COMMA 2.0 COMMA 3.0 COMMA 4.0} });
+  should_fail = false;
+  EVAL("Initializer list in expression", myVector, v,
+    true, v = v + Vector({1.0 COMMA 2.0 COMMA 3.0}));
+#endif
+
 
   HEADING("BASIC EXPRESSIONS");
   EVAL2("Vector assignment to vector from empty", myVector, v, false, myVector, w, v = w);

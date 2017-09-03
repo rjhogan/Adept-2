@@ -187,6 +187,61 @@ namespace adept {
       : GradientIndex<IsActive>(length_, 0)
     { *this = rhs; }
 
+#ifdef ADEPT_CXX11_FEATURES
+    // Initialize from initializer list
+    template <typename T>
+    FixedArray(std::initializer_list<T> list) : GradientIndex<IsActive>(length_,0)
+    { *this = list; }
+
+    // The unfortunate restrictions on initializer_list constructors
+    // mean that each possible Array rank needs explicit treatment
+    template <typename T>
+    FixedArray(std::initializer_list<
+	  std::initializer_list<T> > list)
+      : GradientIndex<IsActive>(length_,0) { *this = list; }
+
+    template <typename T>
+    FixedArray(std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<T> > > list)
+      : GradientIndex<IsActive>(length_,0) { *this = list; }
+
+    template <typename T>
+    FixedArray(std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<T> > > > list)
+      : GradientIndex<IsActive>(length_,0) { *this = list; }
+
+    template <typename T>
+    FixedArray(std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<T> > > > > list)
+      : GradientIndex<IsActive>(length_,0) { *this = list; }
+
+    template <typename T>
+    FixedArray(std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<T> > > > > > list)
+      : GradientIndex<IsActive>(length_,0) { *this = list; }
+
+    template <typename T>
+    FixedArray(std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<T> > > > > > > list)
+      : GradientIndex<IsActive>(length_,0) { *this = list; }
+    
+#endif
+
     // Destructor: if the data are stored in a Storage object then we
     // tell it that one fewer object is linking to it; if the number
     // of links to it drops to zero, it will destruct itself and
@@ -433,6 +488,54 @@ namespace adept {
       //      return *this;
     }
 
+#ifdef ADEPT_CXX11_FEATURES
+    // Assignment of a FixedArray to an initializer list; the first ought
+    // to only work for vectors
+    template <typename T>
+    typename enable_if<std::is_convertible<T,Type>::value, FixedArray&>::type
+    operator=(std::initializer_list<T> list) {
+      ADEPT_STATIC_ASSERT(rank_==1, RANK_MISMATCH_IN_INITIALIZER_LIST);
+
+      if (list.size() > J0) {
+	throw size_mismatch("Initializer list is larger than Vector in assignment"
+			    ADEPT_EXCEPTION_LOCATION);
+      }
+      // Zero the whole array first in order that automatic
+      // differentiation works
+      *this = 0;
+      Index index = 0;
+      for (auto i = std::begin(list); i < std::end(list); ++i,
+	   ++index) {
+	data_[index*offset_<0>::value] = *i;	
+      }
+      return *this;
+    }
+
+    // Assignment of a higher rank Array to a list of lists...
+    template <class IType>
+    FixedArray& operator=(std::initializer_list<std::initializer_list<IType> > list) {
+      ADEPT_STATIC_ASSERT(rank_==initializer_list_rank<IType>::value+2,
+      			  RANK_MISMATCH_IN_INITIALIZER_LIST);
+      if (list.size() > J0) {
+	throw size_mismatch("Multi-dimensional initializer list larger than slowest-varying dimension of Array"
+			    ADEPT_EXCEPTION_LOCATION);
+      }
+      // Zero the whole array first in order that automatic
+      // differentiation works
+      *this = 0;
+
+      // Enact the assignment using the Array version
+      inactive_link() = list;
+      /*
+      Index index = 0;
+      for (auto i = std::begin(list); i < std::end(list); ++i,
+	   ++index) {
+	(*this)[index] = *i;
+      }
+      */
+      return *this;
+    }
+#endif
   
     // -------------------------------------------------------------------
     // FixedArray: 4. Access functions, particularly operator()

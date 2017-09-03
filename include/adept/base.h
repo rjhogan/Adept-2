@@ -105,6 +105,8 @@
 //#define ADEPT_SUPPORT_HUGE_ARRAYS 1
 
 
+
+
 // ---------------------------------------------------------------------
 // 2: Defines requiring a library recompile
 // ---------------------------------------------------------------------
@@ -162,6 +164,9 @@
 //#define ADEPT_NO_ALIAS_CHECKING
 
 
+// This cannot be changed without rewriting the Adept library
+#define ADEPT_MAX_ARRAY_DIMENSIONS 7
+
 // ---------------------------------------------------------------------
 // 4: Miscellaneous
 // ---------------------------------------------------------------------
@@ -211,6 +216,7 @@
 // We can optimize the returning of Arrays from functions with move
 // semantics
 #define ADEPT_MOVE_SEMANTICS 1
+#define ADEPT_CXX11_FEATURES 1
 #endif
 
 

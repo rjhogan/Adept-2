@@ -21,6 +21,11 @@
 #include <limits>
 
 #include <adept/base.h>
+
+#ifdef ADEPT_CXX11_FEATURES
+#include <initializer_list>
+#endif
+
 #include <adept/Storage.h>
 #include <adept/Expression.h>
 #include <adept/RangeIndex.h>
@@ -142,7 +147,6 @@ namespace adept {
       void swap(GradientIndex& rhs) noexcept { }
 #endif
     };
-
 
 
   } // End namespace internal
@@ -310,6 +314,64 @@ namespace adept {
 #endif
       *this = rhs; 
     }
+
+#ifdef ADEPT_CXX11_FEATURES
+    // Initialize from initializer list
+    template <typename T>
+    Array(std::initializer_list<T> list) : data_(0), storage_(0), dimensions_(0) {
+      *this = list;
+    }
+
+    // The unfortunate restrictions on initializer_list constructors
+    // mean that each possible Array rank needs explicit treatment
+    template <typename T>
+    Array(std::initializer_list<
+	  std::initializer_list<T> > list)
+      : data_(0), storage_(0), dimensions_(0) { *this = list; }
+
+    template <typename T>
+    Array(std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<T> > > list)
+      : data_(0), storage_(0), dimensions_(0) { *this = list; }
+
+    template <typename T>
+    Array(std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<T> > > > list)
+      : data_(0), storage_(0), dimensions_(0) { *this = list; }
+
+    template <typename T>
+    Array(std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<T> > > > > list)
+      : data_(0), storage_(0), dimensions_(0) { *this = list; }
+
+    template <typename T>
+    Array(std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<T> > > > > > list)
+      : data_(0), storage_(0), dimensions_(0) { *this = list; }
+
+    template <typename T>
+    Array(std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<
+	  std::initializer_list<T> > > > > > > list)
+      : data_(0), storage_(0), dimensions_(0) { *this = list; }
+    
+
+#endif
+
 
     // Destructor: if the data are stored in a Storage object then we
     // tell it that one fewer object is linking to it; if the number
@@ -667,6 +729,89 @@ namespace adept {
       }
       //      return *this;
     }
+
+#ifdef ADEPT_CXX11_FEATURES
+    // Assignment of an Array to an initializer list; the first ought
+    // to only work for Vectors
+    template <typename T>
+    typename enable_if<std::is_convertible<T,Type>::value, Array&>::type
+    operator=(std::initializer_list<T> list) {
+      ADEPT_STATIC_ASSERT(Rank==1,RANK_MISMATCH_IN_INITIALIZER_LIST);
+
+      if (empty()) {
+	resize(list.size());
+      }
+      else if (list.size() > dimensions_[0]) {
+	throw size_mismatch("Initializer list is larger than Vector in assignment"
+			    ADEPT_EXCEPTION_LOCATION);
+      }
+      // Zero the whole array first in order that automatic
+      // differentiation works
+      *this = 0;
+      Index index = 0;
+      for (auto i = std::begin(list); i < std::end(list); ++i,
+	   ++index) {
+	data_[index*offset_[0]] = *i;	
+      }
+      return *this;
+    }
+
+    // Assignment of a higher rank Array to a list of lists...
+    template <class IType>
+    Array& operator=(std::initializer_list<std::initializer_list<IType> > list) {
+      ADEPT_STATIC_ASSERT(Rank==initializer_list_rank<IType>::value+2,
+      			  RANK_MISMATCH_IN_INITIALIZER_LIST);
+      if (empty()) {
+	Index dims[ADEPT_MAX_ARRAY_DIMENSIONS];
+	int ndims = 0;
+	shape_initializer_list_(list, dims, ndims);
+	resize(dims);
+	/*
+	  // Compile-time checks mean that the following should never happen
+	if (Rank != ndims) {
+	  throw size_mismatch("Rank of initializer list does not match rank of Array"
+			    ADEPT_EXCEPTION_LOCATION);
+	}
+	else {
+	  resize(dims);
+	}
+	*/
+      }
+      else if (list.size() > dimensions_[0]) {
+	throw size_mismatch("Multi-dimensional initializer list larger than slowest-varying dimension of Array"
+			    ADEPT_EXCEPTION_LOCATION);
+      }
+      Index index = 0;
+      for (auto i = std::begin(list); i < std::end(list); ++i,
+	   ++index) {
+	(*this)[index] = *i;
+      }
+      return *this;
+    }
+
+
+  protected:
+    template <typename T>
+    typename enable_if<std::is_convertible<T,Type>::value>::type
+    shape_initializer_list_(std::initializer_list<T> list,
+			    Index* dims, int& ndims) const {
+      dims[ndims] = list.size();
+      ndims++;
+    }
+    template <class IType>
+    void
+    shape_initializer_list_(std::initializer_list<std::initializer_list<IType> > list,
+			    Index* dims, int& ndims) const {
+      dims[ndims] = list.size();
+      ndims++;
+      shape_initializer_list_(*(list.begin()), dims, ndims);
+    }
+
+
+  public:
+
+#endif
+
 
   
     // -------------------------------------------------------------------
@@ -1733,6 +1878,29 @@ namespace adept {
     // temporary non-const Arrays
     Array& link(Array&& rhs) { return link(const_cast<Array&>(rhs)); }
 #endif
+    // To prevent linking to an rvalue expression we write a templated
+    // function that will fail to compile
+    template<class E>
+    typename internal::enable_if<!E::is_lvalue,void>::type
+    link(const Expression<Type,E>&) {
+      ADEPT_STATIC_ASSERT(E::is_lvalue, CAN_ONLY_LINK_TO_AN_LVALUE_EXPRESSION);
+    }
+
+    // Fortran-like link syntax A >>= B
+    Array& operator>>=(Array& rhs)
+    { return link(rhs); }
+#ifndef ADEPT_MOVE_SEMANTICS
+    Array& operator>>=(const Array& rhs)
+    { return link(const_cast<Array&>(rhs)); }
+#else
+    Array& operator>>=(Array&& rhs)
+    { return link(const_cast<Array&>(rhs)); }
+#endif
+    template<class E>
+    typename internal::enable_if<!E::is_lvalue,void>::type
+    operator>>=(const Expression<Type,E>&) {
+      ADEPT_STATIC_ASSERT(E::is_lvalue, CAN_ONLY_LINK_TO_AN_LVALUE_EXPRESSION);
+    }
 
     // STL-like size() returns total length of array
     Index size() const {

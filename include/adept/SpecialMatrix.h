@@ -1347,12 +1347,38 @@ namespace adept {
       }
       return *this;
     }
-  
-    // Linking to a constant reference does the same
+   
+
+#ifndef ADEPT_MOVE_SEMANTICS
+    // A common pattern is to link to a subset of another
+    // SpecialMatrix, e.g. vec1.link(vec2(range(2,4))), but the
+    // problem is that the argument to link is a temporary so will not
+    // bind to SpecialMatrix&. In C++98 we therefore need a function
+    // taking const SpecialMatrix& and then cast away the const-ness. This has
+    // the unfortunate side effect that a non-const SpecialMatrix can be
+    // linked to a const SpecialMatrix.
     SpecialMatrix& link(const SpecialMatrix& rhs) { 
       return link(const_cast<SpecialMatrix&>(rhs)); 
     }
-  
+#else
+    // But in C++11 we can solve this problem and only bind to
+    // temporary non-const SpecialMatrix
+    SpecialMatrix& link(SpecialMatrix&& rhs) {
+      return link(const_cast<SpecialMatrix&>(rhs));
+    }
+#endif
+
+    // Fortran-like link syntax A >>= B
+    SpecialMatrix& operator>>=(SpecialMatrix& rhs)
+    { return link(rhs); }
+#ifndef ADEPT_MOVE_SEMANTICS
+    SpecialMatrix& operator>>=(const SpecialMatrix& rhs)
+    { return link(const_cast<SpecialMatrix&>(rhs)); }
+#else
+    SpecialMatrix& operator>>=(SpecialMatrix&& rhs)
+    { return link(const_cast<SpecialMatrix&>(rhs)); }
+#endif
+
     // STL-like size() returns total length of array
     Index size() const {
       return dimension_*dimension_;

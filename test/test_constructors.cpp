@@ -36,6 +36,14 @@ Vector square_copy(Vector v) {
   return v*v;
 }
 
+#define COMMA ,
+
+#define EVAL_CONSTRUCT(MSG,X,COMMAND) std::cout << "--------------------------------------------------------------------\n" \
+  << MSG << "\n" \
+  << #COMMAND << "\n"; \
+  COMMAND; \
+  std::cout << #X << " = " << X << "\n"
+
 #define EVAL(MSG,X,COMMAND) std::cout << "--------------------------------------------------------------------\n" \
   << MSG << "\n" \
   << #X << " = " << X << "\n" \
@@ -71,10 +79,14 @@ Vector square_copy(Vector v) {
 int
 main() {
 
-  Vector v(2), w(2), v_const_data(2);
-  v = 2.0;
-  v_const_data = 3.0;
+  Vector v(2), w(2), v_data(2), v_const_data(2);
+  v_data << 2, 3;
+  v_const_data << 5, 7;
+  v = v_data;
   const Vector v_const = v_const_data;
+
+  adept::Stack stack;
+  stack.new_recording();
 
   {
   HEADING("COPY CONSTRUCTORS");
@@ -99,6 +111,22 @@ main() {
   VERDICT11("should perform deep copy");
   }
 
+#ifdef ADEPT_CXX11_FEATURES
+  HEADING("INITIALIZER LISTS");
+  EVAL_CONSTRUCT("Construct Vector from initializer list",
+	v1, Vector v1 = {1 COMMA 2});
+  EVAL_CONSTRUCT("Construct Matrix from initializer list",
+		 M, Matrix M = { {1 COMMA 2} COMMA {3} } );
+  EVAL_CONSTRUCT("Construct Array3D from initializer list",
+		 A3, Array3D A3 = { { {1 COMMA 2} COMMA {3} } COMMA { { 4 } } } );
+  EVAL_CONSTRUCT("Construct FixedVector from initializer list",
+		 fv1, Vector3 fv1 = {1 COMMA 2});
+  EVAL_CONSTRUCT("Construct FixedMatrix from initializer list",
+		 fM, Matrix33 fM = { {1 COMMA 2} COMMA {3} } );
+  EVAL_CONSTRUCT("Construct FixedArray3D from initializer list",
+		 fA3, FixedArray<double COMMA false COMMA 3 COMMA 3 COMMA 3> fA3 = { { {1 COMMA 2} COMMA {3} } COMMA { { 4 } } } );
+#endif
+
   HEADING("ASSIGNMENT OPERATOR");
   EVAL2("Passing Vector to assignment operator",
 	v, w = v, w);
@@ -120,7 +148,7 @@ main() {
        v, square_in_place(v));
   VERDICT98("correct");
 
-  v = 2.0;
+  v = v_data;
   EVAL2("Passing Vector as argument to function taking Vector",
        v, w = square_copy(v), w);
   VERDICT98("too many copies, unexpected change of argument");
@@ -141,6 +169,52 @@ main() {
 
   */
 
+
+  HEADING("LINKING");
+  w.clear();
+  EVAL2("Linking to Vector",
+	v, w >>= v, w);
+
+  /*
+  w.clear();
+  // This should not compile
+  EVAL2("Linking to const Vector",
+	v_const, w >>= v_const, w);
+  */
+  w.clear();
+  EVAL2("Linking to Vector rvalue",
+	v, w >>= v(stride(1,0,-1)), w);
+
+  /*
+  // This should not compile
+  w.clear();
+  EVAL2("Linking to const-Vector rvalue",
+	v_const, w >>= v_const(stride(1,0,-1)), w);
+  */
+  /*
+    // This should not compile
+  w.clear();
+  EVAL2("Linking to Expression",
+	v, w >>= v+v, w);
+  VERDICT98("this doesn't make much sense");
+  */
+
+  HEADING("PASSING Vector TO FUNCTIONS");
+  EVAL2("Passing Vector as argument to function taking const Vector&",
+       v, w = square(v), w);
+  VERDICT98("too many copies");
+  VERDICT11("could replace last copy with a move");
+  EVAL("Passing Vector as argument to function taking Vector&",
+       v, square_in_place(v));
+  VERDICT98("correct");
+
+  v = v_data;
+  EVAL2("Passing Vector as argument to function taking Vector",
+       v, w = square_copy(v), w);
+  VERDICT98("too many copies, unexpected change of argument");
+  VERDICT11("should do deep copy on input, replace last copy with a move");
+
+
   HEADING("PASSING Vector RVALUE TO FUNCTIONS");
   EVAL2("Passing Vector rvalue as argument to function taking const Vector&",
 	v, w = square(v(stride(1,0,-1))), w);
@@ -149,7 +223,7 @@ main() {
        v, square_in_place(v(stride(1,0,-1))));
   VERDICT98("Vector subset functions could return references?");
 
-  v = 2.0;
+  v = v_data;
   EVAL2("Passing Vector rvalue as argument to function taking Vector",
 	     v, w = square_copy(v(stride(1,0,-1))), w);
   VERDICT98("Vector subset functions could return references?");
@@ -175,7 +249,7 @@ main() {
   // This should not compile:
   //  EVAL("Passing Expression as argument to function taking Vector&",
   //       v, square_in_place(v+v));
-  v = 2.0;
+  v = v_data;
   EVAL2("Passing Expression as argument to function taking Vector",
        v, w = square_copy(v+v), w);
   VERDICT98("Unclear why copy-assignment + constructor needed");
