@@ -400,13 +400,18 @@ namespace adept {
 #ifdef ADEPT_VERBOSE_FUNCTIONS
       std::cout << "  running Array::operator=(Array&&)\n";
 #endif
-      if ((!storage_ || storage_->n_links() == 1)
+      // A fast "swap" operation can be performed only if the present
+      // ("this") array is either empty, or its data is contained in a
+      // Storage object with only one link to it (corresponding to the
+      // present array). We may not perform a swap if its data is not
+      // in a Storage object, since it might be linked to another
+      // location that is expecting the result of the assignment to
+      // change the data in that location. We also require that the
+      // RHS data would otherwise be lost (but it is not clear that
+      // this is necessary).
+      if ((empty() || (storage_ && storage_->n_links() == 1))
 	  && (!rhs.storage() || rhs.storage()->n_links() == 1)) {
-	// We know that if this object contains data in a Storage
-	// object then it is the only link to it, so we can safely
-	// discard it. Since the RHS will be lost we can implement the
-	// copy by a swap, but first need to check that the dimensions
-	// match.
+	// We still need to check that the dimensions match
 	if (empty() || compatible(dimensions_, rhs.dimensions())) {
 	  swap(*this, rhs);
 	}
