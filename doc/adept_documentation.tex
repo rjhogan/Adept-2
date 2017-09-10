@@ -23,6 +23,22 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{color}
+\usepackage{marginnote}
+\usepackage{rotating}
+
+\usepackage{mdframed,lipsum}
+\newmdenv[
+  leftmargin = 0pt,
+  innerleftmargin = 1em,
+  innertopmargin = 0pt,
+  innerbottommargin = 0pt,
+  innerrightmargin = 0pt,
+  rightmargin = 0pt,
+  linewidth = 1pt,
+  topline = false,
+  rightline = false,
+  bottomline = false
+  ]{leftbar}
 
 % Set math in Times Roman
 \DeclareSymbolFont{letters}{OML}{ptmcm}{m}{it}
@@ -34,9 +50,9 @@
 \setlength{\topmargin}{-2cm}
 \setlength{\textheight}{24cm}
 \setlength{\textwidth}{16cm}
-\setlength{\marginparsep}{2cm}
+\setlength{\marginparsep}{0.5cm}
 \setlength{\marginparwidth}{0cm}
-\setlength{\parindent}{1cm}
+\setlength{\parindent}{1em}
 \setlength{\parskip}{0cm}
 \renewcommand{\baselinestretch}{1.1}
 \sloppy
@@ -50,7 +66,7 @@
   xleftmargin=0cm,
   xrightmargin=0cm,
   basicstyle=\footnotesize\ttfamily,
-  emph={adouble,xdouble,Stack,adept,Array,FixedArray,Vector,aVector,Matrix,aMatrix,Array3,aArray3,intVector,boolVector,floatVector,adept,SpecialMatrix,SquareMatrix,aSquareMatrix,SymmMatrix,aSymmMatrix,UpperMatrix,LowerMatrix,IntVector},
+  emph={adouble,xdouble,Stack,adept,Array,FixedArray,Vector,aVector,Matrix,aMatrix,Array3D,aArray3D,intVector,boolVector,floatVector,adept,SpecialMatrix,SquareMatrix,aSquareMatrix,SymmMatrix,aSymmMatrix,UpperMatrix,LowerMatrix,IndexVector},
   emphstyle=\bfseries\color{red}}
 \lstset{showstringspaces=false}
 
@@ -86,15 +102,20 @@
 \def\codestyle#1{\texttt{#1}}
 \def\Offset{size\_t}
 \renewcommand\thefootnote{\relax}
-% Title material
-\title{\Adept\ C++ Software Library: User
-  Guide} \author{Robin J. Hogan\\ \emph{European Centre for Medium
-    Range Weather Forecasts, Reading, UK}\\ \emph{and School of
-    Mathematical and Physical Sciences, University of Reading, UK,}}
+\def\cxx11{\marginpar{\rotatebox[origin=rb]{90}{\textbf{C++11 only~~~}}}}
+\reversemarginpar
 
-\date{Document version 1.9.8 (April 2016) applicable to \Adept\ version
-  1.9.8 \thanks{This document is copyright \copyright\ Robin J. Hogan
-    2013--2016.  Permission is granted to copy, distribute and/or
+% Title material
+\title{\Adept\ C++ Software Library: User Guide}
+
+\author{Robin J. Hogan\\ \emph{European Centre for Medium Range
+    Weather Forecasts, Reading, UK}\\ \emph{and School of
+    Mathematical, Physical and Computational Sciences, University of
+    Reading, UK,}}
+
+\date{Document version 1.9.10 (September 2010) applicable to \Adept\ version
+  1.9.10 \thanks{This document is copyright \copyright\ Robin J. Hogan
+    2013--2017.  Permission is granted to copy, distribute and/or
     modify this document under the terms of the GNU Free Documentation
     License, Version 1.3 or any later version published by the Free
     Software Foundation. This license may be found at
@@ -204,7 +225,7 @@ On a Unix-like system, do the following:
 \item Configure the build using the \code{configure} script. The most
   basic method is to just run
 \begin{lstlisting}
-./configure
+ ./configure
 \end{lstlisting}
 More likely you will wish to compile with a higher level of
 optimization than the default (which is \code{-O2}), achieved by
@@ -212,14 +233,14 @@ setting the environment variable \code{CXXFLAGS}. You may also wish to
 specify the root directory of the installation, say to
 \code{/foo}. These may be done by running instead
 \begin{lstlisting}
-./configure CXXFLAGS="-g -O3" --prefix=/foo
+ ./configure CXXFLAGS="-g -O3" --prefix=/foo
 \end{lstlisting}
 The \code{-g} option to \code{CXXFLAGS} ensures debugging information
 is stored.  If a library you wish to use is installed in a non-system
 directory, say under \code{/foo}, then specify the locations as
 follows:
 \begin{lstlisting}
-./configure CPPFLAGS="-I/foo/include" LDFLAGS="-L/foo/lib -Wl,-rpath,/foo/lib"
+ ./configure CPPFLAGS="-I/foo/include" LDFLAGS="-L/foo/lib -Wl,-rpath,/foo/lib"
 \end{lstlisting}
 where the \code{-rpath} business is needed in order that the
 \Adept\ shared library knows where to look for the libraries it is
@@ -236,20 +257,20 @@ changes to the configuration of \Adept.  The output from the
 \Adept\ and the test programs will be built.
 \item Build \Adept\ by running
 \begin{lstlisting}
-make
+ make
 \end{lstlisting}
 This will create the static and shared libraries in \code{adept/.libs}.
 \item Install the header files and the static and shared libraries by
   running
 \begin{lstlisting}
-make install
+ make install
 \end{lstlisting}
 If this is to be installed to a system directory, you will need to log
 in as the super-user first, or run \code{sudo make install} on
 depending on your system.
 \item Build the example and benchmarking programs by running
 \begin{lstlisting}
-make check
+ make check
 \end{lstlisting}
 Note that this may be done without first installing the
 \Adept\ library to a system directory.  This compiles the following
@@ -318,7 +339,7 @@ have provided a very simple way to build an \Adept\ application
 \emph{without} the need to link to a pre-compiled \Adept\ library. In
 one of your source files and one only, add this near the top:
 \begin{lstlisting}
-#include <adept_source.h>
+ #include <adept_source.h>
 \end{lstlisting}
 Typically you would include this in the source file containing the
 \code{main} function.  This header file is simply a concatenation of
@@ -1492,6 +1513,15 @@ value of 0 indicates that the maximum available will be used. Returns
 the maximum that will be used, which may be fewer than requested,
 e.g. 1 if the \Adept\ library was compiled without OpenMP
 support. (Introduced in \Adept\ version 1.1.) 
+\citem{void preallocate\_statements(int n)} If you know in advance
+roughly how many differential statements will be stored by an
+algorithm then you may be able to speed-up the first use of the stack
+by preallocating the memory needed to store them.  More memory will
+still be allocated if needed, but this should reduce the number of
+allocations and copies.
+\citem{void preallocate\_operations(int n)} Likewise, if you know in
+advance roughly how many operations will be stored then you can
+speed-up the first use of the stack with this member function.
 \end{description}
 
 \noindent The following non-member functions are provided in the
@@ -1636,9 +1666,11 @@ functions if available\footnote{This decision may puzzle some readers,
   since Fortran is a dirty word to many C++ users due to the
   limitations of the FORTRAN 77 language. Many of these limitations
   were overcome in Fortran 90, whose array functionality in particular
-  is rather well designed. All references to Fortran in this document
-  imply the 1990 (or later) standard.}. This design makes \Adept\ a
-good choice if you have Fortran code that you wish to convert to C++.
+  is rather well designed. Indeed, the pioneering ``Blitz++'' C++
+  array library \cite[]{Veldhuizen1995} also reproduces many Fortran
+  array functions. All references to Fortran in this document imply
+  the 1990 (or later) standard.}. This design makes \Adept\ a good
+choice if you have Fortran code that you wish to convert to C++.
 \Adept\ provides the following array functionality:
 %
 \begin{description}
@@ -1748,16 +1780,16 @@ compiled to use for computing derivatives, and is usually
 algorithm.
 
 A number of typedefs are provided for the most common types of array:
-\code{Vector}, \code{Matrix} and \code{Array3} provide inactive arrays
+\code{Vector}, \code{Matrix} and \code{Array3D} provide inactive arrays
 of type \code{Real} and rank 1--3. The corresponding active types are
-\code{aVector}, \code{aMatrix} and \code{aArray3}. Vectors of other
+\code{aVector}, \code{aMatrix} and \code{aArray3D}. Vectors of other
 numeric types are \code{boolVector}, \code{intVector},
 \code{floatVector}, \code{afloatVector}, and similarly for matrices
 and 3D arrays of these types. If you wanted shortcuts for
 4-dimensional active and passive arrays, they could be defined using:
 \begin{lstlisting}
- typedef adept::Array<4> Array4;
- typedef adept::Array<4,adept::Real,true> aArray4;
+ typedef adept::Array<4> Array4D;
+ typedef adept::Array<4,adept::Real,true> aArray4D;
 \end{lstlisting}
 
 An \code{Array} can be constructed in numerous ways:
@@ -1813,7 +1845,8 @@ relinked or cleared completely as follows:
  M.resize(5,2);       // Works up to 7 dimensions
  Index dim[2]={5,2};
    M.resize(dim);     // Works for any number of dimensions
- v.link(M(end-1,__)); // Size of v set to that of the argument
+ v.link(M(end-1,__)); // Size of v set to that of the argument and link to data
+ v >>= M(end-1,__);   // Convenient syntax for linking, similar to Fortran's "->"
  M.clear();           // Returns array to original empty state
 \end{lstlisting}
 The member functions \code{resize} and \code{clear} unlink from any
@@ -1841,15 +1874,15 @@ An \code{Array} may be filled using the \code{<<} operator for the
 first element followed by either the \code{<<} or \code{,} operators
 for subsequent elements:
 \begin{lstlisting}
-Vector v(4);
-v << 1 << 2 << 3 << 4; // Fill the four elements of v
-v << 1, 2, 3, 4;       // Same behaviour but easier on the eye
-v << 1, 2, 3, 4, 5;    // Error: v has been overfilled
-Matrix M(2,4);
-M << 1, 2, 3, 4,       // Filling of multi-dimensional arrays
-     5, 6, 7, 8;       // automatically moves on to next dimension
-M << 1, 2, 3, 4,
-     v;                // v treated as a row vector here
+ Vector v(4);
+ v << 1 << 2 << 3 << 4; // Fill the four elements of v
+ v << 1, 2, 3, 4;       // Same behaviour but easier on the eye
+ v << 1, 2, 3, 4, 5;    // Error: v has been overfilled
+ Matrix M(2,4);
+ M << 1, 2, 3, 4,       // Filling of multi-dimensional arrays
+      5, 6, 7, 8;       // automatically moves on to next dimension
+ M << 1, 2, 3, 4,
+      v;                // v treated as a row vector here
 \end{lstlisting}
 For multidimensional arrays, elements are filled such that the final
 dimension ticks over fastest (regardless of whether the array uses
@@ -1859,6 +1892,25 @@ provided that they fit in.  In this context, a rank-1 array is treated
 as a row vector. An \code{index\_out\_of\_bounds} exception is thrown
 if an array is overfilled, while an \code{empty\_array} exception is
 thrown if an attempt is made to fill an empty array.
+
+\cxx11 \begin{leftbar} If you compile your code with C++11 features
+  enabled then you can use the ``initializer list'' feature to fill
+  arrays using the C-like curly bracket syntax:
+\begin{lstlisting}
+ Vector v;              // Construct an empty vector
+ v = {1, 2, 3};         // Resize to length 3 and fill
+ Vector w = {1, 2, 3};  // Construct a vector of length 3 and fill
+ w = {4.4, 5.5};        // Underfill leads to remaining elements set to zero (as in C)
+ w = {6, 7, 8, 9};      // Overfill leads to size_mismatch exception being thrown
+ Matrix M = {{1, 2, 3}, // Multi-dimensional arrays use nested curly brackets;
+             {4, 5}};   //  ...underfill again leads to remaining elements set to zero
+\end{lstlisting}
+Another convenient property of this syntax is that temporary arrays
+with explicit values can be used in expressions:
+\begin{lstlisting}
+ v = w * Vector{3.0, 4.2, 5.1};
+\end{lstlisting}
+\end{leftbar}
 
 When interfacing with other libraries, direct access to the data is
 often required. The \code{Array} class provides the following member
@@ -2098,43 +2150,88 @@ matrix, an \code{invalid\_operation} exception will be thrown.
 
 \section{Passing arrays to and from functions}
 \label{sec:passing}
-How can large arrays be returned efficiently from a function?  If
-array \code{A} is created in a function and then returned with
-\code{return A}, the receiving function invokes a copy constructor to
-copy \code{A} into an array in that function, followed by calling the
-destructor of \code{A}. It is unnecessary to perform a deep copy when
-\code{A} is about to be destructed; it is enough for the receiving
-array to simply copy the data members of \code{A}, i.e.\ little more
-than the dimensions of the array and pointers to the data and the
-\code{Storage} object. This is how copy constructors are implemented
-in \Adept. Consider the following function to square the elements of a
-matrix:
+When writing functions taking array arguments, there are three
+different ways to do it depending on the extent to which the function
+needs to be able to modify the array.  In the case of constant array
+arguments, a constant reference should be used; for example:
 \begin{lstlisting}
- Matrix sqr(const Matrix& in) {
-   Matrix out;      // Create an empty matrix but don't allocate any memory yet
-   out = in*in;     // Allocate memory for "out" and fill with in*in
+ Real l3norm(const Vector& v) {     // Function returning the L3-norm of a vector
+   return cbrt(sum(v*v*v));
+ }
+ Vector w(3); w << 1.0, 2.0, 3.0;   // Create a test vector
+ Real ans1 = l3norm(w);             // Named vector argument
+ Real ans2 = l3norm(w(range(0,1))); // Temporary vector argument
+ Real ans3 = l3norm(2.0*w);         // Expression implicitly converted to temporary vector
+\end{lstlisting}
+This function works with all three types of argument.  The last
+example illustrates that when an inactive rank-1 expression is passed
+to the function, it is evaluated and the result placed in a temporary
+vector that is passed to the function.
+
+At the other extreme, we may wish to create a function that modifies
+an array argument, including the possibility of changing its size; for
+example:
+\begin{lstlisting}
+ void resize_and_zero(int n, Vector& v) { // A rather pointless function...
+   v.resize(n); v = 0.0;
+ }
+ Vector w(4);
+ resize_and_zero(2,w);                    // Results in w={0.0, 0.0}
+ resize_and_zero(2,w(range(0,2)));        // Compile error: argument is temporary
+ resize_and_zero(2,2.0*w);                // Compile error: argument is not an lvalue
+\end{lstlisting}
+In this case, due to the C++ rule that a non-constant reference cannot
+bind to a temporary object, the function can only take a
+\emph{non-temporary} \code{Vector} as an argument.  This is fair
+enough; it would not make sense to resize the subset of an array, or
+an expression. However, it is very common to want to pass a subset of
+an array to a function and for the function to modify the values of
+the array, but not to resize it. In \Adept\ this is achieved as
+follows:
+\begin{lstlisting}
+ void square_in_place(Vector v) {
+   v *= v;
+ }
+ Vector w(3); w << 2.0, 3.0, 5.0;
+ square_in_place(w);              // Results in w={4.0, 9.0, 25.0}
+ square_in_place(w(range(0,1)));  // Results in w={4.0, 9.0, 5.0}
+ square_in_place(2.0*w);          // No effect on w
+\end{lstlisting}
+Even though the \code{Vector} has been passed by value, the
+\code{Vector} copy constructor performs a ``shallow copy'', which
+means that little more than the array dimensions and a pointer to the
+data are copied. Therefore, in the first two examples above the vector
+\code{v} inside the function points to data in \code{w}, and can
+therefore modify \code{w}.  By contrast, when an expression is passed
+to the function, a new \code{Vector} is created to hold the result of
+the expression, and when this is modified inside the function it does
+not affect the data in the calling routine.
+
+The fact that \code{Array} copy constructors perform shallow copies
+also improves the efficiency of functions that return arrays such as
+the following:
+\begin{lstlisting}
+ Matrix square(const Matrix& in) {
+   Matrix out = in*in; // Create an matrix containing the result of in*in
    return out;  
  }
- Matrix A(100,100); // Allocate memory for "A"
- Matrix B = sqr(A); // Shallow copy of "out" into "B"
+ Matrix A(100,100);    // Allocate memory for "A"
+ Matrix B = square(A); // Copy constructor: shallow copy of "out" into "B"
 \end{lstlisting}
-When an empty matrix is constructed using ``\code{Matrix out}'', it is
-placed on the stack but no memory is allocated on the heap for the
-actual contents of the matrix via a \code{Storage} object. This is
-done on the next line when it is assigned to \code{in*in}.  At the
-\code{return} statement, matrix \code{out} is received by the copy
-constructor of matrix \code{B}, so a shallow copy is performed. This
-means that the description of matrix \code{out} is copied to \code{B},
-including a pointer to the \code{Storage} object. Matrix \code{out} is
-then destructed, with the net result being that \code{B} has
-``stolen'' the data in the matrix from \code{out} without it having
-been copied, thus avoiding unnecessary allocation of memory on the
-heap, followed by copying and deallocation.
+At the \code{return} statement, matrix \code{out} is received by the
+copy constructor of matrix \code{B}, so a shallow copy is
+performed. This means that the description of matrix \code{out} is
+copied to \code{B}, including a pointer to \code{Storage} object
+containing both the data and a count of the number of references to
+it; this counter is increased by one. Matrix \code{out} is then
+destructed, and the counter is immediately reduced by one. The net
+result is that \code{B} has ``stolen'' the data in the matrix from
+\code{out} without it having been copied, thus avoiding unnecessary
+allocation of memory on the heap followed by copying and deallocation. 
 
-The fact that \Adept\ copy constructors perform shallow copies leads
-to two sorts of behaviour that users may not be expecting. Firstly, if
-an array is initialized from another array in either of the following
-two ways:
+The shallow-copy implementation leads to behaviour that users may not
+be expecting. If an array is initialized from another array in either
+of the following two ways:
 \begin{lstlisting}
  Matrix M(3,4);
  Matrix A(M);   // Call copy constructor
@@ -2148,38 +2245,51 @@ necessary to do the following:
  Matrix A;      // Create empty matrix
  A = M;         // Call assignment operator for deep copy
 \end{lstlisting}
-Secondly, arrays passed to functions ``by value'' behave as if they
-were passed ``by reference'':
-\begin{lstlisting}
- void sqr_in_place(Matrix& A) { // Pass A by reference
-   A *= A;
- }
- void sqr_in_place2(Matrix A) { // Pass A by value
-   A *= A;
- }
- Matrix B(100,100);
- sqr_in_place2(B); 
-\end{lstlisting}
-These two functions behave the same to the user: the second function
-creates a shallow copy of \code{B} in \code{A}, and thus any
-modifications to \code{A} are also made to \code{B}.
+This is annoying, but the alternative is that there would be no clean
+way to pass a subset of an array to a function that then modifies its
+values. The same behaviour is implemented in the Blitz++ array class
+\cite[]{Veldhuizen1995}.
 
-The question of how to implement copy constructors is a classical C++
-problem, solved in C++11 with ``move semantics'': the compiler can
-tell when an object is about to be destructed, in which case it
-performs a shallow ``move'' rather than a deep ``copy''.  The
-\Adept\ approach is compatible with older C++ compilers that do not
-implement move semantics.
+It should be noted that with the introduction of ``move semantics'' in
+the C++11 standard, the it is possible to detect when an array
+returned from a function is about to be destructed, and therefore
+invoke a move constructor that implements a shallow copy. This negates
+one of the two reasons from making the copy constructor execute only a
+shallow copy.  But it does not help in passing array subsets to
+functions, unless two versions of every function were created, one
+accepting an lvalue reference (\code{Array\&}) and the other accepting
+an rvalue reference (\code{Array\&\&}), which is hardly practical.
+
+\cxx11 \begin{leftbar}If you compile your code with C++11 features
+  enabled then move semantics can sometimes make assignment more
+  efficient. Consider code calling the \code{square} function above:
+\begin{lstlisting}
+ Matrix A(10,10), B(10,10);
+ B = square(A); // Move assignment operator performs shallow copy
+ Matrix C(B);   // B and C now share the same data
+ B = square(A); // Move assignment operator performs deep copy
+\end{lstlisting}
+  Both assignments are to temporary objects about to be destructed, so
+  the move assignment operator is called. This operator checks how
+  many references there are to the data in \code{B}. In the first case
+  there is only one reference, so the data in \code{B} can safely be
+  discarded and a shallow copy (a ``move'') of the data in the
+  temporary is performed. In the second case there are two references,
+  so a deep copy must be performed in order that \code{C} sees the
+  change in \code{B}.
+\end{leftbar}
+
 
 
 \section{Array reduction operations}
 \label{sec:reduce}
 A family of functions return a result that is reduced in rank compared
-to their argument, and operate in the same way as Fortran functions
-of the same name.  Consider the \code{sum} function, which can be used
+to their argument, and operate in the same way as Fortran functions of
+the same name.  Consider the \code{sum} function, which can be used
 either to sum all the elements in an array expression and return a
 scalar, or to sum elements along the dimension specified in the second
-argument and return an array whose rank is one less than the first argument:
+argument and return an array whose rank is one less than the first
+argument:
 \begin{lstlisting}
  Array A(3,4);
  Real x = sum(A);     // Sum all elements of matrix A
@@ -2227,18 +2337,19 @@ size as the boolean expression.
 
 An alternative approach that works with only vectors uses the
 \code{find} function. This is similar to the equivalent Matlab
-function and returns an \code{IntVector} containing indices to the
+function and returns an \code{IndexVector} (a vector of integers of
+sufficient precision to index an array) containing indices to the
 \code{true} elements of the vector:
 \begin{lstlisting}
  Vector v(10), w(10);
  v(find(v > 5.0)) = 3.0;
- IntVector index = find(v > 5.0);
+ IndexVector index = find(v > 5.0);
  v(index) = 2.0 * u(index);
 \end{lstlisting}
-This will work if none if no \code{true} elements are found:
-\code{find} will return an empty array, and when \code{v} is indexed
-by an empty vector, no action will be taken.  In general, \code{find}
-is less efficient than \code{where}.
+This will work if no \code{true} elements are found: \code{find} will
+return an empty array, and when \code{v} is indexed by an empty
+vector, no action will be taken.  In general, \code{find} is less
+efficient than \code{where}.
 
 \section{Fixed-size arrays}
 \label{sec:fixed}
@@ -2393,10 +2504,12 @@ illustrated here:\footnote{A drawback of the \code{**} interface with
   but this result is then implicitly transposed when it is used as the
   left-hand argument of the matrix multiplication with \code{B}.
   Moreover, the order of precedence affects the result, since this
-  expression will not give the same answer as \code{A**(v**B)}. I may
-  consider introducing additional constraints and features in future
-  versions to require users to more explicitly state what they mean in
-  such situations, to reduce the chance of accidental mistakes.}
+  expression will not give the same answer as \code{A**(v**B)}.
+ % I may
+ % consider introducing additional constraints and features in future
+ % versions to require users to more explicitly state what they mean in
+ % such situations, to reduce the chance of accidental mistakes.
+}
 \begin{lstlisting}
  Matrix A(3,5), B;
  SymmMatrix S(5);                // 5-by-5 symmetric matrix
@@ -3010,8 +3123,8 @@ yourself in \code{adept/base.h}.
   identification to be accurate. Another approach is to add the
   following in a C++ source file:
 \begin{lstlisting}
-#include <fenv.h>
-int _feenableexcept_status = feenableexcept(FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
+ #include <fenv.h>
+ int _feenableexcept_status = feenableexcept(FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
 \end{lstlisting}
   This will cause a floating point exception to be thrown when a
   \code{NaN} or \code{Inf} is generated, which can again be located in
@@ -3021,23 +3134,23 @@ int _feenableexcept_status = feenableexcept(FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW)
   round-off error can lead to incorrect gradients even in hand-coded
   differential code. Consider the following:
 \begin{lstlisting}
-int main() {
-  Stack stack;
-  adouble a = 1.0e-26, b;
-  stack.new_recording();
-  b = sin(a) / a;
-  b.set_gradient(1.0);
-  stack.compute_adjoint();
-  std::cout << "a=" << a << ", b=" << b << ", db/da=" << a.get_gradient() << "\n";
-}
+ int main() {
+   Stack stack;
+   adouble a = 1.0e-26, b;
+   stack.new_recording();
+   b = sin(a) / a;
+   b.set_gradient(1.0);
+   stack.compute_adjoint();
+   std::cout << "a=" << a << ", b=" << b << ", db/da=" << a.get_gradient() << "\n";
+ }
 \end{lstlisting}
   We know that near \code{a=0} we should have \code{b=1} and the
   gradient should be \code{0}.  But running the program above will
   give a gradient of \code{1.71799e+10}. If you hand-code the
   gradient, i.e.
 \begin{lstlisting}
-double A = 1.0e-26;
-double dB_dA = cos(A)/A - sin(A) / (A*A);
+ double A = 1.0e-26;
+ double dB_dA = cos(A)/A - sin(A) / (A*A);
 \end{lstlisting}
   you will you will also get the wrong gradient.  You can see that the
   answer is the difference of two very large numbers and so subject to
@@ -3121,9 +3234,9 @@ J(\x) \myspace =\myspace \left[\y(\x)-\y^o\right]^\mathrm{T}{\bf
 \item[Why doesn't the ternary operator work?] Some compilers will fail
   to compile the following function:
 \begin{lstlisting}
-adept::adouble piecewise(adept::adouble x) {
-  return x < 1.0 ? x*x : 2.0*x-1.0;
-}
+ adept::adouble piecewise(adept::adouble x) {
+   return x < 1.0 ? x*x : 2.0*x-1.0;
+ }
 \end{lstlisting}%
 The reason is that these compilers require that the two possible
 outcomes of the ternary operator have the same type, but due to the
@@ -3132,9 +3245,9 @@ expressions are actually different.  The ternary operator cannot be
 overloaded to allow such arguments. The solution is to explicitly
 convert the outcomes to \code{adouble}:
 \begin{lstlisting}
-adept::adouble piecewise(adept::adouble x) {
-  return x < 1.0 ? adept::adouble(x*x) : adept::adouble(2.0*x-1.0);
-}
+ adept::adouble piecewise(adept::adouble x) {
+   return x < 1.0 ? adept::adouble(x*x) : adept::adouble(2.0*x-1.0);
+ }
 \end{lstlisting}
 \item[Why is my executable so huge?]  Probably you are including
   debugging symbols by compiling with the \code{-g} option. Expression
