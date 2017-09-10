@@ -1713,8 +1713,8 @@ choice if you have Fortran code that you wish to convert to C++.
   \code{norm2} perform reduction operations that return an array of
   lower rank to the expression they are applied to. The functions
   \code{all} and \code{any} do the same but for boolean
-  expressions. \code{count}\footnote{Not yet implemented.} returns the
-  number of \code{true} elements in a boolean expression.
+  expressions. \code{count} returns the number of \code{true} elements
+  in a boolean expression.
 % The function
 %  \code{find(A)} returns indices to the \code{true} elements of
 %  \code{A}. 
@@ -2303,9 +2303,9 @@ difference between \code{maxval} and \code{max}: the behaviour of
 functions operate in the same way but on boolean arrays: \code{all}
 returns \code{true} only if all elements are \code{true}, \code{any}
 returns \code{true} if any element is \code{true} (and \code{false}
-otherwise), while \code{count}\footnote{Not yet implemented.} returns
-the number of \code{true} elements.  Each of these can work on an
-individual dimension as with \code{sum} and friends.
+otherwise), while \code{count} returns the number of \code{true}
+elements.  Each of these can work on an individual dimension as with
+\code{sum} and friends.
 
 A further function, \code{dot\_product(a,b)}, takes two arguments that
 must be rank-1 arrays of the same length and returns the dot

@@ -300,15 +300,27 @@ namespace adept {
       void finish(X& total, const Index& n) { }
     };
 
+    // Count enables the "count" function that returns the number of
+    // "true" elements in a bool array.
+    struct Count {
+      static const bool finish_needed = false;
+      const char* name() { return "count"; }
+      Index first_value() { return 0; }
+      void accumulate(Index& total, const bool& rhs)
+      { total += static_cast<Index>(rhs); } // true=1, false=0
+      template <class X>
+      void finish(X& total, const Index& n) { }
+    };
+
     // -------------------------------------------------------------------
     // Section 2. Various versions of the "reduce" function
     // -------------------------------------------------------------------
 
     // Reduce an entire inactive array
-    template <class Func, typename Type, class E>
+    template <class Func, typename Type, class E, typename TotalType = Type>
     inline
-    Type reduce(const Expression<Type, E>& rhs) {
-      Type total;
+    TotalType reduce(const Expression<Type, E>& rhs) {
+      TotalType total;
       Func f;
       ExpressionSize<E::rank> dims;
       // Check right hand side is a valid expression
@@ -352,10 +364,10 @@ namespace adept {
     }
 
     // Reduce the specified dimension of an inactive array of rank > 1
-    template <class Func, typename Type, class E>
+    template <class Func, typename Type, class E, typename TotalType>
     inline
     void reduce(const Expression<Type, E>& rhs, int reduce_dim,
-		Array<E::rank-1,Type,false>& total) {
+		Array<E::rank-1,TotalType,false>& total) {
       Func f;
       ExpressionSize<E::rank> dims;
       if (!rhs.get_dimensions(dims)) {
@@ -689,14 +701,28 @@ namespace adept {
   Array<E::rank-1,bool,false>				 \
   NAME(const Expression<bool, E>& rhs, int dim) {	 \
     Array<E::rank-1,bool,false> result;			 \
-    reduce<CLASSNAME>(rhs, dim, result);			 \
+    reduce<CLASSNAME>(rhs, dim, result);		 \
     return result;					 \
   }
 
   DEFINE_BOOL_REDUCE_FUNCTION(all, All);
   DEFINE_BOOL_REDUCE_FUNCTION(any, Any);
-
 #undef DEFINE_BOOL_REDUCE_FUNCTION
+
+  // count(x) and count(x,dim) is slightly different as it returns
+  // Index
+  template <class E>
+  inline Index count(const Expression<bool, E>& rhs)
+  { return reduce<Count,bool,E,Index>(rhs); }
+
+  template <class E>
+  inline Array<E::rank-1,Index,false>
+  count(const Expression<bool, E>& rhs, int dim) {
+    Array<E::rank-1,Index,false> result;
+    reduce<Count>(rhs, dim, result);
+    return result;
+  }
+
 
   // -------------------------------------------------------------------
   // Section 4. diag_vector

@@ -223,6 +223,9 @@ main() {
 
   struct Test {
 
+    bool b;
+    boolVector B;
+    int c;
     myReal x;
     myVector v, w;
     myMatrix M, N;
@@ -238,6 +241,9 @@ main() {
 
 
     Test() {
+      b = false;
+      B.resize(3); B = false;
+      c = 0;
       x = -2;
       v.resize(3);
       w.resize(3);
@@ -386,6 +392,12 @@ main() {
   EVAL2("dot product", myReal, x, true, myVector, w, x = dot_product(w,w(stride(end,0,-1))));
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, Vector(value(w)/3.0)));
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, value(w)/3.0));
+  EVAL2("all reduction", bool, b, false, myMatrix, M, b = all(M > 8.0));
+  EVAL2("any reduction", bool, b, false, myMatrix, M, b = any(M > 8.0));
+  EVAL2("count reduction", int, c, false, myMatrix, M, c = count(M > 8.0));
+  EVAL2("1-dimension all reduction", boolVector, B, false, myMatrix, M, B = all(M > 8.0, 1));
+  EVAL2("1-dimension any reduction", boolVector, B, false, myMatrix, M, B = any(M > 8.0, 1));
+  EVAL2("1-dimension count reduction", intVector, index, false, myMatrix, M, index = count(M > 8.0, 1));
   HEADING("CONDITIONAL OPERATIONS");
   EVAL2("where construct, scalar right-hand-side", myMatrix, M, true, myMatrix, N, M.where(N > 20) = 0);
   EVAL2("where construct, expression right-hand-side", myMatrix, M, true, myMatrix, N, M.where(N > 20) = -N);
