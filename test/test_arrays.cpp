@@ -18,7 +18,7 @@
 
 
 // The following controls whether to use active variables or not
-#define ALL_ACTIVE 1
+//#define ALL_ACTIVE 1
 //#define MARVEL_STYLE 1
 
 using namespace adept;
@@ -505,8 +505,10 @@ main() {
 #ifndef ALL_ACTIVE
   HEADING("LINEAR ALGEBRA");
   EVAL2("Solving general linear equations Ax=b", myVector, v, true, myMatrix, S, v = solve(S,v));
+  //  EVAL2("Solving general linear equations Ax=b with expression arguments", myVector, v, true, myMatrix, S, v = solve(S,2*v));
 
   EVAL2("Solving general linear equations AX=B", myMatrix, M, true, myMatrix, S, M.T() = solve(S,M.T()));
+  //  EVAL2("Solving general linear equations AX=B with expression arguments", myMatrix, M, true, myMatrix, S, M.T() = solve(2.0 * S,2.0 * M.T()));
   EVAL2("Solving linear equations Ax=b with symmetric A", myVector, v, true, mySymmMatrix, O, v = solve(O,v));
   EVAL2("Solving linear equations AX=B with symmetric A", myMatrix, M, true, mySymmMatrix, O, M.T() = solve(O,M.T()));
   //  EVAL2("Solving linear equations AX=B with symmetric A and B", myMatrix, S, false, mySymmMatrix, O, S = solve(O,P));
