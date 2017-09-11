@@ -363,7 +363,8 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + R::n_scratch;
       static const int  n_arrays_ = R::n_arrays;
-      static const bool is_vectorizable_ = R::is_vectorizable && Op::is_vectorized;
+      static const bool is_vectorizable_ = R::is_vectorizable && Op::is_vectorized
+	&& is_same<L,typename R::type>::value;
 
       using Op::is_operator;
       using Op::operation;
@@ -549,7 +550,8 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + L::n_scratch;
       static const int  n_arrays_ = L::n_arrays;
-      static const bool is_vectorizable_ = L::is_vectorizable && Op::is_vectorized;
+      static const bool is_vectorizable_ = L::is_vectorizable && Op::is_vectorized
+	&& is_same<typename L::type,R>::value;
 
       using Op::is_operator;
       using Op::operation;
