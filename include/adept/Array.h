@@ -531,7 +531,7 @@ namespace adept {
 	  assign_expression_<Rank, IsActive, false>(copy);
 	}
 	else {
-	  assign_expression_<Rank, IsActive, false>(rhs);
+	  assign_expression_<Rank, IsActive, false>(rhs.cast());
 	}
       }
       return *this;

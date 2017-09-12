@@ -540,6 +540,10 @@ main() {
   EVAL2("Fill matrix with vector using \"<<\"", myMatrix, S, true, myVector, v, S << v << v << v);
   EVAL("Assign array using range", myVector, v, false, v = range(3,6));
 
+  HEADING("EXPRESSION PRINTING");
+  EVAL("Send expression to standard output", myMatrix, M, true,
+       std::cout << M(0,__) + M(1,__) << '\n');
+
 #ifdef ADEPT_BOUNDS_CHECKING
   HEADING("BOUNDS CHECKING");
   should_fail = true;
