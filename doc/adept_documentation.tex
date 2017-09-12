@@ -1719,6 +1719,9 @@ choice if you have Fortran code that you wish to convert to C++.
 %  \code{find(A)} returns indices to the \code{true} elements of
 %  \code{A}. 
   See section \ref{sec:reduce}.
+\item[Array expansion operations.] The functions \code{outer\_product}
+  and \code{spread} return an expression of a higher rank than the
+  expression they are applied to. See section \ref{sec:expand}
 \item[Conditional operations.] Two convenient ways are provided to
   perform an operation on an array depending on the result of a
   boolean expression: \code{where} and \code{find}. The statement
@@ -2279,8 +2282,6 @@ an rvalue reference (\code{Array\&\&}), which is hardly practical.
   change in \code{B}.
 \end{leftbar}
 
-
-
 \section{Array reduction operations}
 \label{sec:reduce}
 A family of functions return a result that is reduced in rank compared
@@ -2310,6 +2311,30 @@ elements.  Each of these can work on an individual dimension as with
 A further function, \code{dot\_product(a,b)}, takes two arguments that
 must be rank-1 arrays of the same length and returns the dot
 product. This is essentially the same as \code{sum(a*b)}.
+
+\section{Array expansion operations}
+\label{sec:expand}
+The function \code{outer\_product(x,y)} returns the outer product of
+two rank-1 expressions; if ${\bf x}$ and ${\bf y}$ are interpreted as
+column vectors then ${\bf xy}^T$ is returned. If \code{outer\_product}
+is used in an expression then an intermediate matrix object is not
+created to store it.
+
+The function \code{spread<dim>(A,n)} returns an array that replicates
+the \code{A} array \code{n} times along dimension \code{dim}. The
+returned array has a rank one larger than \code{a} whose dimension
+\code{dim} is \code{n} and the remaining dimensions are the same as
+those of \code{A}. This is illustrated for an argument of rank 1:
+\begin{lstlisting}
+ Vector v(3); v << 1, 2, 3;
+ Matrix M0 = spread<0>(v,2);
+ // M1 contains {{1, 2, 3},
+ //              {1, 2, 3}}
+ Matrix M1 = spread<1>(v,2);
+ // M2 contains {{1, 1},
+ //              {2, 2},
+ //              {3, 3}}
+\end{lstlisting}
 
 \section{Conditional operations}
 \label{sec:conditional}
@@ -2535,6 +2560,12 @@ multiplications.  The final example shows an expression that would
 fail at runtime with an \code{inner\_dimension\_mismatch} exception
 due to the matrix multiplication being applied to matrices whose inner
 dimensions do not match.
+
+You cannot use \code{matmul} or ``\code{**}'' for vector-vector
+multiplication, since it is ambiguous whether you require the inner
+product (dot product) or the outer product. Therefore you must
+explicitly call the function \code{dot\_product} (section
+\ref{sec:reduce}) or \code{outer\_product} (section \ref{sec:expand}).
 
 In order to get the best performance, \Adept\ does not use expression
 templates for matrix multiplication but rather calls the appropriate
