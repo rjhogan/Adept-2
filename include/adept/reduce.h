@@ -105,6 +105,8 @@ namespace adept {
     // Sum enables the "sum" function that sums its arguments.
     template <typename T>
     struct Sum {
+      // What is the type of the running total?
+      typedef T total_type;
       // Do we need to do anything to the final summed value(s)?
       static const bool finish_needed = false;
       // Do we need to do anything to the final summed value(s) in the
@@ -142,6 +144,7 @@ namespace adept {
     // dividing the final result by the number of elements averaged.
     template <typename T>
     struct Mean {
+      typedef T total_type;
       static const bool finish_needed = true;
       static const bool active_finish_needed = true;
       const char* name() { return "mean"; }
@@ -165,6 +168,7 @@ namespace adept {
     // arguments together.
     template <typename T>
     struct Product {
+      typedef T total_type;
       static const bool finish_needed = false;
       static const bool active_finish_needed = false;
       const char* name() { return "product"; }
@@ -189,6 +193,7 @@ namespace adept {
     // MaxVal enables the "maxval" function that returns the maximum value
     template <typename T>
     struct MaxVal {
+      typedef T total_type;
       static const bool finish_needed = false;
       static const bool active_finish_needed = false;
       const char* name() { return "maxval"; }
@@ -217,6 +222,7 @@ namespace adept {
     // MinVal enables the "minval" function that returns the minimum value
     template <typename T>
     struct MinVal {
+      typedef T total_type;
       static const bool finish_needed = false;
       static const bool active_finish_needed = false;
       const char* name() { return "minval"; }
@@ -238,11 +244,12 @@ namespace adept {
       void finish(X& total, const Index& n) { }
       void finish_active(Active<T>& total, const Index& n) { }
     };
-
+  
     // Norm2 enables the "norm2" function that returns the L-2 norm of
     // its arguments, equal to sqrt(sum(rhs*rhs))
     template <typename T>
     struct Norm2 {
+      typedef T total_type;
       static const bool finish_needed = true;
       static const bool active_finish_needed = true;
       const char* name() { return "norm2"; }
@@ -278,6 +285,7 @@ namespace adept {
     // the bool elements of the right hand side are true.  It would be
     // faster if it could quit after finding the first "false".
     struct All {
+      typedef bool total_type;
       static const bool finish_needed = false;
       const char* name() { return "all"; }
       bool first_value() { return true; }
@@ -291,6 +299,7 @@ namespace adept {
     // the bool elements of the right hand side are true. It would be
     // faster if it could quite after finding the first "true".
     struct Any {
+      typedef bool total_type;
       static const bool finish_needed = false;
       const char* name() { return "any"; }
       bool first_value() { return false; }
@@ -303,6 +312,7 @@ namespace adept {
     // Count enables the "count" function that returns the number of
     // "true" elements in a bool array.
     struct Count {
+      typedef Index total_type;
       static const bool finish_needed = false;
       const char* name() { return "count"; }
       Index first_value() { return 0; }
@@ -317,10 +327,10 @@ namespace adept {
     // -------------------------------------------------------------------
 
     // Reduce an entire inactive array
-    template <class Func, typename Type, class E, typename TotalType = Type>
+    template <class Func, typename Type, class E>
     inline
-    TotalType reduce(const Expression<Type, E>& rhs) {
-      TotalType total;
+    typename Func::total_type reduce(const Expression<Type, E>& rhs) {
+      typename Func::total_type total;
       Func f;
       ExpressionSize<E::rank> dims;
       // Check right hand side is a valid expression
@@ -364,10 +374,10 @@ namespace adept {
     }
 
     // Reduce the specified dimension of an inactive array of rank > 1
-    template <class Func, typename Type, class E, typename TotalType>
+    template <class Func, typename Type, class E>
     inline
     void reduce(const Expression<Type, E>& rhs, int reduce_dim,
-		Array<E::rank-1,TotalType,false>& total) {
+		Array<E::rank-1,typename Func::total_type,false>& total) {
       Func f;
       ExpressionSize<E::rank> dims;
       if (!rhs.get_dimensions(dims)) {
@@ -713,7 +723,7 @@ namespace adept {
   // Index
   template <class E>
   inline Index count(const Expression<bool, E>& rhs)
-  { return reduce<Count,bool,E,Index>(rhs); }
+  { return reduce<Count>(rhs); }
 
   template <class E>
   inline Array<E::rank-1,Index,false>
