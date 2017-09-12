@@ -827,32 +827,32 @@ namespace adept {
       
       // Calculate the gradient of the left-hand argument
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R>
-      void calc_left(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
-			       const ScratchVector<NScratch>& scratch) const {
+      static void calc_left(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
+			       const ScratchVector<NScratch>& scratch) {
         left.template calc_gradient_<MyArrayNum, MyScratchNum+store_result>(stack, loc, scratch, 
 	    right.template value_stored_<MyArrayNum+L::n_arrays,MyScratchNum+L::n_scratch+store_result>(loc, scratch));
       }
 
       // Calculate the gradient of the right-hand argument
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R>
-      void calc_right(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
-			       const ScratchVector<NScratch>& scratch) const {
+      static void calc_right(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
+			       const ScratchVector<NScratch>& scratch) {
         right.template calc_gradient_<MyArrayNum+L::n_arrays, MyScratchNum+L::n_scratch+store_result>(stack, loc, scratch, 
 				   left.template value_stored_<MyArrayNum,MyScratchNum+store_result>(loc, scratch));
       }
 
       // Calculate the gradient of the left-hand argument with a multiplier
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R, typename MyType>
-      void calc_left(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
-			       const ScratchVector<NScratch>& scratch, MyType multiplier) const {
+      static void calc_left(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
+			       const ScratchVector<NScratch>& scratch, MyType multiplier) {
         left.template calc_gradient_<MyArrayNum, MyScratchNum+store_result>(stack, loc, scratch, multiplier
 	    *right.template value_stored_<MyArrayNum+L::n_arrays,MyScratchNum+L::n_scratch+store_result>(loc, scratch));
       }
 
       // Calculate the gradient of the right-hand argument with a multiplier
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R, typename MyType>
-      void calc_right(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
-			       const ScratchVector<NScratch>& scratch, MyType multiplier) const {
+      static void calc_right(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
+			       const ScratchVector<NScratch>& scratch, MyType multiplier) {
         right.template calc_gradient_<MyArrayNum+L::n_arrays, MyScratchNum+L::n_scratch+store_result>(stack, loc, scratch, 
 		   multiplier*left.template value_stored_<MyArrayNum,MyScratchNum+store_result>(loc, scratch));
       }

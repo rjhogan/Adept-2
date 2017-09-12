@@ -187,6 +187,7 @@ main() {
   typedef aLowerMatrix myLowerMatrix;
   typedef aUpperMatrix myUpperMatrix;
   typedef SpecialMatrix<Real,BandEngine<ROW_MAJOR,2,1>,true> myOddBandMatrix;
+  typedef aArray3D myArray3D;
 #else
   typedef aReal myReal;
   typedef Array<2,aReal,false> myMatrix;
@@ -204,7 +205,8 @@ main() {
   typedef Real   myReal;
   typedef Matrix myMatrix;
   typedef Vector myVector;
-  
+  typedef Array3D myArray3D;
+
   typedef SymmMatrix mySymmMatrix;
   //typedef SquareMatrix mySymmMatrix;
   typedef DiagMatrix myDiagMatrix;
@@ -238,23 +240,34 @@ main() {
     myUpperMatrix U, UU;
     myOddBandMatrix Q, R;
     intVector index;
+    myArray3D A;
 
-
+    //#define MINI_TEST
+#ifdef MINI_TEST
+#define DIM1 3
+#define DIM2 2
+#define DIM3 5
+#else
+#define DIM1 12
+#define DIM2 10
+#define DIM3 15
+#endif
     Test() {
+
       b = false;
-      B.resize(3); B = false;
+      B.resize(DIM1); B = false;
       c = 0;
       x = -2;
-      v.resize(3);
-      w.resize(3);
-      M.resize(2,3);
-      myMatrix Mtmp(6,6);
+      v.resize(DIM1);
+      w.resize(DIM1);
+      M.resize(DIM2,DIM1);
+      myMatrix Mtmp(DIM2*3,DIM1*2);
       Mstrided.link(Mtmp(stride(0,end,3),stride(0,end,2)));
-      N.resize(2,3);
-      S.resize(3,3);
-      O.resize(3);
-      Q.resize(5);
-      index.resize(2);
+      N.resize(DIM2,DIM1);
+      S.resize(DIM1,DIM1);
+      O.resize(DIM1);
+      Q.resize(DIM3);
+      index.resize(DIM2);
       v(0) = 2; v(1) = 3; v(2) = 5;
       w(0) = 7; w(1) = 11; w(2) = 13;
       M(0,0) = 2; M(0,1) = 3; M(0,2) = 5;
@@ -281,6 +294,10 @@ main() {
       T = S;
       L = S;
       U = S;
+
+      A.resize(DIM2,DIM1,DIM2);
+      A << 2, 3, 5, 7, 11, 13,
+	17, 19, 23, 29, 31,37;
 
       index << 1, 0;
     }
@@ -390,6 +407,7 @@ main() {
   EVAL2("maxval", myVector, v, false, myMatrix, M, v = maxval(M,1));
   EVAL2("minval", myVector, v, false, myMatrix, M, v = minval(M,1));
   EVAL2("dot product", myReal, x, true, myVector, w, x = dot_product(w,w(stride(end,0,-1))));
+  EVAL2("dot product on expressions", myReal, x, true, myVector, w, x = dot_product(2.0*w,w(stride(end,0,-1))+1.0));
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, Vector(value(w)/3.0)));
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, value(w)/3.0));
   EVAL2("all reduction", bool, b, false, myMatrix, M, b = all(M > 8.0));
@@ -474,8 +492,19 @@ main() {
   EVAL2("LowerMatrix transpose as rvalue via T member function", myUpperMatrix, U, false, myLowerMatrix, L, U = L.T());
   EVAL2("UpperMatrix transpose as rvalue via T member function", myLowerMatrix, L, false, myUpperMatrix, U, L = U.T());
 
+  HEADING("EXPANSION OPERATIONS");
+  EVAL2("Outer product", myMatrix, M, false, myVector, v, M = outer_product(v,v));
+  EVAL2("Outer product on indexed array", myMatrix, M, false, myVector, v, M = outer_product(v,v(stride(end,0,-1))));
+  EVAL2("Outer product on expressions", myMatrix, M, false, myVector, v, M = outer_product(2.0*v,v-1.0));
+  EVAL2("Vector spread of dimension 0", myMatrix, M, false, myVector, v, M = spread<0>(v,2));
+  EVAL2("Vector spread of dimension 1", myMatrix, M, false, myVector, v, M = spread<1>(v,2));
+  EVAL2("Vector spread with expression argument", myMatrix, M, false, myVector, v, M = spread<1>(v*2.0,2));
+  EVAL2("Matrix spread of dimension 0", myArray3D, A, false, myMatrix, M, A = spread<0>(M,2));
+  EVAL2("Matrix spread of dimension 1", myArray3D, A, false, myMatrix, M, A = spread<1>(M,2));
+  EVAL2("Matrix spread of dimension 2", myArray3D, A, false, myMatrix, M, A = spread<2>(M,2));
+
 #ifndef MARVEL_STYLE
-  HEADING("MATRIX MULTIPLICATION");
+ HEADING("MATRIX MULTIPLICATION");
   //EVAL2("inner product", myReal, x, true, myVector, w, x = w.T() ** w);
   EVAL3("Matrix-Vector multiplication", myVector, w, false, myMatrix, M, myVector, v, w = M ** v);
   EVAL3("Matrix-Vector multiplication with strided matrix", myVector, w, false, myMatrix, Mstrided, myVector, v, w = Mstrided ** v);

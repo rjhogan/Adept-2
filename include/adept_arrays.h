@@ -21,6 +21,8 @@
 #include <adept/inv.h>
 #include <adept/Allocator.h>
 #include <adept/interp.h>
+#include <adept/spread.h>
+#include <adept/outer_product.h>
 #include <adept/array_shortcuts.h>
 #include <adept/vector_utilities.h>
 
