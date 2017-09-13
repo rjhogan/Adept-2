@@ -236,9 +236,15 @@ specify the root directory of the installation, say to
  ./configure CXXFLAGS="-g -O3" --prefix=/foo
 \end{lstlisting}
 The \code{-g} option to \code{CXXFLAGS} ensures debugging information
-is stored.  If a library you wish to use is installed in a non-system
-directory, say under \code{/foo}, then specify the locations as
-follows:
+is stored. If you use the GNU compiler then consider the \code{-g1}
+option instead to reduce the amount of debugging information
+stored. The GNU \code{-march=native} option will also enable the
+fastest instruction set for the machine on which the code is being
+compiled.  On Intel you may see a performance improvement if AVX
+instructions are enabled \code{-mavx} since \Adept\ is able to
+vectorize certain expressions. If a library you wish to use is
+installed in a non-system directory, say under \code{/foo}, then
+specify the locations as follows:
 \begin{lstlisting}
  ./configure CPPFLAGS="-I/foo/include" LDFLAGS="-L/foo/lib -Wl,-rpath,/foo/lib"
 \end{lstlisting}
@@ -295,6 +301,8 @@ programs in the \code{test} directory:
   link to the \Adept\ library in order to create an executable.
 \item\code{test\_arrays}: tests many of the array capabilities
   described in chapter \ref{chap:arrays}.
+\item\code{test\_arrays\_active}: tests the same array capabilities
+  but with active arrays.
 \item\code{test\_fixed\_arrays}: tests the similar capabilities of
   arrays with fixed dimensions (known at compile time).
 \end{itemize}
@@ -327,7 +335,6 @@ an \Adept\ application \emph{without} needing to link to a library.
 \subsection{Non-Unix platforms, and compiling \Adept\ applications
   without linking to an external library}
 \label{sec:non-unix}
-{\bf WARNING: THIS FUNCTIONALITY IS BROKEN IN VERSION 1.9 BUT WILL BE FIXED WITH VERSION 2.0}
 
 Most of the difficulty in maintaining software that can compile on
 multiple platforms arises from the different ways of compiling
@@ -346,18 +353,26 @@ Typically you would include this in the source file containing the
 the \Adept\ library source files, so when you compile a file that
 includes it, you compile in all the functionally of the
 \Adept\ library. All other source files in your application should
-include the \code{adept.h} or \code{adept\_arrays.h} header file as normal.  When you link all
-your object files together to make an executable, the
-\Adept\ functionality will be built in, even though you did not link
-to an external \Adept\ library.  A demonstration of this is in the
+include only the \code{adept.h} or \code{adept\_arrays.h} header file
+as normal.  When you link all your object files together to make an
+executable, the \Adept\ functionality will be built in, even though
+you did not link to an external \Adept\ library. Since \Adept\ depends
+on BLAS for matrix multiplication, you will still need to link to a
+functioning BLAS library (such as OpenBLAS). By default,
+\code{adept\_arrays.h} does not enable LAPACK (needed for matrix
+inversion and solving linear systems of equations); to enable it, edit
+the line near the top of \code{adept\_source.h} containing
+\code{HAVE\_LAPACK}, and link against a functioning LAPACK library.  A
+demonstration of the use of \code{adept\_source.h} is in the
 \code{test/test\_no\_lib.cpp} source file, which needs to be compiled
 together with \code{test/algorithm.cpp} to make an executable.
 %
 It is hoped that this feature will make it easy to use \Adept\ on
 non-Unix platforms, although of course this feature works just as well
-on Unix-like platforms as well.  If you want to use OpenBLAS on such
-platforms then you will still need to install that library in the
-normal way.
+on Unix-like platforms as well.
+%  If you want to use OpenBLAS on such
+%platforms then you will still need to install that library in the
+%normal way.%
 
 A further point to note is that, under the terms of the license, it is
 permitted to copy all the \Adept\ include files, including
@@ -2330,7 +2345,10 @@ The function \code{spread<dim>(A,n)} returns an array that replicates
 the \code{A} array \code{n} times along dimension \code{dim}. The
 returned array has a rank one larger than \code{a} whose dimension
 \code{dim} is \code{n} and the remaining dimensions are the same as
-those of \code{A}. This is illustrated for an argument of rank 1:
+those of \code{A}. It is essentially the same as the Fortran function
+of the same name, but \code{dim} is provided as a template arguent
+since performance is improved if this is known at compile time.  The
+following illustrates \code{spread} for an argument of rank 1:
 \begin{lstlisting}
  Vector v(3); v << 1, 2, 3;
  Matrix M0 = spread<0>(v,2);
@@ -2341,6 +2359,8 @@ those of \code{A}. This is illustrated for an argument of rank 1:
  //              {2, 2},
  //              {3, 3}}
 \end{lstlisting}
+Note that \code{spread<1>(x,y.size())*spread<0>(y,x.size())} gives the
+same result as \code{outer\_product(x,y)}.
 
 \section{Conditional operations}
 \label{sec:conditional}
@@ -2829,7 +2849,18 @@ control the number used in Jacobian calculations.
   symbols, at least with the GNU C++ compiler.
 \item A high compiler optimization setting is recommended to inline
   the function calls associated with mathematical expressions.  On the
-  GNU C++ compiler, the \code{-O3} setting is recommended.
+  GNU C++ compiler, the \code{-O3 -march=native} setting is
+  recommended.
+\item On Intel architectures, \Adept\ will vectorize expressions if
+  they satisfy a number of requirements: (1) they contain only
+  elementary mathematical operators, (2) the arrays in the expression
+  are either all of type \code{float} or all of type \code{double},
+  (3) all the arrays in the expression must have their final dimension
+  increasing in memory with no stride, and (4) none of the arrays are
+  active. If AVX is enabled (\code{-mavx}) then four \code{double}s or
+  eight \code{float}s will be operated on at once, otherwise if SSE2
+  is enabled (\code{-msse2}) then two \code{double}s or four
+  \code{float}s will be operated on at once.
 \item By default the Jacobian functions are compiled to process a
   strip of rows or columns of the Jacobian matrix at once. The optimum
   width of the strip depends on your platform, and you may wish to
@@ -3119,7 +3150,7 @@ default this variable is not defined initially, and then later in
 \code{adept/base.h} it is set to \code{\_\_declspec(thread)} on
 Microsoft Visual C++, an empty declaration on Mac (since thread-local
 storage is not available on many Mac platforms) and \code{\_\_thread}
-otherwise (appropriate for at least the GCC, Intel, Sun and IBM
+otherwise (appropriate for at least the GNU, Intel, Sun and IBM
 compilers). To override the default behaviour, define this variable
 yourself in \code{adept/base.h}.
 \end{description}
