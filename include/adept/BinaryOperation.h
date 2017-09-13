@@ -42,9 +42,6 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + L::n_scratch + R::n_scratch;
       static const int  n_arrays_ = L::n_arrays + R::n_arrays;
-      //      static const VectorOrientation vector_orientation_ 
-      //	= combined_orientation<L::vector_orientation,R::vector_orientation>::value;
-
       static const bool is_vectorizable_
 	= L::is_vectorizable && R::is_vectorizable && Op::is_vectorized
 	&& is_same<typename L::type,typename R::type>::value

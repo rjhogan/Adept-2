@@ -242,7 +242,7 @@ main() {
     intVector index;
     myArray3D A;
 
-    //#define MINI_TEST
+#define MINI_TEST
 #ifdef MINI_TEST
 #define DIM1 3
 #define DIM2 2

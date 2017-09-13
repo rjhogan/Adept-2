@@ -36,7 +36,6 @@ namespace adept {
       // FIX! Only store if active and if needed
       static const int  n_scratch_ = 1 + R::n_scratch;
       static const int  n_arrays_ = R::n_arrays;
-      //      static const VectorOrientation vector_orientation_ = R::vector_orientation;
       // Will need to modify this for sqrt:
       static const bool is_vectorizable_ = false;
 

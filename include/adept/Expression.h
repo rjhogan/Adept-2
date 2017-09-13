@@ -18,7 +18,6 @@
 #include <adept/exception.h>
 #include <adept/Stack.h>
 #include <adept/ScratchVector.h>
-//#include <adept/VectorOrientation.h>
 #include <adept/Packet.h>
 
 namespace adept {
@@ -79,8 +78,6 @@ namespace adept {
     // only those that are need to define is_vectorizable_.
     static const bool is_vectorizable_ = false;
 
-    //    static const VectorOrientation vector_orientation = A::vector_orientation_;
-
     // Classes derived from this one that do not define how many
     // scratch variables, active variables or arrays they contain are
     // assumed to need zero
@@ -92,8 +89,6 @@ namespace adept {
     // Expressions cannot be lvalues by default, but override this
     // bool if they are
     static const bool is_lvalue_ = false;
-
-    //    static const VectorOrientation vector_orientation_ = UNSPECIFIED_VECTOR_ORIENTATION;
 
     // The presence of _adept_expression_flag is used to define the
     // adept::is_not_expression trait

@@ -6,10 +6,9 @@ pkginclude_HEADERS = adept/Active.h adept/ActiveReference.h adept/Allocator.h \
 	adept/ScratchVector.h adept/SpecialMatrix.h adept/Stack.h \
 	adept/StackStorage.h adept/StackStorageOrig.h \
 	adept/StackStorageOrigStl.h adept/Statement.h adept/Storage.h \
-	adept/VectorOrientation.h adept/array_shortcuts.h adept/base.h \
+	adept/array_shortcuts.h adept/base.h adept/reduce.h \
 	adept/contiguous_matrix.h adept/exception.h adept/settings.h \
 	adept/interp.h adept/ActiveConstReference.h adept/cppblas.h \
-	adept/inv.h adept/oriented_vector.h adept/reduce.h \
 	adept/scalar_shortcuts.h adept/solve.h adept/traits.h adept/where.h \
 	adept/vector_utilities.h adept/FixedArray.h adept/Packet.h \
 	adept/UnaryOperation.h adept/BinaryOperation.h adept/ArrayWrapper.h \
