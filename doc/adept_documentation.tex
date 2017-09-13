@@ -2129,7 +2129,7 @@ pointing to the data along its diagonals.  An
 non-square matrix, and a compile-time error if applied to an array of
 rank other than 2.
 %
-\citem{diag\_vector(i)} When applied to a square rank-2 $n$-by-$n$
+\citem{diag\_vector(int i)} When applied to a square rank-2 $n$-by-$n$
 \code{Array}, this returns a rank-1 array of length
 $n-\mathrm{abs}(i)$ pointing to the $i$th superdiagonal of the square
 matrix, or the $-i$th subdiagonal if $i$ is negative. An
@@ -2149,6 +2149,12 @@ matrix, an \code{invalid\_operation} exception will be thrown.
 %\citem{upper\_matrix()}
 %\citem{lower\_matrix()}
 %\citem{band\_matrix<LDiag,UDiag>()}
+\citem{reshape(int i0, int i1...)} Only applicable to an \code{Array}
+of rank 1, this returns a multi-dimensional array whose dimensions are
+given by the arguments to the function.  Between 2 and 7 dimensions
+are possible. If the arguments are such that the total size of the
+returned array would not match the length of the vector, an
+\code{invalid\_dimension} exception is thrown.
 \end{description}
 
 \section{Passing arrays to and from functions}
