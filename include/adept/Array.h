@@ -2930,7 +2930,7 @@ namespace adept {
       static const int last = LocalRank-1;
       
       if (dimensions_[last] >= Packet<Type>::size*2
-	  && offset_[last] == 1
+	  && all_arrays_contiguous_()
 	  && rhs.all_arrays_contiguous()) {
 	// Contiguous source and destination data
 	int iendvec;
