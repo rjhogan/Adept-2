@@ -229,7 +229,7 @@ main() {
     boolVector B;
     int c;
     myReal x;
-    myVector v, w;
+    myVector v, w, vlong;
     myMatrix M, N;
     myMatrix Mstrided;
     myMatrix S;
@@ -247,10 +247,12 @@ main() {
 #define DIM1 3
 #define DIM2 2
 #define DIM3 5
+#define DIMLONG 12
 #else
 #define DIM1 12
 #define DIM2 10
 #define DIM3 15
+#define DIMLONG 20
 #endif
     Test() {
 
@@ -259,6 +261,7 @@ main() {
       c = 0;
       x = -2;
       v.resize(DIM1);
+      vlong.resize(DIMLONG); vlong = linspace(1,DIMLONG,DIMLONG);
       w.resize(DIM1);
       M.resize(DIM2,DIM1);
       myMatrix Mtmp(DIM2*3,DIM1*2);
@@ -399,6 +402,10 @@ main() {
   EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = N(__,range(1,2)));
   EVAL2("2D arbitrary index as lvalue with assign-multiply operator", myMatrix, M, true, intVector, index, M(index,index) *= 10.0);
   EVAL2("2D arbitrary index as lvalue with aliased right-hand-side", myMatrix, M, true, intVector, index, M(index,index) += M(__,range(1,2)));
+  EVAL2("reshape member function", myMatrix, M, false, myVector, vlong, M >>= vlong.reshape(3,4));
+  should_fail=true;
+  EVAL2("reshape member function with invalid dimensions", myMatrix, M, false, myVector, vlong, M >>= vlong.reshape(5,5));
+  should_fail=false;
 
   HEADING("REDUCTION OPERATIONS"); 
   EVAL2("full reduction", myReal, x, true, myMatrix, M, x = sum(M));

@@ -2442,6 +2442,44 @@ namespace adept {
       return permute(idim);
     }
 
+    // Only applicable to vectors, return a multi-dimensional array
+    // that links to the data in the vector
+    template <int NewRank>
+    Array<NewRank,Type,IsActive> reshape(const ExpressionSize<NewRank>& dims) {
+      ADEPT_STATIC_ASSERT(Rank == 1, CANNOT_RESHAPE_MULTIDIMENSIONAL_ARRAY);
+      Index new_size = 1;
+      for (int i = 0; i < NewRank; ++i) {
+	new_size *= dims[i];
+      }
+      if (new_size != dimensions_[0]) {
+	throw invalid_dimension("Size of reshaped array does not match original vector");
+      }
+      ExpressionSize<NewRank> offset;
+      offset[NewRank-1] = offset_[0];
+      for (int i = NewRank-2; i >= 0; --i) {
+	offset[i] = dims[i+1]*offset[i+1];
+      }
+      return Array<NewRank,Type,IsActive>(data_,storage_,dims,offset);
+    }
+
+    // More convenient interfaces to reshape providing a list of
+    // integer dimensions
+    Array<2,Type,IsActive> reshape(Index i0, Index i1)
+    { return reshape(ExpressionSize<2>(i0,i1)); }
+    Array<3,Type,IsActive> reshape(Index i0, Index i1, Index i2)
+    { return reshape(ExpressionSize<2>(i0,i1,i2)); }
+    Array<4,Type,IsActive> reshape(Index i0, Index i1, Index i2, Index i3)
+    { return reshape(ExpressionSize<2>(i0,i1,i2,i3)); }
+    Array<5,Type,IsActive> reshape(Index i0, Index i1, Index i2, Index i3, Index i4)
+    { return reshape(ExpressionSize<2>(i0,i1,i2,i3,i4)); }
+    Array<6,Type,IsActive> reshape(Index i0, Index i1, Index i2, Index i3,
+				   Index i4, Index i5)
+    { return reshape(ExpressionSize<2>(i0,i1,i2,i3,i4,i5)); }
+    Array<7,Type,IsActive> reshape(Index i0, Index i1, Index i2, Index i3,
+				   Index i4, Index i5, Index i6)
+    { return reshape(ExpressionSize<2>(i0,i1,i2,i3,i4,i5,i6)); }
+
+
     // 
     template <typename MyType>
     void get_gradient(Array<Rank,MyType,false>& gradient) const {

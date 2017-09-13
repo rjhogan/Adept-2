@@ -48,7 +48,18 @@ namespace adept {
       }
     }
 
-    ExpressionSize(Index j0, Index j1) { dim[0] = j0; dim[1] = j1; }
+    ExpressionSize(Index j0, Index j1)
+    { dim[0]=j0; dim[1]=j1; }
+    ExpressionSize(Index j0, Index j1, Index j2)
+    { dim[0]=j0; dim[1]=j1; dim[2]=j2; }
+    ExpressionSize(Index j0, Index j1, Index j2, Index j3)
+    { dim[0]=j0; dim[1]=j1; dim[2]=j2; dim[3]=j3; }
+    ExpressionSize(Index j0, Index j1, Index j2, Index j3, Index j4)
+    { dim[0]=j0; dim[1]=j1; dim[2]=j2; dim[3]=j3; dim[4]=j4; }
+    ExpressionSize(Index j0, Index j1, Index j2, Index j3, Index j4, Index j5)
+    { dim[0]=j0; dim[1]=j1; dim[2]=j2; dim[3]=j3; dim[4]=j4; dim[5]=j5; }
+    ExpressionSize(Index j0, Index j1, Index j2, Index j3, Index j4, Index j5, Index j6)
+    { dim[0]=j0; dim[1]=j1; dim[2]=j2; dim[3]=j3; dim[4]=j4; dim[5]=j5; dim[6]=j6; }
 
     // Assume copy constructor will copy elements of dim
     
