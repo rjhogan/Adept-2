@@ -16,9 +16,10 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
 #ifdef HAVE_OPENBLAS_CBLAS_HEADER
 #include <cblas.h>
-#endif
 #endif
 
 namespace adept {

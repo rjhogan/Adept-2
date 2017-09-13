@@ -3,10 +3,10 @@
 ### GENERAL CONFIGURATION ###
 
 AC_PREREQ([2.61])
-AC_INIT([adept], [1.9.10], [r.j.hogan@ecmwf.int])
+AC_INIT([adept], [1.9.10], [r.j.hogan@ecmwf.int], [adept], [http://www.met.reading.ac.uk/clouds/adept2/])
 AC_LANG([C++])
 AC_CONFIG_SRCDIR([adept/Stack.cpp])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([config.h config_platform_independent.h])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 AC_CONFIG_MACRO_DIR([m4])
 

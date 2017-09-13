@@ -37,6 +37,10 @@ top_builddir = ..
 CXXLINK = $(LIBTOOL) --tag=CXX --mode=link $(CXX) $(CXXFLAGS) \
 	-static -no-install -L../adept/.libs $(LDFLAGS) -ladept -o $@
 
+# Link without the Adept library
+CXXLINK_NOLIB = $(LIBTOOL) --tag=CXX --mode=link $(CXX) $(CXXFLAGS) \
+	$(LDFLAGS) -o $@
+
 # Dependency on the presence of the Adept static library
 LIBADEPT = ../adept/.libs/libadept.a
 
@@ -91,7 +95,7 @@ test_thread_safe: test_thread_safe.o $(LIBADEPT)
 
 # Test program 8 (note that it is not linked against the Adept library)
 test_no_lib: test_no_lib.o algorithm.o
-	$(CXXLINK) test_no_lib.o algorithm.o
+	$(CXXLINK_NOLIB) test_no_lib.o algorithm.o $(MYLIBS)
 
 # Test program 9
 test_arrays: test_arrays.o $(LIBADEPT)

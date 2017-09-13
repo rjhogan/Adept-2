@@ -10,8 +10,11 @@
 #ifndef AdeptCppLapack_H
 #define AdeptCppLapack_H 1                       
 
+#include <vector>
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 
 #ifdef HAVE_LAPACK
 
@@ -182,8 +185,6 @@ namespace adept {
 
   }
 }
-
-#endif
 
 #endif
 

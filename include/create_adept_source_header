@@ -10,6 +10,7 @@ echo "Creating $ADEPT_SOURCE_HEADER"
 echo "/* $ADEPT_SOURCE_HEADER - Source code for the Adept library
 
   Copyright (C) 2012-2015 The University of Reading
+  Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
   Licensed under the Apache License, Version 2.0 (the \"License\"); you
   may not use this file except in compliance with the License.  You
@@ -32,12 +33,35 @@ echo "/* $ADEPT_SOURCE_HEADER - Source code for the Adept library
   its source files (typically the one containing the main function),
   and then the Adept library will be built into the executable without
   the need to link to an external library. All other source files
-  should just #include \"adept.h\". The ability to use Adept in this
-  way makes it easier to distribute an Adept package that is usable on
-  non-Unix platforms that are unable to use the configure script to
-  build external libraries.
+  should just #include <adept.h> or <adept_arrays.h>. The ability to
+  use Adept in this way makes it easier to distribute an Adept package
+  that is usable on non-Unix platforms that are unable to use the
+  autoconf configure script to build external libraries.
+
+  Adept programs must be linked to a functioning BLAS library for
+  matrix multiplication, although a header file does not need to be
+  included.  If HAVE_LAPACK is defined the linear algebra routines
+  will be enabled (matrix inverse and solving linear systems of
+  equations); again, the LAPACK library should be provided at the link
+  stage although no header file is required.
+
+*/
+
+#warning \"The adept_source.h header file has not been edited so LAPACK linear-algebra support has been disabled\"
+
+/* The BLAS library is required */
+#define HAVE_BLAS 1
+
+/* Uncomment this if you have the LAPACK library (header file not required) */
+//#define HAVE_LAPACK 1
+
+/* Uncomment this if you have the cblas.h header from OpenBLAS */
+//#define HAVE_OPENBLAS_CBLAS_HEADER
+
+/*
 
   The individual source files now follow.
+
 */
 
 #ifndef AdeptSource_H
@@ -45,9 +69,7 @@ echo "/* $ADEPT_SOURCE_HEADER - Source code for the Adept library
 
 " > $ADEPT_SOURCE_HEADER
 
-
-
-for FILE in ../adept/*.h ../adept/*.cpp
+for FILE in ../config_platform_independent.h ../adept/*.h ../adept/*.cpp
 do
     echo "   Adding $FILE"
     echo "
