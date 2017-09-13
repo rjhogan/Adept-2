@@ -35,7 +35,10 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + LArray::n_scratch + RArray::n_scratch;
       static const int  n_arrays_ = LArray::n_arrays + RArray::n_arrays;
-      static const bool is_vectorizable_ = is_same<LType,RType>::value;
+      // Currently not vectorizable because the current design always
+      // has the array index increasing
+      //      static const bool is_vectorizable_ = is_same<LType,RType>::value;
+      static const bool is_vectorizable_ = false;//is_same<LType,RType>::value;
 
     protected:
 
@@ -90,12 +93,16 @@ namespace adept {
 	  * right.value_at_location_<MyArrayNum+LArray::n_arrays>(loc);
       }
 
+      // This does not work because the array index is always
+      // increased which it shouldn't be for the left vector. For this
+      // reason, vectorization is turned off (see is_vectorizable_
+      // above)
       template <int MyArrayNum, int NArrays>
       Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
 	// The LHS of the following multiplication returns a packet
 	// containing repeated values of the left vector at one
 	// location
-	return Packet<Type>(left.value_at_location_<MyArrayNum>(loc))
+	return Packet<Type>(left.value_at_location_<MyArrayNum>(loc)) // <- fix!
 	  * right.packet_at_location_<MyArrayNum+LArray::n_arrays>(loc);
       }
 

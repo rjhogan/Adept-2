@@ -29,7 +29,10 @@ namespace adept {
       static const int  n_active_ = ArrayType::n_active;
       static const int  n_scratch_ = 0;
       static const int  n_arrays_ = ArrayType::n_arrays;
-      static const bool is_vectorizable_ = true;
+      // Currently not vectorizable if the final dimension is the
+      // spread dimension because the current design always has the
+      // array index increasing
+      static const bool is_vectorizable_ = (SpreadDim != E::rank);
 
     protected:
       const ArrayType array;
@@ -113,12 +116,19 @@ namespace adept {
 
     protected:
 
+      // Specializing for the case when the final dimension is the
+      // final dimension of the wrapped array
       template <bool IsDuplicate, int MyArrayNum, int NArrays>
       typename enable_if<!IsDuplicate, Packet<Type> >::type
       packet_at_location_local_(const ExpressionSize<NArrays>& loc) const {
 	return array.packet_at_location_<MyArrayNum>(loc);
       }
 
+      // Specializing for the case when the final dimension is to be
+      // "spread".  The following does not work because the array
+      // location is incremented for packets when we really want it to
+      // always point to the start of a row.  It is deactivated by
+      // is_vectorizable_ (above).
       template <bool IsDuplicate, int MyArrayNum, int NArrays>
       typename enable_if<IsDuplicate, Packet<Type> >::type
       packet_at_location_local_(const ExpressionSize<NArrays>& loc) const {
