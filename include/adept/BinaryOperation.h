@@ -940,12 +940,16 @@ namespace adept {
       // Implement the basic operation
       template <class LType, class RType>
       typename promote<LType, RType>::type
-      operation(const LType& left, const RType& right) const { return pow(left, right); }
+      operation(const LType& left, const RType& right) const {
+	using std::pow;
+	return pow(left, right);
+      }
       
       // Calculate the gradient of the left-hand argument
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R>
       void calc_left(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
 			       const ScratchVector<NScratch>& scratch) const {
+	using std::pow;
         left.template calc_gradient_<MyArrayNum, MyScratchNum+store_result>(stack, loc, scratch, 
 	   right.template value_stored_<MyArrayNum+L::n_arrays,MyScratchNum+L::n_scratch+store_result>(loc, scratch)
 	    *pow(left.template value_stored_<MyArrayNum, MyScratchNum+store_result>(loc, scratch),
@@ -956,6 +960,7 @@ namespace adept {
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R>
       void calc_right(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
 			       const ScratchVector<NScratch>& scratch) const {
+	using std::log;
         right.template calc_gradient_<MyArrayNum+L::n_arrays, MyScratchNum+L::n_scratch+store_result>(stack, loc, scratch, 
 	  scratch[MyScratchNum] * log(left.template value_stored_<MyArrayNum,MyScratchNum+store_result>(loc, scratch)));
       }
@@ -964,6 +969,7 @@ namespace adept {
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R, typename MyType>
       void calc_left(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
 			       const ScratchVector<NScratch>& scratch, MyType multiplier) const {
+	using std::pow;
         left.template calc_gradient_<MyArrayNum, MyScratchNum+store_result>(stack, loc, scratch, multiplier
 	    *right.template value_stored_<MyArrayNum+L::n_arrays,MyScratchNum+L::n_scratch+store_result>(loc, scratch)
 	    *pow(left.template value_stored_<MyArrayNum, MyScratchNum+store_result>(loc, scratch),
@@ -974,6 +980,7 @@ namespace adept {
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R, typename MyType>
       void calc_right(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
 			       const ScratchVector<NScratch>& scratch, MyType multiplier) const {
+	using std::log;
         right.template calc_gradient_<MyArrayNum+L::n_arrays, MyScratchNum+L::n_scratch+store_result>(stack, loc, scratch, 
 		   multiplier * scratch[MyScratchNum] 
 		  * log(left.template value_stored_<MyArrayNum,MyScratchNum+store_result>(loc, scratch)));

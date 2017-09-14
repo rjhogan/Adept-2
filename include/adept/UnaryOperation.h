@@ -1,6 +1,6 @@
 /* UnaryOperation.h -- Unary operations on Adept expressions
 
-    Copyright (C) 2014-2016 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014-2017 European Centre for Medium-Range Weather Forecasts
 
     Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -150,92 +150,119 @@ namespace adept {
   
   } // End namespace internal
 
-} // End namespace adept
+  // ---------------------------------------------------------------------
+  // SECTION 3.2: Unary operations: define specific operations
+  // ---------------------------------------------------------------------
 
-
-// ---------------------------------------------------------------------
-// SECTION 3.2: Unary operations: define specific operations
-// ---------------------------------------------------------------------
-
-// Overloads of mathematical functions only works if done in the
-// global namespace
+  // We may place the overloaded mathematical functions in the global
+  // namespace provided that a using declaration enables the std::
+  // version of the function to be located
 #define ADEPT_DEF_UNARY_FUNC(NAME, FUNC, RAWFUNC, STRING, DERIVATIVE)	\
-  namespace adept{							\
-    namespace internal {						\
-      template <typename Type>						\
-      struct NAME  {							\
-	static const bool is_operator = false;				\
-	const char* operation_string() const { return STRING; }		\
-	Type operation(const Type& val) const {				\
-	  return RAWFUNC(val);						\
-	}								\
-	Type derivative(const Type& val, const Type& result) const {	\
-	  return DERIVATIVE;						\
-	}								\
-	Type fast_sqr(Type val) { return val*val; }			\
-      };								\
-    } /* End namespace internal */					\
-  } /* End namespace adept */						\
+  namespace internal {							\
+    template <typename Type>						\
+    struct NAME  {							\
+      static const bool is_operator = false;				\
+      const char* operation_string() const { return STRING; }		\
+      Type operation(const Type& val) const {				\
+	using std:: FUNC;						\
+	return FUNC(val); /*RAWFUNC(val);*/				\
+      }									\
+      Type derivative(const Type& val, const Type& result) const {	\
+	using std::sin;							\
+	using std::cos;							\
+	using std::sqrt;						\
+	using std::cosh;						\
+	using std::sinh;						\
+	using std::exp;							\
+	return DERIVATIVE;						\
+      }									\
+      Type fast_sqr(Type val) { return val*val; }			\
+    };									\
+  } /* End namespace internal */					\
   template <class Type, class R>					\
   inline								\
   adept::internal::UnaryOperation<Type, adept::internal::NAME, R>	\
   FUNC(const adept::Expression<Type, R>& r)	{			\
     return adept::internal::UnaryOperation<Type,			\
-      adept::internal::NAME, R>(r.cast());				\
+				   adept::internal::NAME, R>(r.cast()); \
   }
 
-// Functions y(x) whose derivative depends on the argument of the
-// function, i.e. dy(x)/dx = f(x)
-ADEPT_DEF_UNARY_FUNC(Log,   log,   log,   "log",   1.0/val)
-ADEPT_DEF_UNARY_FUNC(Log10, log10, log10, "log10", 0.43429448190325182765/val)
-ADEPT_DEF_UNARY_FUNC(Log2,  log2,  log2,  "log2",  1.44269504088896340737/val)
-ADEPT_DEF_UNARY_FUNC(Sin,   sin,   sin,   "sin",   cos(val))
-ADEPT_DEF_UNARY_FUNC(Cos,   cos,   cos,   "cos",   -sin(val))
-ADEPT_DEF_UNARY_FUNC(Tan,   tan,   tan,   "tan",   1.0/fast_sqr(cos(val)))
-ADEPT_DEF_UNARY_FUNC(Asin,  asin,  asin,  "asin",  1.0/sqrt(1.0-val*val))
-ADEPT_DEF_UNARY_FUNC(Acos,  acos,  acos,  "acos",  -1.0/sqrt(1.0-val*val))
-ADEPT_DEF_UNARY_FUNC(Atan,  atan,  atan,  "atan",  1.0/(1.0+val*val))
-ADEPT_DEF_UNARY_FUNC(Sinh,  sinh,  sinh,  "sinh",  cosh(val))
-ADEPT_DEF_UNARY_FUNC(Cosh,  cosh,  cosh,  "cosh",  sinh(val))
-ADEPT_DEF_UNARY_FUNC(Abs,   abs,   std::abs, "abs", ((val>0.0)-(val<0.0)))
-ADEPT_DEF_UNARY_FUNC(Fabs,  fabs,  std::abs, "fabs", ((val>0.0)-(val<0.0)))
-ADEPT_DEF_UNARY_FUNC(Expm1, expm1, expm1, "expm1", exp(val))
-ADEPT_DEF_UNARY_FUNC(Exp2,  exp2,  exp2,  "exp2",  0.6931471805599453094172321214581766*exp2(val))
-ADEPT_DEF_UNARY_FUNC(Log1p, log1p, log1p, "log1p", 1.0/(1.0+val))
-ADEPT_DEF_UNARY_FUNC(Asinh, asinh, asinh, "asinh", 1.0/sqrt(val*val+1.0))
-ADEPT_DEF_UNARY_FUNC(Acosh, acosh, acosh, "acosh", 1.0/sqrt(val*val-1.0))
-ADEPT_DEF_UNARY_FUNC(Atanh, atanh, atanh, "atanh", 1.0/(1.0-val*val))
-ADEPT_DEF_UNARY_FUNC(Erf,   erf,   erf,   "erf",   1.12837916709551*exp(-val*val))
-ADEPT_DEF_UNARY_FUNC(Erfc,  erfc,  erfc,  "erfc",  -1.12837916709551*exp(-val*val))
+  // Functions y(x) whose derivative depends on the argument of the
+  // function, i.e. dy(x)/dx = f(x)
+  ADEPT_DEF_UNARY_FUNC(Log,   log,   log,   "log",   1.0/val)
+  ADEPT_DEF_UNARY_FUNC(Log10, log10, log10, "log10", 0.43429448190325182765/val)
+  ADEPT_DEF_UNARY_FUNC(Log2,  log2,  log2,  "log2",  1.44269504088896340737/val)
+  ADEPT_DEF_UNARY_FUNC(Sin,   sin,   sin,   "sin",   cos(val))
+  ADEPT_DEF_UNARY_FUNC(Cos,   cos,   cos,   "cos",   -sin(val))
+  ADEPT_DEF_UNARY_FUNC(Tan,   tan,   tan,   "tan",   1.0/fast_sqr(cos(val)))
+  ADEPT_DEF_UNARY_FUNC(Asin,  asin,  asin,  "asin",  1.0/sqrt(1.0-val*val))
+  ADEPT_DEF_UNARY_FUNC(Acos,  acos,  acos,  "acos",  -1.0/sqrt(1.0-val*val))
+  ADEPT_DEF_UNARY_FUNC(Atan,  atan,  atan,  "atan",  1.0/(1.0+val*val))
+  ADEPT_DEF_UNARY_FUNC(Sinh,  sinh,  sinh,  "sinh",  cosh(val))
+  ADEPT_DEF_UNARY_FUNC(Cosh,  cosh,  cosh,  "cosh",  sinh(val))
+  //  ADEPT_DEF_UNARY_FUNC(Abs,   abs,   std::abs, "abs", ((val>0.0)-(val<0.0)))
+  //  ADEPT_DEF_UNARY_FUNC(Fabs,  fabs,  std::abs, "fabs", ((val>0.0)-(val<0.0)))
+  ADEPT_DEF_UNARY_FUNC(Abs,   abs,   abs, "abs", ((val>0.0)-(val<0.0)))
+  ADEPT_DEF_UNARY_FUNC(Fabs,  fabs,  abs, "fabs", ((val>0.0)-(val<0.0)))
+  ADEPT_DEF_UNARY_FUNC(Expm1, expm1, expm1, "expm1", exp(val))
+  ADEPT_DEF_UNARY_FUNC(Exp2,  exp2,  exp2,  "exp2",  0.6931471805599453094172321214581766*result)
+  ADEPT_DEF_UNARY_FUNC(Log1p, log1p, log1p, "log1p", 1.0/(1.0+val))
+  ADEPT_DEF_UNARY_FUNC(Asinh, asinh, asinh, "asinh", 1.0/sqrt(val*val+1.0))
+  ADEPT_DEF_UNARY_FUNC(Acosh, acosh, acosh, "acosh", 1.0/sqrt(val*val-1.0))
+  ADEPT_DEF_UNARY_FUNC(Atanh, atanh, atanh, "atanh", 1.0/(1.0-val*val))
+  ADEPT_DEF_UNARY_FUNC(Erf,   erf,   erf,   "erf",   1.12837916709551*exp(-val*val))
+  ADEPT_DEF_UNARY_FUNC(Erfc,  erfc,  erfc,  "erfc",  -1.12837916709551*exp(-val*val))
 
-// Functions y(x) whose derivative depends on the result of the
-// function, i.e. dy(x)/dx = f(y)
-ADEPT_DEF_UNARY_FUNC(Exp,   exp,   exp,   "exp",   result)
-ADEPT_DEF_UNARY_FUNC(Sqrt,  sqrt,  sqrt,  "sqrt",  0.5/result)
-ADEPT_DEF_UNARY_FUNC(Cbrt,  cbrt,  cbrt,  "cbrt",  (1.0/3.0)/(result*result))
-ADEPT_DEF_UNARY_FUNC(Tanh,  tanh,  tanh,  "tanh",  1.0 - result*result)
+  // Functions y(x) whose derivative depends on the result of the
+  // function, i.e. dy(x)/dx = f(y)
+  ADEPT_DEF_UNARY_FUNC(Exp,   exp,   exp,   "exp",   result)
+  ADEPT_DEF_UNARY_FUNC(Sqrt,  sqrt,  sqrt,  "sqrt",  0.5/result)
+  ADEPT_DEF_UNARY_FUNC(Cbrt,  cbrt,  cbrt,  "cbrt",  (1.0/3.0)/(result*result))
+  ADEPT_DEF_UNARY_FUNC(Tanh,  tanh,  tanh,  "tanh",  1.0 - result*result)
 
-// Functions with zero derivative
-ADEPT_DEF_UNARY_FUNC(Round, round, round, "round", 0.0)
-ADEPT_DEF_UNARY_FUNC(Ceil,  ceil,  ceil,  "ceil",  0.0)
-ADEPT_DEF_UNARY_FUNC(Floor, floor, floor, "floor", 0.0)
-ADEPT_DEF_UNARY_FUNC(Trunc, trunc, trunc, "trunc", 0.0)
-ADEPT_DEF_UNARY_FUNC(Rint,  rint,  rint,  "rint",  0.0)
-ADEPT_DEF_UNARY_FUNC(Nearbyint,nearbyint,nearbyint,"nearbyint",0.0)
+  // Functions with zero derivative
+  ADEPT_DEF_UNARY_FUNC(Round, round, round, "round", 0.0)
+  ADEPT_DEF_UNARY_FUNC(Ceil,  ceil,  ceil,  "ceil",  0.0)
+  ADEPT_DEF_UNARY_FUNC(Floor, floor, floor, "floor", 0.0)
+  ADEPT_DEF_UNARY_FUNC(Trunc, trunc, trunc, "trunc", 0.0)
+  ADEPT_DEF_UNARY_FUNC(Rint,  rint,  rint,  "rint",  0.0)
+  ADEPT_DEF_UNARY_FUNC(Nearbyint,nearbyint,nearbyint,"nearbyint",0.0)
 
-// Operators
-ADEPT_DEF_UNARY_FUNC(UnaryPlus,  operator+, +, "+", 1.0)
-ADEPT_DEF_UNARY_FUNC(UnaryMinus, operator-, -, "-", -1.0)
-ADEPT_DEF_UNARY_FUNC(Not,        operator!, !, "!", 0.0)
+  //#undef ADEPT_DEF_UNARY_FUNC
 
-//#undef ADEPT_DEF_UNARY_FUNC
+#define ADEPT_DEF_UNARY_OP(NAME, FUNC, RAWFUNC, STRING, DERIVATIVE)	\
+  namespace internal {							\
+    template <typename Type>						\
+    struct NAME  {							\
+      static const bool is_operator = false;				\
+      const char* operation_string() const { return STRING; }		\
+      Type operation(const Type& val) const {				\
+	return RAWFUNC(val);						\
+      }									\
+      Type derivative(const Type& val, const Type& result) const {	\
+	return DERIVATIVE;						\
+      }									\
+      Type fast_sqr(Type val) { return val*val; }			\
+    };									\
+  } /* End namespace internal */					\
+  template <class Type, class R>					\
+  inline								\
+  adept::internal::UnaryOperation<Type, adept::internal::NAME, R>	\
+  FUNC(const adept::Expression<Type, R>& r)	{			\
+    return adept::internal::UnaryOperation<Type,			\
+				   adept::internal::NAME, R>(r.cast()); \
+  }
+  
+  // Operators
+  ADEPT_DEF_UNARY_OP(UnaryPlus,  operator+, +, "+", 1.0)
+  ADEPT_DEF_UNARY_OP(UnaryMinus, operator-, -, "-", -1.0)
+  ADEPT_DEF_UNARY_OP(Not,        operator!, !, "!", 0.0)
 
 
 // ---------------------------------------------------------------------
 // SECTION 3.3: Unary operations: define noalias function
 // ---------------------------------------------------------------------
 
-namespace adept {
   namespace internal {
     // No-alias wrapper for enabling noalias()
     template <typename Type, class R>
@@ -550,22 +577,18 @@ namespace adept {
     };
   
   } // End namespace internal
-} // End namespace adept
 
-// Overloads of mathematical functions only works if done in the
-// global namespace
 #define ADEPT_DEF_UNARY_BOOL_FUNC(NAME, FUNC, RAWFUNC)		\
-  namespace adept {						\
-    namespace internal {					\
-      template <typename Type>					\
-      struct NAME  {						\
-	const char* operation_string() const { return #FUNC; }	\
-	bool operation(const Type& val) const {			\
-	  return RAWFUNC(val);					\
-	}							\
-      };							\
-    } /* End namespace internal */				\
-  } /* End namespace adept */					\
+  namespace internal {						\
+    template <typename Type>					\
+    struct NAME  {						\
+      const char* operation_string() const { return #FUNC; }	\
+      bool operation(const Type& val) const {			\
+	using RAWFUNC;						\
+	return FUNC(val); /* RAWFUNC(val); */			\
+      }								\
+    };								\
+  } /* End namespace internal */					\
   template <class Type, class R>					\
   inline								\
   adept::internal::UnaryBoolOperation<Type, adept::internal::NAME, R>	\
@@ -574,13 +597,14 @@ namespace adept {
       adept::internal::NAME, R>(r.cast());				\
   }
 
-ADEPT_DEF_UNARY_BOOL_FUNC(IsNan,    isnan,    std::isnan)
-ADEPT_DEF_UNARY_BOOL_FUNC(IsInf,    isinf,    std::isinf)
-ADEPT_DEF_UNARY_BOOL_FUNC(IsFinite, isfinite, std::isfinite)
+  ADEPT_DEF_UNARY_BOOL_FUNC(IsNan,    isnan,    std::isnan)
+  ADEPT_DEF_UNARY_BOOL_FUNC(IsInf,    isinf,    std::isinf)
+  ADEPT_DEF_UNARY_BOOL_FUNC(IsFinite, isfinite, std::isfinite)
 
-//#undef ADEPT_DEF_UNARY_BOOL_FUNC
+  //#undef ADEPT_DEF_UNARY_BOOL_FUNC
 
-  
+} /* End namespace adept */
+
 
 
 #endif

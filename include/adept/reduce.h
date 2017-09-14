@@ -268,8 +268,12 @@ namespace adept {
 	total.lvalue() += xval*xval;
       }
       template <class X>
-      void finish(X& total, const Index& n) { total = noalias(sqrt(total)); }
+      void finish(X& total, const Index& n) {
+	using std::sqrt;
+	total = noalias(sqrt(total));
+      }
       void finish_active(Active<T>& total, const Index& n) {
+	using std::sqrt;
 	// The operation stack now contains the derivatives of all the
 	// squared elements on the right hand side.  Here we complete
 	// the differential statement by pushing the left hand side

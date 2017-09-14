@@ -112,6 +112,9 @@ namespace adept {
   log_interp(const Array<1,XType,false>& x,
 	 const Array<1,YType,YIsActive>& y,
 	 const Array<1,XiType,false>& xi) {
+    using std::exp;
+    using std::log;
+
     int length = xi.size();
     Array<1,YType,YIsActive> ans(length);
     if (x.size() != y.size()) {
