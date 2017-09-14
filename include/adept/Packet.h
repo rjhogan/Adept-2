@@ -18,6 +18,7 @@
 #define AdeptPacket_H 1
 
 #include <iostream>
+#include <cstdlib>
 
 // Headers needed for x86 vector intrinsics
 #ifdef __SSE2__
@@ -92,7 +93,7 @@ namespace adept {
     struct ScalarPacket {
       typedef T intrinsic_type;
       static const int size = 1;
-      static const int alignment_bytes = sizeof(T);
+      static const std::size_t alignment_bytes = sizeof(T);
       static const bool is_vectorized = false;
       explicit ScalarPacket()    : data(0) { }
       explicit ScalarPacket(T d) : data(d) { }
@@ -106,7 +107,7 @@ namespace adept {
     struct Packet {
       typedef T intrinsic_type;
       static const int size = 1;
-      static const int alignment_bytes = sizeof(T);
+      static const std::size_t alignment_bytes = sizeof(T);
       static const bool is_vectorized = false;
       Packet() : data(0.0) { }
       explicit Packet(const T* d) : data(*d) { }
@@ -135,7 +136,7 @@ namespace adept {
     template <> struct ScalarPacket<TYPE> {			\
       typedef INT_TYPE intrinsic_type;				\
       static const int size = sizeof(INT_TYPE) / sizeof(TYPE);	\
-      static const int alignment_bytes = sizeof(INT_TYPE);	\
+      static const std::size_t alignment_bytes = sizeof(INT_TYPE);	\
       static const bool is_vectorized = true;			\
       ScalarPacket()              : data(SET0())  { }		\
       ScalarPacket(TYPE d)        : data(SET1(d)) { }		\
@@ -150,7 +151,7 @@ namespace adept {
       static const int size = sizeof(INT_TYPE) / sizeof(TYPE);	\
       static const int intrinsic_size				\
         = sizeof(INT_TYPE) / sizeof(TYPE);			\
-      static const int alignment_bytes = sizeof(INT_TYPE);	\
+      static const std::size_t alignment_bytes = sizeof(INT_TYPE);	\
       static const bool is_vectorized = true;			\
       Packet()              : data(SET0())  { }			\
       Packet(const TYPE* d) : data(LOAD(d)) { }		\
@@ -258,7 +259,7 @@ namespace adept {
     template <> struct ScalarPacket<TYPE> {			\
       typedef INT_TYPE intrinsic_type;				\
       static const int size = sizeof(INT_TYPE) / sizeof(TYPE);	\
-      static const int alignment_bytes = sizeof(INT_TYPE);	\
+      static const std::size_t alignment_bytes = sizeof(INT_TYPE);	\
       static const bool is_vectorized = true;			\
       ScalarPacket()              : data(SET0())  { }		\
       ScalarPacket(TYPE d)        : data(SET1(d)) { }		\
@@ -273,7 +274,7 @@ namespace adept {
       static const int size =2*sizeof(INT_TYPE) / sizeof(TYPE);	\
       static const int intrinsic_size				\
         = sizeof(INT_TYPE) / sizeof(TYPE);			\
-      static const int alignment_bytes = sizeof(INT_TYPE);	\
+      static const std::size_t alignment_bytes = sizeof(INT_TYPE);	\
       static const bool is_vectorized = true;			\
       Packet() : data0(SET0()), data1(SET0()) { }		\
       Packet(const TYPE* d) : data0(LOAD(d)),			\
@@ -519,7 +520,7 @@ namespace adept {
     template <typename Type>
     inline
     Type* alloc_aligned(Index n) {
-      int n_align = Packet<Type>::alignment_bytes;
+      std::size_t n_align = Packet<Type>::alignment_bytes;
       if (n_align < sizeof(void*)) {
 	// Note that the requested byte alignment passed to
 	// posix_memalign must be at least sizeof(void*)

@@ -42,7 +42,6 @@ namespace adept {
     public:
       Spread(const Expression<Type,E>& e, Index n_)
 	: array(e.cast()), n(n_) {
-	int idim = 0;
 	for (int i = 0; i < SpreadDim; ++i) {
 	  dims[i] = array.dimension(i);
 	}
