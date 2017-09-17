@@ -27,7 +27,9 @@ using namespace adept;
 int
 main() {
   using namespace adept;
+#ifdef ALL_ACTIVE
   Stack stack;
+#endif
   
 #define HEADING(MESSAGE) \
   std::cout << "####################################################################\n"	\
@@ -306,7 +308,12 @@ main() {
     }
   };
 
+#ifdef ALL_ACTIVE
   stack.new_recording();
+#ifndef ADEPT_RECORDING_PAUSABLE
+  stack.pause_recording();
+#endif
+#endif
 
   Test test;
 
@@ -597,4 +604,18 @@ main() {
   else {
     std::cout << "In terms of run-time errors, all tests were passed\n";
   }
+
+#ifdef ALL_ACTIVE
+#ifdef ADEPT_RECORDING_PAUSABLE
+  if (stack.n_statements() > 0) {
+    std::cout << "*** Stack contains " << stack.n_statements() 
+	      << " statements and " << stack.n_operations()
+	      << " operations but both should be 0 because recording has been paused\n";
+  }
+#else
+  std::cout << "Stack contains " << stack.n_statements()
+	    << " statements and " << stack.n_operations() << " operations\n";
+#endif
+#endif
+
 }

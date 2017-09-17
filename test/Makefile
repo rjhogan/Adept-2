@@ -22,7 +22,7 @@ OBJECTS = algorithm.o algorithm_noad.o test_checkpoint.o \
 	test_adept.o test_adept_with_and_without_ad.o \
 	test_radiances.o simulate_radiances.o test_thread_safe.o \
 	test_no_lib.o test_misc.o test_arrays.o test_arrays_active.o \
-	test_array_speed.o \
+	test_array_speed.o test_arrays_pausable.o \
 	test_radiances_array.o test_fixed_arrays.o test_constructors.o
 GSL_OBJECTS = test_gsl_interface.o state.o rosenbrock_banana_function.o
 
@@ -49,7 +49,8 @@ MYLIBS = $(LIBS)
 PROGRAMS = test_adept test_adept_with_and_without_ad test_radiances \
 	test_gsl_interface test_misc test_checkpoint test_thread_safe \
 	test_arrays test_array_speed test_no_lib test_radiances_array \
-	test_fixed_arrays test_constructors test_arrays_active
+	test_fixed_arrays test_constructors test_arrays_active \
+	test_arrays_active_pausable
 
 all:
 	@echo "********************************************************"
@@ -105,9 +106,14 @@ test_arrays: test_arrays.o $(LIBADEPT)
 test_arrays_active: test_arrays_active.o $(LIBADEPT)
 	$(CXXLINK) test_arrays_active.o $(MYLIBS)
 
+# Test program 9c
+test_arrays_active_pausable: test_arrays_active_pausable.o $(LIBADEPT)
+	$(CXXLINK) test_arrays_active_pausable.o $(MYLIBS)
+
 # Test program 10
 test_array_speed: test_array_speed.o $(LIBADEPT)
 	$(CXXLINK) test_array_speed.o $(MYLIBS)
+
 
 # Test program 11
 test_radiances_array: simulate_radiances.o test_radiances_array.o $(LIBADEPT)
@@ -134,6 +140,9 @@ algorithm_noad.o: algorithm.cpp *.h ../include/adept.h
 
 test_arrays_active.o: test_arrays.cpp  *.h ../include/*.h ../include/adept/*.h
 	$(CXX) $(COMPILE_FLAGS) -DALL_ACTIVE $(INCLUDES) -c test_arrays.cpp -o test_arrays_active.o
+
+test_arrays_active_pausable.o: test_arrays.cpp  *.h ../include/*.h ../include/adept/*h
+	$(CXX) $(COMPILE_FLAGS) -DADEPT_RECORDING_PAUSABLE -DALL_ACTIVE $(INCLUDES) -c test_arrays.cpp -o test_arrays_active_pausable.o
 
 # Remove all object files and executables
 clean:

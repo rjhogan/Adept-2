@@ -497,7 +497,6 @@ namespace adept {
     // If the argument is a special matrix then convert it to the new
     // type; this will only involve a copy of the raw data if the type
     // is changed, otherwise the new array will simply link to the old
-    // o
     template <typename NewType, typename OldType, class Engine, bool IsActive>
     inline
     SpecialMatrix<OldType,Engine,IsActive>
