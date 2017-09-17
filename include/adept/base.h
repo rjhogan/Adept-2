@@ -51,17 +51,6 @@
 // have good reason to believe many variables in your code are zero).
 // #define ADEPT_REMOVE_NULL_STATEMENTS 1
 
-// If copy constructors for aReal objects are only used in the return
-// values for functions then defining this will lead to slightly
-// faster code, because it will be assumed that when a copy
-// constructor is called the gradient_offset can simply be copied
-// because the object being copied will shortly be destructed. You
-// need to be sure that the code does not contain these constructions:
-//   aReal x = y;
-//   aReal x(y);
-// where y is an aReal object.
-//#define ADEPT_COPY_CONSTRUCTOR_ONLY_ON_RETURN_FROM_FUNCTION 1
-
 // If using the same code for both forward-only and
 // forward-and-reverse calculations, then it is useful to be able to
 // dynamically control whether or not gradient information is computed

@@ -3087,20 +3087,9 @@ calculations. The speed up of the latter is only likely to exceed the
 slow down of the former if your code contains many zeros. For most
 codes, this option causes a net slow down.
 %
-\citem{ADEPT\_COPY\_CONSTRUCTOR\_ONLY\_ON\_RETURN\_FROM\_FUNCTION}
-(not recommended!) If copy constructors for \code{adouble} objects are
-only used in the return values for functions, then defining this
-preprocessor variable will lead to slightly faster code, because it
-will be assumed that when a copy constructor is called, the index to
-its gradient can simply be copied because the object being copied will
-shortly be destructed (otherwise communication with the \code{Stack}
-object is required to unregister one and immediately register the
-other). You need to be sure that the code being compiled with this
-option does not invoke the copy constructor in any other
-circumstances. Specifically, it must not include either of these
-constructions: ``\code{adouble x = y;}'' or ``\code{adouble x(y);}'',
-where \code{y} is an \code{adouble} object. If it does, then strange
-errors will occur.
+\citem{ADEPT\_COPY\_CONSTRUCTOR\_ONLY\_ON\_RETURN\_FROM\_FUNCTION} In
+\Adept\ 1.1 this enabled a small but unsafe optimization. It now has
+no effect.
 %
 \citem{ADEPT\_BOUNDS\_CHECKING} If this variable is defined, check
 that all array indices are within the bounds of the array throwing an

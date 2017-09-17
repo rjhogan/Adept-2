@@ -112,7 +112,7 @@ namespace adept {
     }
    
     // Constructor with an active argument
-#ifndef ADEPT_COPY_CONSTRUCTOR_ONLY_ON_RETURN_FROM_FUNCTION
+
     // Normal copy construction: register the new object then treat
     // this as an assignment.  We need two versions because if we
     // don't provide the first then the compiler will provide it and
@@ -122,33 +122,16 @@ namespace adept {
     {
       *this = rhs;
     }
-    // If we are copying from an active reference 
-    //    Active(const ActiveReference<Type>& rhs) 
-    //      : val_(rhs.lvalue()), gradient_index_(rhs.gradient_index())  { }
-
     template <typename AType>
     Active(const Active<AType>& rhs) 
       : val_(0.0), gradient_index_(ADEPT_ACTIVE_STACK->register_gradient())
     {
       *this = rhs;
     }
-#else
-    // If copy constructors for active objects are only used in the
-    // return values for functions then we may make a slight
-    // optimization by simply copying the gradient_index, since we
-    // can expect that the object being copied will shortly be
-    // destructed. This will only lead to the right answer if your
-    // code does not contain either of the following constructions:
-    //   aReal x = y;
-    //   aReal x(y);
-    // where y is an aReal object.
-    Active(const Active& rhs)
-      : val_(rhs.scalar_value()), gradient_index_(rhs.gradient_index()) { }
-    template <AType>
-    Active(const Active<AType>& rhs)
-      : val_(rhs.scalar_value()), gradient_index_(rhs.gradient_index()) { }
+
+#ifdef ADEPT_COPY_CONSTRUCTOR_ONLY_ON_RETURN_FROM_FUNCTION 
+#warning "ADEPT_COPY_CONSTRUCTOR_ONLY_ON_RETURN_FROM_FUNCTION was unsafe so has no effect"
 #endif
-  
 
     // Construction with an expression.  This is primarily used so
     // that if we define a function func(aReal a), it will also accept
