@@ -1087,8 +1087,6 @@ drawback and are suitable for large codes.
 
 \subsection{Pausable recording}
 \label{sec:pausable}
-{\bf WARNING: THIS FUNCTIONALITY IS BROKEN IN VERSION 1.9 BUT WILL BE FIXED WITH VERSION 2.0}
-
 The second method involves compiling the entire code with the
 \code{ADEPT\_RECORDING\_PAUSABLE} preprocessor variable defined, which
 can be done by adding an argument \code{-DADEPT\_RECORDING\_PAUSABLE}
@@ -2769,6 +2767,17 @@ threads available for matrix operations by the BLAS library.
 %
 \end{description}
 
+The preprocessor can detect the \Adept\ version at run-time via the
+\code{ADEPT\_VERSION} preprocessor variable, which is an integer
+variable with the digits $abbcc$ corresponding to \Adept\ version
+$a.bb.cc$. This could be used to activate a different compile path
+dependent on the version, or even to fail to compile if the version is
+not recent enough:
+\begin{lstlisting}
+#if ADEPT_VERSION < 10910
+#error "Adept >= 1.9.10 is required by this program"
+#endif
+\end{lstlisting}
 
 \section{Parallelizing \Adept\ programs}
 \Adept\ currently has limited built-in support for parallelization. If
@@ -3311,7 +3320,9 @@ convert the outcomes to \code{adouble}:
   templates need long strings to describe them, so this extra content
   can increase the size of object files and executables by a factor of
   ten.  This does not slow down execution, but for production code you
-  may wish to compile without debugging symbols.
+  may wish to compile without debugging symbols, or if you use the GNU
+  compiler use instead the \code{-g1} option which stores a reduced
+  amount of debugging information.
 \end{description}
 
 \section{Copyright and license for \Adept\ software}
