@@ -8,6 +8,10 @@ version 1.9.10 (September 2017)
 	- Added outer_product(x,y)
 	- Fixed adept_source.h for non-Unix systems
 	- Moved mathematical functions from global to adept namespace
+	- Fixed pausable recording and added test_adept_active_pausable
+	- Removed unsafe ADEPT_COPY_CONSTRUCTOR_ONLY_ON_RETURN_FROM_FUNCTION
+	- C++98 and C++11 correctly take cmath functions from :: and std::
+	respectively
 
 version 1.9.9 (August 2017)
 	- Put on GitHub as rjhogan/Adept-2

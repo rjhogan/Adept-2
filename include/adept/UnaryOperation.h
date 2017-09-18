@@ -164,8 +164,8 @@ namespace adept {
       static const bool is_operator = false;				\
       const char* operation_string() const { return STRING; }		\
       Type operation(const Type& val) const {				\
-	using std:: FUNC;						\
-	return FUNC(val); /*RAWFUNC(val);*/				\
+	using RAWFUNC;							\
+	return FUNC(val);						\
       }									\
       Type derivative(const Type& val, const Type& result) const {	\
 	using std::sin;							\
@@ -189,44 +189,64 @@ namespace adept {
 
   // Functions y(x) whose derivative depends on the argument of the
   // function, i.e. dy(x)/dx = f(x)
-  ADEPT_DEF_UNARY_FUNC(Log,   log,   log,   "log",   1.0/val)
-  ADEPT_DEF_UNARY_FUNC(Log10, log10, log10, "log10", 0.43429448190325182765/val)
-  ADEPT_DEF_UNARY_FUNC(Log2,  log2,  log2,  "log2",  1.44269504088896340737/val)
-  ADEPT_DEF_UNARY_FUNC(Sin,   sin,   sin,   "sin",   cos(val))
-  ADEPT_DEF_UNARY_FUNC(Cos,   cos,   cos,   "cos",   -sin(val))
-  ADEPT_DEF_UNARY_FUNC(Tan,   tan,   tan,   "tan",   1.0/fast_sqr(cos(val)))
-  ADEPT_DEF_UNARY_FUNC(Asin,  asin,  asin,  "asin",  1.0/sqrt(1.0-val*val))
-  ADEPT_DEF_UNARY_FUNC(Acos,  acos,  acos,  "acos",  -1.0/sqrt(1.0-val*val))
-  ADEPT_DEF_UNARY_FUNC(Atan,  atan,  atan,  "atan",  1.0/(1.0+val*val))
-  ADEPT_DEF_UNARY_FUNC(Sinh,  sinh,  sinh,  "sinh",  cosh(val))
-  ADEPT_DEF_UNARY_FUNC(Cosh,  cosh,  cosh,  "cosh",  sinh(val))
+  ADEPT_DEF_UNARY_FUNC(Log,   log,   std::log,   "log",   1.0/val)
+  ADEPT_DEF_UNARY_FUNC(Log10, log10, std::log10, "log10", 0.43429448190325182765/val)
+  ADEPT_DEF_UNARY_FUNC(Sin,   sin,   std::sin,   "sin",   cos(val))
+  ADEPT_DEF_UNARY_FUNC(Cos,   cos,   std::cos,   "cos",   -sin(val))
+  ADEPT_DEF_UNARY_FUNC(Tan,   tan,   std::tan,   "tan",   1.0/fast_sqr(cos(val)))
+  ADEPT_DEF_UNARY_FUNC(Asin,  asin,  std::asin,  "asin",  1.0/sqrt(1.0-val*val))
+  ADEPT_DEF_UNARY_FUNC(Acos,  acos,  std::acos,  "acos",  -1.0/sqrt(1.0-val*val))
+  ADEPT_DEF_UNARY_FUNC(Atan,  atan,  std::atan,  "atan",  1.0/(1.0+val*val))
+  ADEPT_DEF_UNARY_FUNC(Sinh,  sinh,  std::sinh,  "sinh",  cosh(val))
+  ADEPT_DEF_UNARY_FUNC(Cosh,  cosh,  std::cosh,  "cosh",  sinh(val))
   //  ADEPT_DEF_UNARY_FUNC(Abs,   abs,   std::abs, "abs", ((val>0.0)-(val<0.0)))
   //  ADEPT_DEF_UNARY_FUNC(Fabs,  fabs,  std::abs, "fabs", ((val>0.0)-(val<0.0)))
-  ADEPT_DEF_UNARY_FUNC(Abs,   abs,   abs, "abs", ((val>0.0)-(val<0.0)))
-  ADEPT_DEF_UNARY_FUNC(Fabs,  fabs,  abs, "fabs", ((val>0.0)-(val<0.0)))
-  ADEPT_DEF_UNARY_FUNC(Expm1, expm1, expm1, "expm1", exp(val))
-  ADEPT_DEF_UNARY_FUNC(Exp2,  exp2,  exp2,  "exp2",  0.6931471805599453094172321214581766*result)
-  ADEPT_DEF_UNARY_FUNC(Log1p, log1p, log1p, "log1p", 1.0/(1.0+val))
-  ADEPT_DEF_UNARY_FUNC(Asinh, asinh, asinh, "asinh", 1.0/sqrt(val*val+1.0))
-  ADEPT_DEF_UNARY_FUNC(Acosh, acosh, acosh, "acosh", 1.0/sqrt(val*val-1.0))
-  ADEPT_DEF_UNARY_FUNC(Atanh, atanh, atanh, "atanh", 1.0/(1.0-val*val))
-  ADEPT_DEF_UNARY_FUNC(Erf,   erf,   erf,   "erf",   1.12837916709551*exp(-val*val))
-  ADEPT_DEF_UNARY_FUNC(Erfc,  erfc,  erfc,  "erfc",  -1.12837916709551*exp(-val*val))
+  ADEPT_DEF_UNARY_FUNC(Abs,   abs,   std::abs, "abs", ((val>0.0)-(val<0.0)))
+  ADEPT_DEF_UNARY_FUNC(Fabs,  fabs,  std::abs, "fabs", ((val>0.0)-(val<0.0)))
 
   // Functions y(x) whose derivative depends on the result of the
   // function, i.e. dy(x)/dx = f(y)
-  ADEPT_DEF_UNARY_FUNC(Exp,   exp,   exp,   "exp",   result)
-  ADEPT_DEF_UNARY_FUNC(Sqrt,  sqrt,  sqrt,  "sqrt",  0.5/result)
-  ADEPT_DEF_UNARY_FUNC(Cbrt,  cbrt,  cbrt,  "cbrt",  (1.0/3.0)/(result*result))
-  ADEPT_DEF_UNARY_FUNC(Tanh,  tanh,  tanh,  "tanh",  1.0 - result*result)
+  ADEPT_DEF_UNARY_FUNC(Exp,   exp,   std::exp,   "exp",   result)
+  ADEPT_DEF_UNARY_FUNC(Sqrt,  sqrt,  std::sqrt,  "sqrt",  0.5/result)
+  ADEPT_DEF_UNARY_FUNC(Tanh,  tanh,  std::tanh,  "tanh",  1.0 - result*result)
 
   // Functions with zero derivative
-  ADEPT_DEF_UNARY_FUNC(Round, round, round, "round", 0.0)
-  ADEPT_DEF_UNARY_FUNC(Ceil,  ceil,  ceil,  "ceil",  0.0)
-  ADEPT_DEF_UNARY_FUNC(Floor, floor, floor, "floor", 0.0)
-  ADEPT_DEF_UNARY_FUNC(Trunc, trunc, trunc, "trunc", 0.0)
-  ADEPT_DEF_UNARY_FUNC(Rint,  rint,  rint,  "rint",  0.0)
-  ADEPT_DEF_UNARY_FUNC(Nearbyint,nearbyint,nearbyint,"nearbyint",0.0)
+  ADEPT_DEF_UNARY_FUNC(Ceil,  ceil,  std::ceil,  "ceil",  0.0)
+  ADEPT_DEF_UNARY_FUNC(Floor, floor, std::floor, "floor", 0.0)
+  
+  // Functions defined in the std namespace in C++11 but only in the
+  // global namespace before that
+#ifdef ADEPT_CXX11_FEATURES
+  ADEPT_DEF_UNARY_FUNC(Log2,  log2,  std::log2,  "log2",  1.44269504088896340737/val)
+  ADEPT_DEF_UNARY_FUNC(Expm1, expm1, std::expm1, "expm1", exp(val))
+  ADEPT_DEF_UNARY_FUNC(Exp2,  exp2,  std::exp2,  "exp2",  0.6931471805599453094172321214581766*result)
+  ADEPT_DEF_UNARY_FUNC(Log1p, log1p, std::log1p, "log1p", 1.0/(1.0+val))
+  ADEPT_DEF_UNARY_FUNC(Asinh, asinh, std::asinh, "asinh", 1.0/sqrt(val*val+1.0))
+  ADEPT_DEF_UNARY_FUNC(Acosh, acosh, std::acosh, "acosh", 1.0/sqrt(val*val-1.0))
+  ADEPT_DEF_UNARY_FUNC(Atanh, atanh, std::atanh, "atanh", 1.0/(1.0-val*val))
+  ADEPT_DEF_UNARY_FUNC(Erf,   erf,   std::erf,   "erf",   1.12837916709551*exp(-val*val))
+  ADEPT_DEF_UNARY_FUNC(Erfc,  erfc,  std::erfc,  "erfc",  -1.12837916709551*exp(-val*val))
+  ADEPT_DEF_UNARY_FUNC(Cbrt,  cbrt,  std::cbrt,  "cbrt",  (1.0/3.0)/(result*result))
+  ADEPT_DEF_UNARY_FUNC(Round, round, std::round, "round", 0.0)
+  ADEPT_DEF_UNARY_FUNC(Trunc, trunc, std::trunc, "trunc", 0.0)
+  ADEPT_DEF_UNARY_FUNC(Rint,  rint,  std::rint,  "rint",  0.0)
+  ADEPT_DEF_UNARY_FUNC(Nearbyint,nearbyint,std::nearbyint,"nearbyint",0.0)
+#else
+  ADEPT_DEF_UNARY_FUNC(Log2,  log2,  ::log2,  "log2",  1.44269504088896340737/val)
+  ADEPT_DEF_UNARY_FUNC(Expm1, expm1, ::expm1, "expm1", exp(val))
+  ADEPT_DEF_UNARY_FUNC(Exp2,  exp2,  ::exp2,  "exp2",  0.6931471805599453094172321214581766*result)
+  ADEPT_DEF_UNARY_FUNC(Log1p, log1p, ::log1p, "log1p", 1.0/(1.0+val))
+  ADEPT_DEF_UNARY_FUNC(Asinh, asinh, ::asinh, "asinh", 1.0/sqrt(val*val+1.0))
+  ADEPT_DEF_UNARY_FUNC(Acosh, acosh, ::acosh, "acosh", 1.0/sqrt(val*val-1.0))
+  ADEPT_DEF_UNARY_FUNC(Atanh, atanh, ::atanh, "atanh", 1.0/(1.0-val*val))
+  ADEPT_DEF_UNARY_FUNC(Erf,   erf,   ::erf,   "erf",   1.12837916709551*exp(-val*val))
+  ADEPT_DEF_UNARY_FUNC(Erfc,  erfc,  ::erfc,  "erfc",  -1.12837916709551*exp(-val*val))
+  ADEPT_DEF_UNARY_FUNC(Cbrt,  cbrt,  ::cbrt,  "cbrt",  (1.0/3.0)/(result*result))
+  ADEPT_DEF_UNARY_FUNC(Round, round, ::round, "round", 0.0)
+  ADEPT_DEF_UNARY_FUNC(Trunc, trunc, ::trunc, "trunc", 0.0)
+  ADEPT_DEF_UNARY_FUNC(Rint,  rint,  ::rint,  "rint",  0.0)
+  ADEPT_DEF_UNARY_FUNC(Nearbyint,nearbyint,::nearbyint,"nearbyint",0.0)
+#endif
 
   //#undef ADEPT_DEF_UNARY_FUNC
 
