@@ -18,14 +18,13 @@
 #include <adept/FixedArray.h>
 
 // The following controls whether to use active variables or not
-#define ALL_ACTIVE 1
+//#define ALL_ACTIVE 1
 //#define MARVEL_STYLE 1
 
 using namespace adept;
 
-
 int
-main() {
+main(int argc, const char** argv) {
   using namespace adept;
   Stack stack;
   
@@ -195,7 +194,7 @@ main() {
     myVector3 v, w;
     myMatrix12 K;
     myMatrix23 M, N;
-    myMatrix33 S;
+    myMatrix33 S, C;
     myMatrix32 A;
     myMatrix22 B;
 
@@ -246,6 +245,7 @@ main() {
       Q.diag_vector(1)  = 4;
       */
 
+      C = 0;
       D = S;
       T = S;
       L = S;
@@ -383,7 +383,7 @@ main() {
   EVAL2("Solving linear equations Ax=b with symmetric A", myVector3, v, mySymmMatrix, O, v = solve(O,v));
   EVAL2("Solving linear equations AX=B with symmetric A", myMatrix23, M, mySymmMatrix, O, M.T() = solve(O,M.T()));
   //  EVAL2("Solving linear equations AX=B with symmetric A and B", myMatrix, S, mySymmMatrix, O, S = solve(O,P));
-  EVAL2("Invert general matrix", myMatrix23, M, myMatrix33, S, M = inv(S));
+  EVAL2("Invert general matrix", myMatrix33, C, myMatrix33, S, C = inv(S));
 
 #else
   std::cout << "NO LINEAR ALGEBRA TESTS PERFORMED BECAUSE ACTIVE ARRAYS NOT YET SUPPORTED\n";
@@ -426,8 +426,13 @@ main() {
   std::cout << "====================================================================\n";
   if (anomalous_results > 0) {
     std::cout << "*** In terms of run-time errors, there were " << anomalous_results << " incorrect results\n";
+#ifdef ALL_ACTIVE
+    std::cerr << "*** Note that " << argv[0] << " is expected to fail since Adept is not yet capable of differentiating certain matrix operations\n";
+#endif
+    return 1;
   }
   else {
     std::cout << "In terms of run-time errors, all tests were passed\n";
+    return 0;
   }
 }

@@ -1,6 +1,6 @@
 /* test_arrays.cpp - Test Adept's array functionality
 
-    Copyright (C) 2016 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2016-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -8,6 +8,13 @@
   are permitted in any medium without royalty provided the copyright
   notice and this notice are preserved.  This file is offered as-is,
   without any warranty.
+
+  This program can be compiled to run in three ways: (1) normal
+  compilation tests inactive arrays, (2) with -DALL_ACTIVE tests
+  active arrays, and (3) "-DALL_ACTIVE -DADEPT_RECORDING_PAUSABLE"
+  tests whether a "paused" recording correctly records nothing to the
+  automatic-differentiation stack.
+
 */
 
 #include <iostream>
@@ -25,7 +32,7 @@ using namespace adept;
 
 
 int
-main() {
+main(int argc, const char** argv) {
   using namespace adept;
 #ifdef ALL_ACTIVE
   Stack stack;
@@ -428,7 +435,7 @@ EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector,
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, value(w)/3.0));
   EVAL2("all reduction", bool, b, false, myMatrix, M, b = all(M > 8.0));
   EVAL2("any reduction", bool, b, false, myMatrix, M, b = any(M > 8.0));
-  EVAL2("count reduction", int, c, false, myMatrix, M, c = count(M > 8.0));
+  EVAL2("count reduction", int, c, true, myMatrix, M, c = count(M > 8.0));
   EVAL2("1-dimension all reduction", boolVector, B, false, myMatrix, M, B = all(M > 8.0, 1));
   EVAL2("1-dimension any reduction", boolVector, B, false, myMatrix, M, B = any(M > 8.0, 1));
   EVAL2("1-dimension count reduction", intVector, index, false, myMatrix, M, index = count(M > 8.0, 1));
@@ -521,7 +528,6 @@ EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector,
 
 #ifndef MARVEL_STYLE
  HEADING("MATRIX MULTIPLICATION");
-  //EVAL2("inner product", myReal, x, true, myVector, w, x = w.T() ** w);
   EVAL3("Matrix-Vector multiplication", myVector, w, false, myMatrix, M, myVector, v, w = M ** v);
   EVAL3("Matrix-Vector multiplication with strided matrix", myVector, w, false, myMatrix, Mstrided, myVector, v, w = Mstrided ** v);
   EVAL2("Matrix-Matrix multiplication", myMatrix, M, false, myMatrix, N, M = N.T() ** N);
@@ -550,13 +556,13 @@ EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector,
 #ifndef ALL_ACTIVE
   HEADING("LINEAR ALGEBRA");
   EVAL2("Solving general linear equations Ax=b", myVector, v, true, myMatrix, S, v = solve(S,v));
-  //  EVAL2("Solving general linear equations Ax=b with expression arguments", myVector, v, true, myMatrix, S, v = solve(S,2*v));
+  EVAL2("Solving general linear equations Ax=b with expression arguments", myVector, v, true, myMatrix, S, v = solve(S,2*v));
 
   EVAL2("Solving general linear equations AX=B", myMatrix, M, true, myMatrix, S, M.T() = solve(S,M.T()));
-  //  EVAL2("Solving general linear equations AX=B with expression arguments", myMatrix, M, true, myMatrix, S, M.T() = solve(2.0 * S,2.0 * M.T()));
+  EVAL2("Solving general linear equations AX=B with expression arguments", myMatrix, M, true, myMatrix, S, M.T() = solve(2.0 * S,2.0 * M.T()));
   EVAL2("Solving linear equations Ax=b with symmetric A", myVector, v, true, mySymmMatrix, O, v = solve(O,v));
   EVAL2("Solving linear equations AX=B with symmetric A", myMatrix, M, true, mySymmMatrix, O, M.T() = solve(O,M.T()));
-  //  EVAL2("Solving linear equations AX=B with symmetric A and B", myMatrix, S, false, mySymmMatrix, O, S = solve(O,P));
+  EVAL3("Solving linear equations AX=B with symmetric A and B", myMatrix, S, false, mySymmMatrix, O, mySymmMatrix, P, S = solve(O,P));
   EVAL2("Invert general matrix", myMatrix, M, false, myMatrix, S, M = inv(S));
   EVAL2("Invert symmetric matrix", mySymmMatrix, P, false, mySymmMatrix, O, P = inv(O));
 #else
@@ -600,23 +606,35 @@ EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector,
 #endif
 
   std::cout << "====================================================================\n";
+#ifdef ALL_ACTIVE
+  std::cout << stack;
+  std::cout << "====================================================================\n";
+#endif
+
   if (anomalous_results > 0) {
     std::cout << "*** In terms of run-time errors, there were " << anomalous_results << " incorrect results\n";
+#ifdef ALL_ACTIVE
+    std::cerr << "*** Note that " << argv[0] << " is expected to fail since Adept is not yet capable of differentiating certain matrix operations\n";
+#endif
   }
   else {
     std::cout << "In terms of run-time errors, all tests were passed\n";
   }
 
 #ifdef ALL_ACTIVE
-  std::cout << stack;
 #ifdef ADEPT_RECORDING_PAUSABLE
   if (stack.n_statements() > 1) {
     std::cout << "*** Stack contains " << stack.n_statements()-1
 	      << " statements and " << stack.n_operations()
 	      << " operations but both should be 0 because recording has been paused\n";
+    return 1;
   }
-#else
 #endif
 #endif
-
+  if (anomalous_results > 0) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
 }

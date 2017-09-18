@@ -746,7 +746,7 @@ namespace adept {
       if (empty()) {
 	resize(list.size());
       }
-      else if (list.size() > dimensions_[0]) {
+      else if (list.size() > static_cast<std::size_t>(dimensions_[0])) {
 	throw size_mismatch("Initializer list is larger than Vector in assignment"
 			    ADEPT_EXCEPTION_LOCATION);
       }
@@ -782,7 +782,7 @@ namespace adept {
 	}
 	*/
       }
-      else if (list.size() > dimensions_[0]) {
+      else if (list.size() > static_cast<std::size_t>(dimensions_[0])) {
 	throw size_mismatch("Multi-dimensional initializer list larger than slowest-varying dimension of Array"
 			    ADEPT_EXCEPTION_LOCATION);
       }

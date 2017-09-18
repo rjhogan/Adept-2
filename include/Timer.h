@@ -59,8 +59,8 @@ public:
   // Print out the times spent in each activity
   void print() {
     double sum = 0.0;
-    std::cerr << timings_.size() << " activities:\n";
-    for (std::size_t i = 0; i < timings_.size(); i++) {
+    std::cerr << size() << " activities:\n";
+    for (TimerInt i = 0; i < size(); i++) {
       std::cerr.width(10);
       std::cerr << std::right << timings_[i] << " s: " << names_[i] << "\n";
       sum += timings_[i];
@@ -72,7 +72,7 @@ public:
   // Register a new activity with the specified name, returning the
   // tag to be used to specify it in future, as a TimerInt
   TimerInt new_activity(const std::string& name) {
-    TimerInt tag = timings_.size();
+    TimerInt tag = size();
     names_.push_back(name);
     timings_.push_back(0.0);
     return tag;
@@ -95,7 +95,7 @@ public:
       split_();
     }
 
-    if (activity >= 0 && activity < timings_.size()) {
+    if (activity >= 0 && activity < size()) {
       current_activity_ = activity;
       timer_on_ = true;
     }
@@ -109,7 +109,7 @@ public:
 
   // Set the timing for a specific activity back to zero
   void reset(TimerInt activity) {
-    if (activity >= 0 && activity < timings_.size()) {
+    if (activity >= 0 && activity < size()) {
       timings_[activity] = 0.0;
     }
   }
@@ -120,12 +120,17 @@ public:
 
   // Return a single timing
   double timing(TimerInt activity) {
-    if (activity >= 0 && activity < timings_.size()) {
+    if (activity >= 0 && activity < size()) {
       return timings_[activity];
     }
     else {
       return 0.0;
     }
+  }
+
+  // Convert from size_t to int
+  TimerInt size() {
+    return timings_.size();
   }
 
   // Decide whether the contents of the timer class will be printed
