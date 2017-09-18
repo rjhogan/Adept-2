@@ -199,8 +199,6 @@ namespace adept {
   ADEPT_DEF_UNARY_FUNC(Atan,  atan,  std::atan,  "atan",  1.0/(1.0+val*val))
   ADEPT_DEF_UNARY_FUNC(Sinh,  sinh,  std::sinh,  "sinh",  cosh(val))
   ADEPT_DEF_UNARY_FUNC(Cosh,  cosh,  std::cosh,  "cosh",  sinh(val))
-  //  ADEPT_DEF_UNARY_FUNC(Abs,   abs,   std::abs, "abs", ((val>0.0)-(val<0.0)))
-  //  ADEPT_DEF_UNARY_FUNC(Fabs,  fabs,  std::abs, "fabs", ((val>0.0)-(val<0.0)))
   ADEPT_DEF_UNARY_FUNC(Abs,   abs,   std::abs, "abs", ((val>0.0)-(val<0.0)))
   ADEPT_DEF_UNARY_FUNC(Fabs,  fabs,  std::abs, "fabs", ((val>0.0)-(val<0.0)))
 
