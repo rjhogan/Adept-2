@@ -2810,7 +2810,8 @@ namespace adept {
     // advantage in specialist behaviour depending on the rank of the
     // array
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
-    typename enable_if<!LocalIsActive && !E::is_vectorizable,void>::type
+    typename enable_if<!LocalIsActive && (!E::is_vectorizable
+					  || !is_same<typename E::type,Type>::value),void>::type
     assign_expression_(const E& rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<LocalRank> i(0);
@@ -2849,7 +2850,8 @@ namespace adept {
 
     // Vectorized version for Rank-1 arrays
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
-    typename enable_if<!LocalIsActive && E::is_vectorizable && LocalRank == 1,void>::type
+    typename enable_if<!LocalIsActive && E::is_vectorizable && LocalRank == 1
+		       && is_same<typename E::type,Type>::value,void>::type
       // Removing the reference speeds things up because otherwise E
       // is dereferenced each loop
       //  assign_expression_(const E& __restrict rhs) {
@@ -2912,7 +2914,8 @@ namespace adept {
 
     // Vectorized version
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
-    typename enable_if<!LocalIsActive && E::is_vectorizable && (LocalRank > 1),void>::type
+    typename enable_if<!LocalIsActive && E::is_vectorizable && (LocalRank > 1)
+                       && is_same<typename E::type,Type>::value,void>::type
     // Removing the reference speeds things up because otherwise E
     // is dereferenced each loop
     //  assign_expression_(const E& rhs) 
