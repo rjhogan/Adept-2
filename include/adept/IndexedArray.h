@@ -479,7 +479,16 @@ namespace adept {
       typename enable_if<is_not_expression<RType>::value, IndexedArray&>::type
       operator=(RType rhs) {
 	if (!empty()) {
-	  assign_inactive_scalar_<IsActive>(rhs);
+#ifdef ADEPT_RECORDING_PAUSABLE
+	  if (ADEPT_ACTIVE_STACK->is_recording()) {
+#endif
+	    assign_inactive_scalar_<IsActive>(rhs);
+#ifdef ADEPT_RECORDING_PAUSABLE
+	  }
+	  else {
+	    assign_inactive_scalar_<false>(rhs);
+	  }
+#endif
 	}
 	return *this;
       }
@@ -584,6 +593,13 @@ namespace adept {
       template <bool LocalIsActive, typename X>
       typename enable_if<LocalIsActive,void>::type
       assign_inactive_scalar_(X x) {
+	// If not recording we call the inactive version instead
+#ifdef ADEPT_RECORDING_PAUSABLE
+	if (!ADEPT_ACTIVE_STACK->is_recording()) {
+	  assign_inactive_scalar_<false, X>(x);
+	  return;
+	}
+#endif
 	ExpressionSize<Rank> coords(0);
 	ExpressionSize<a_rank> a_coords(0);
 	ExpressionSize<1> a_loc(0);
@@ -642,6 +658,12 @@ namespace adept {
       template<bool LeftIsActive, bool RightIsActive, class E>
       typename enable_if<LeftIsActive && !RightIsActive,void>::type
       assign_expression_(const E& rhs) {
+#ifdef ADEPT_RECORDING_PAUSABLE
+	if (!ADEPT_ACTIVE_STACK->is_recording()) {
+	  assign_expression_<false,false>(rhs);
+	  return;
+	}
+#endif
 	ExpressionSize<Rank> coords(0);
 	ExpressionSize<a_rank> a_coords(0);
 	ExpressionSize<E::n_arrays> loc(0);
@@ -671,6 +693,12 @@ namespace adept {
       template<bool LeftIsActive, bool RightIsActive, class E>
       typename enable_if<LeftIsActive && RightIsActive,void>::type
       assign_expression_(const E& rhs) {
+#ifdef ADEPT_RECORDING_PAUSABLE
+	if (!ADEPT_ACTIVE_STACK->is_recording()) {
+	  assign_expression_<false,false>(rhs);
+	  return;
+	}
+#endif
 	ExpressionSize<Rank> coords(0);
 	ExpressionSize<a_rank> a_coords(0);
 	ExpressionSize<E::n_arrays> loc(0);

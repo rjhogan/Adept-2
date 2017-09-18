@@ -44,7 +44,6 @@ namespace adept {
       // stack.  We assume here that check_space() as been called before
       // so there is enough space to hold these elements.
       void push_rhs(const Real& multiplier, const uIndex& gradient_index) {
-
 #ifdef ADEPT_REMOVE_NULL_STATEMENTS
 	// If multiplier==0 then the resulting statement would have no
 	// effect so we can speed up the subsequent adjoint/jacobian

@@ -309,8 +309,9 @@ main() {
   };
 
 #ifdef ALL_ACTIVE
-  stack.new_recording();
 #ifndef ADEPT_RECORDING_PAUSABLE
+  stack.new_recording();
+#else
   stack.pause_recording();
 #endif
 #endif
@@ -406,7 +407,8 @@ main() {
   EVAL2("transpose as rvalue via T member function", myMatrix, N, false, myMatrix, M, N = 2 * M.T());
   EVAL2("transpose as rvalue via permute member function", myMatrix, N, false, myMatrix, M, N = 2 * M.permute(1,0));
   EVAL3("2D arbitrary index as rvalue", myMatrix, M, false, myMatrix, N, intVector, index, M = const_cast<const myMatrix&>(N)(index,index));
-  EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = N(__,range(1,2)));
+//EVAL3("2D arbitrary index as lvalue assigned to scalar", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = (myReal)(4.0));
+EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = N(__,range(1,2)));
   EVAL2("2D arbitrary index as lvalue with assign-multiply operator", myMatrix, M, true, intVector, index, M(index,index) *= 10.0);
   EVAL2("2D arbitrary index as lvalue with aliased right-hand-side", myMatrix, M, true, intVector, index, M(index,index) += M(__,range(1,2)));
   EVAL2("reshape member function", myMatrix, M, false, myVector, vlong, M >>= vlong.reshape(3,4));
@@ -606,15 +608,14 @@ main() {
   }
 
 #ifdef ALL_ACTIVE
+  std::cout << stack;
 #ifdef ADEPT_RECORDING_PAUSABLE
-  if (stack.n_statements() > 0) {
-    std::cout << "*** Stack contains " << stack.n_statements() 
+  if (stack.n_statements() > 1) {
+    std::cout << "*** Stack contains " << stack.n_statements()-1
 	      << " statements and " << stack.n_operations()
 	      << " operations but both should be 0 because recording has been paused\n";
   }
 #else
-  std::cout << "Stack contains " << stack.n_statements()
-	    << " statements and " << stack.n_operations() << " operations\n";
 #endif
 #endif
 

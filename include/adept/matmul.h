@@ -87,7 +87,12 @@ namespace adept {
 		   1.0, left.const_data(), stride, 
 		   right.const_data(), right.offset(0), 
 		   0.0, ans.data(), ans.offset(0));
-      if (is_active) {
+      if (is_active
+#ifdef ADEPT_RECORDING_PAUSABLE
+	  && ADEPT_ACTIVE_STACK->is_recording()
+#endif
+	  ) {
+
 	uIndex left_index = left.gradient_index();
 	uIndex right_index = right.gradient_index();
 	uIndex ans_index = ans.gradient_index();
@@ -173,7 +178,11 @@ namespace adept {
 		    1.0, left.const_data(), left_stride,
 		    right.const_data(), right_stride,
 		    0.0, ans.data(), ans_stride);
-	if (LIsActive || RIsActive) {
+	if ( (LIsActive || RIsActive)
+#ifdef ADEPT_RECORDING_PAUSABLE
+	    && ADEPT_ACTIVE_STACK->is_recording()
+#endif
+	    ) {
 	  uIndex left_index = left.gradient_index();
 	  uIndex right_index = right.gradient_index();
 	  uIndex ans_index = ans.gradient_index();

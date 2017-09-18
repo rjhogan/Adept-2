@@ -64,13 +64,21 @@ namespace adept {
     }
     
   protected:
-    // Only allow the class to destroy itself by putting in "protected"
+    // Only allow the class to destroy itself by putting in
+    // "protected".  FIX - would be better to start valid
+    // gradient_index at 1, so 0 is reserved for invalid values.
     ~Storage() {
       internal::free_aligned(data_);
 #ifndef ADEPT_NO_AUTOMATIC_DIFFERENTIATION
-      if (gradient_index_ >= 0) {
-	ADEPT_ACTIVE_STACK->unregister_gradients(gradient_index_, n_);
+#ifdef ADEPT_RECORDING_PAUSABLE
+      if (ADEPT_ACTIVE_STACK->is_recording()) {
+#endif
+	if (gradient_index_ >= 0) {
+	  ADEPT_ACTIVE_STACK->unregister_gradients(gradient_index_, n_);
+	}
+#ifdef ADEPT_RECORDING_PAUSABLE
       }
+#endif
 #endif
       internal::n_storage_objects_deleted_++; }
 

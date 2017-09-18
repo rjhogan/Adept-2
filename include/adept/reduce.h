@@ -482,6 +482,13 @@ namespace adept {
     template <class Func, typename Type, class E>
     inline
     void reduce(const Expression<Type, E>& rhs, Active<Type>& total) {
+#ifdef ADEPT_RECORDING_PAUSABLE
+      if (!ADEPT_ACTIVE_STACK->is_recording()) {
+	total.lvalue() = reduce<Func>(rhs);
+	return;
+      }
+#endif
+
       Func f;
       ExpressionSize<E::rank> dims;
       if (!rhs.get_dimensions(dims)) {
@@ -530,6 +537,23 @@ namespace adept {
     inline
     void reduce(const Expression<Type, E>& rhs, int reduce_dim,
 		Array<E::rank-1,Type,true>& result) {
+#ifdef ADEPT_RECORDING_PAUSABLE
+      if (!ADEPT_ACTIVE_STACK->is_recording()) {
+	// This solution requires more shallow copies than are really
+	// needed; could be made more efficient if Array had a member
+	// function to link an pre-constructed active Array to
+	// inactive data.
+	Array<E::rank-1,Type,false> result_inactive;
+	reduce<Func>(rhs, reduce_dim, result_inactive);
+	Array<E::rank-1,Type,true> result_active(result_inactive.data(),
+						 result_inactive.storage(),
+						 result_inactive.dimensions(),
+						 result_inactive.offset());
+	result >>= result_active;
+	return;
+      }
+#endif
+
       Func f;
       ExpressionSize<E::rank> dims;
       if (!rhs.get_dimensions(dims)) {

@@ -571,7 +571,7 @@ namespace adept {
       if (!empty()) {
 #ifdef ADEPT_RECORDING_PAUSABLE
 	if (!ADEPT_ACTIVE_STACK->is_recording()) {
-	  assign_inactive_scalar_<Rank,IsActive>(rhs.scalar_value());
+	  assign_inactive_scalar_<Rank,false>(rhs.scalar_value());
 	  return *this;
 	}
 #endif
@@ -1868,7 +1868,10 @@ namespace adept {
       }
       return *this;
     }
-  
+
+    // Fortran-like link syntax A >>= B
+    Array& operator>>=(Array& rhs)
+    { return link(rhs); }  
 
 #ifndef ADEPT_MOVE_SEMANTICS
     // A common pattern is to link to a subset of another Array,
@@ -1877,12 +1880,15 @@ namespace adept {
     // C++98 we therefore need a function taking const Array& and then
     // cast away the const-ness. This has the unfortunate side effect
     // that a non-const Array can be linked to a const Array.
-    Array& link(const Array& rhs) { return link(const_cast<Array&>(rhs)); }
+    Array&        link(const Array& rhs) { return link(const_cast<Array&>(rhs)); }
+    Array& operator>>=(const Array& rhs) { return link(const_cast<Array&>(rhs)); }
 #else
     // But in C++11 we can solve this problem and only bind to
     // temporary non-const Arrays
-    Array& link(Array&& rhs) { return link(const_cast<Array&>(rhs)); }
+    Array&        link(Array&& rhs) { return link(const_cast<Array&>(rhs)); }
+    Array& operator>>=(Array&& rhs) { return link(const_cast<Array&>(rhs)); }
 #endif
+
     // To prevent linking to an rvalue expression we write a templated
     // function that will fail to compile
     template<class E>
@@ -1890,17 +1896,6 @@ namespace adept {
     link(const Expression<Type,E>&) {
       ADEPT_STATIC_ASSERT(E::is_lvalue, CAN_ONLY_LINK_TO_AN_LVALUE_EXPRESSION);
     }
-
-    // Fortran-like link syntax A >>= B
-    Array& operator>>=(Array& rhs)
-    { return link(rhs); }
-#ifndef ADEPT_MOVE_SEMANTICS
-    Array& operator>>=(const Array& rhs)
-    { return link(const_cast<Array&>(rhs)); }
-#else
-    Array& operator>>=(Array&& rhs)
-    { return link(const_cast<Array&>(rhs)); }
-#endif
     template<class E>
     typename internal::enable_if<!E::is_lvalue,void>::type
     operator>>=(const Expression<Type,E>&) {

@@ -1834,7 +1834,7 @@ namespace adept {
       // If recording has been paused then call the inactive version
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (!ADEPT_ACTIVE_STACK->is_recording()) {
-	assign_expression_<LocalIsActive,false>(rhs);
+	assign_expression_<false,false>(rhs);
 	return;
       }
 #endif

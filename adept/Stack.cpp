@@ -555,6 +555,12 @@ namespace adept {
       os << "   Currently detached\n";
     }
     os << "   Recording status:\n";
+    if (is_recording_) {
+      os << "      Recording is ON\n";  
+    }
+    else {
+      os << "      Recording is PAUSED\n";
+    }
     // Account for the null statement at the start by subtracting one
     os << "      " << n_statements()-1 << " statements (" 
        << n_allocated_statements() << " allocated)";

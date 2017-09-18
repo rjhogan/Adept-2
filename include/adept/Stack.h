@@ -241,8 +241,8 @@ namespace adept {
     void unregister_gradient(const uIndex& gradient_index) {
       n_gradients_registered_--;
       if (gradient_index+1 == i_gradient_) {
-	// Gradient to be unregistered is at the top of the stack
-	i_gradient_--;
+        // Gradient to be unregistered is at the top of the stack
+        i_gradient_--;
 	if (!gap_list_.empty()) {
 	  Gap& last_gap = gap_list_.back();
 	  if (i_gradient_ == last_gap.end+1) {
