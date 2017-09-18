@@ -364,6 +364,9 @@ main(int argc, const char** argv) {
   should_fail = false;
   EVAL("Initializer list in expression", myVector, v,
     true, v = v + Vector({1.0 COMMA 2.0 COMMA 3.0}));
+  EVAL2("Indexed matrix assigned to initializer list", myMatrix, M, true, intVector, index, 
+	M(index,index) = {{1 COMMA 2} COMMA {3 COMMA 4}});
+
 #endif
 
 
@@ -415,7 +418,7 @@ main(int argc, const char** argv) {
   EVAL2("transpose as rvalue via permute member function", myMatrix, N, false, myMatrix, M, N = 2 * M.permute(1,0));
   EVAL3("2D arbitrary index as rvalue", myMatrix, M, false, myMatrix, N, intVector, index, M = const_cast<const myMatrix&>(N)(index,index));
 //EVAL3("2D arbitrary index as lvalue assigned to scalar", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = (myReal)(4.0));
-EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = N(__,range(1,2)));
+  EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = N(__,range(1,2)));
   EVAL2("2D arbitrary index as lvalue with assign-multiply operator", myMatrix, M, true, intVector, index, M(index,index) *= 10.0);
   EVAL2("2D arbitrary index as lvalue with aliased right-hand-side", myMatrix, M, true, intVector, index, M(index,index) += M(__,range(1,2)));
   EVAL2("reshape member function", myMatrix, M, false, myVector, vlong, M >>= vlong.reshape(3,4));

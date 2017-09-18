@@ -556,6 +556,66 @@ namespace adept {
     //    ADEPT_DEFINE_OPERATOR(operator|=, |);
 #undef ADEPT_DEFINE_OPERATOR
 
+#ifdef ADEPT_CXX11_FEATURES
+
+    // To enable assignment to an initializer list we take a simple
+    // but inefficient strategy of creating a temporary Array and
+    // assigning to that
+    template <class IType>
+    IndexedArray& operator=(std::initializer_list<IType> list) {
+      ADEPT_STATIC_ASSERT(Rank==1,RANK_MISMATCH_IN_INITIALIZER_LIST);
+      Array<Rank,Type,false> array = list;
+      return (*this = array);
+    }
+    template <class IType>
+    IndexedArray& operator=(std::initializer_list<
+			    std::initializer_list<IType> > list) {
+      ADEPT_STATIC_ASSERT(Rank==2,RANK_MISMATCH_IN_INITIALIZER_LIST);
+      Array<Rank,Type,false> array = list;
+      return (*this = array);
+    }
+    template <class IType>
+    IndexedArray& operator=(std::initializer_list<
+			    std::initializer_list<
+			    std::initializer_list<IType> > > list) {
+      ADEPT_STATIC_ASSERT(Rank==3,RANK_MISMATCH_IN_INITIALIZER_LIST);
+      Array<Rank,Type,false> array = list;
+      return (*this = array);
+    }
+    template <class IType>
+    IndexedArray& operator=(std::initializer_list<
+			    std::initializer_list<
+			    std::initializer_list<
+			    std::initializer_list<IType> > > > list) {
+      ADEPT_STATIC_ASSERT(Rank==4,RANK_MISMATCH_IN_INITIALIZER_LIST);
+      Array<Rank,Type,false> array = list;
+      return (*this = array);
+    }
+    template <class IType>
+    IndexedArray& operator=(std::initializer_list<
+			    std::initializer_list<
+			    std::initializer_list<
+			    std::initializer_list<
+			    std::initializer_list<IType> > > > > list) {
+      ADEPT_STATIC_ASSERT(Rank==5,RANK_MISMATCH_IN_INITIALIZER_LIST);
+      Array<Rank,Type,false> array = list;
+      return (*this = array);
+    }
+    template <class IType>
+    IndexedArray& operator=(std::initializer_list<
+			    std::initializer_list<
+			    std::initializer_list<
+			    std::initializer_list<
+			    std::initializer_list<
+			    std::initializer_list<IType> > > > > > list) {
+      ADEPT_STATIC_ASSERT(Rank==6,RANK_MISMATCH_IN_INITIALIZER_LIST);
+      Array<Rank,Type,false> array = list;
+      return (*this = array);
+    }
+
+#endif
+
+
     protected:
       // ---------------------------------------------------------------------
       // Section 5.5. IndexedArray: Internal functions facilitating operator=
