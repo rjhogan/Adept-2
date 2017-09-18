@@ -48,6 +48,7 @@ namespace adept {
     // 14. is_same
     // 15. remove_reference
     // 16. initializer_list_rank
+    // 17. matrix_op_defined
     // --------------------
 
     // ---------------------------------------------------------------------
@@ -397,6 +398,20 @@ namespace adept {
 
 #endif
 
+    // ---------------------------------------------------------------------
+    // 14. matrix_op_defined
+    // ---------------------------------------------------------------------
+
+    // Return true if a type is float or double, false otherwise
+    template<typename T>
+    struct matrix_op_defined { static const bool value = false;  };
+    
+    template<>
+    struct matrix_op_defined<float>  { static const bool value = true; };
+
+    template<>
+    struct matrix_op_defined<double>  { static const bool value = true; };
+ 
 
   } // End namespace internal
 

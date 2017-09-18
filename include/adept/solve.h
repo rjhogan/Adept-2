@@ -61,8 +61,37 @@ namespace adept {
     return solve(A,B_array);
   }
 
+  // -------------------------------------------------------------------
+  // Solve Ax = b for general expressions
+  // -------------------------------------------------------------------
+  template <typename LType, class L, typename RType, class R>
+  typename internal::enable_if<L::rank==2 && R::rank==1
+			       && !L::is_active && !R::is_active
+			       && internal::matrix_op_defined<LType>::value
+			       && internal::matrix_op_defined<RType>::value,
+			       Array<1,typename internal::promote<LType,RType>::type,false> >::type
+  solve(const Expression<LType,L>& l, const Expression<RType,R>& r) {
+    typedef typename internal::promote<LType,RType>::type PType;
+    Array<2,PType,false> left = l.cast();
+    Array<1,PType,false> right = r.cast();
+    return solve(left,right);
+  }
 
-  
+  // -------------------------------------------------------------------
+  // Solve AX = B for general expressions
+  // -------------------------------------------------------------------
+  template <typename LType, class L, typename RType, class R>
+  typename internal::enable_if<L::rank==2 && R::rank==2
+			       && !L::is_active && !R::is_active
+			       && internal::matrix_op_defined<LType>::value
+			       && internal::matrix_op_defined<RType>::value,
+			       Array<2,typename internal::promote<LType,RType>::type,false> >::type
+  solve(const Expression<LType,L>& l, const Expression<RType,R>& r) {
+    typedef typename internal::promote<LType,RType>::type PType;
+    Array<2,PType,false> left = l.cast();
+    Array<2,PType,false> right = r.cast();
+    return solve(left,right);
+  } 
 }
 
 #endif

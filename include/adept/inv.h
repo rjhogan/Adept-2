@@ -30,7 +30,19 @@ namespace adept {
   template <typename Type, SymmMatrixOrientation Orient>
   SpecialMatrix<Type,SymmEngine<Orient>,false> 
   inv(const SpecialMatrix<Type,SymmEngine<Orient>,false>& A);
-  
+ 
+  // -------------------------------------------------------------------
+  // Invert arbitrary expression
+  // -------------------------------------------------------------------
+  template <typename Type, class E>
+  typename internal::enable_if<E::rank==2 && E::is_active==false
+			       && internal::matrix_op_defined<Type>::value,
+			       Array<2,Type,false> >::type
+  inv(const Expression<Type,E>& A) {
+    Array<2,Type,false> array = A.cast();
+    return inv(array);
+  };
+ 
 }
 
 #endif
