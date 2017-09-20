@@ -1,6 +1,6 @@
 /* test_arrays.cpp - Test Adept's array functionality
 
-    Copyright (C) 2016 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2016-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -32,10 +32,9 @@ main(int argc, const char** argv) {
   std::cout << "====================================================================\n"	\
 	    << "   TESTING " << MESSAGE << "\n"
 
-#define EVAL(MESSAGE, TYPE, X, EXPR)				\
+#define EVAL(MESSAGE, TYPE, X, EXPR)					\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "   Testing " << MESSAGE << "\n   " << #EXPR << "\n"	\
-            << "--------------------------------------------------------------------\n"; \
+	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
   try {								\
     TYPE X;								\
     X = test. X;							\
@@ -49,7 +48,7 @@ main(int argc, const char** argv) {
     }									\
   } catch (adept::exception e) {					\
     std::cout << "*** Failed with: " << e.what() << "\n";		\
-    if (!should_fail) { std::cout << "*** INCORRECT OUTCOME\n";	\
+    if (!should_fail) { std::cout << "*** INCORRECT OUTCOME\n";		\
       anomalous_results++;						\
     }									\
     else {								\
@@ -59,8 +58,7 @@ main(int argc, const char** argv) {
 
 #define EVAL2(MESSAGE, TYPEX, X, TYPEY, Y, EXPR)			\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "   Testing " << MESSAGE << "\n   " << #EXPR << "\n"		\
-	    << "--------------------------------------------------------------------\n"; \
+	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
   try {									\
     TYPEX X;								\
     X = test. X;							\
@@ -85,10 +83,9 @@ main(int argc, const char** argv) {
   }
 
 
-#define EVAL3(MESSAGE, TYPEX, X, TYPEY, Y, TYPEZ, Z, EXPR)	\
+#define EVAL3(MESSAGE, TYPEX, X, TYPEY, Y, TYPEZ, Z, EXPR)		\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "   Testing " << MESSAGE << "\n   " << #EXPR << "\n"		\
-	    << "--------------------------------------------------------------------\n"; \
+	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
   try {									\
     TYPEX X;								\
     X = test. X;							\
@@ -116,8 +113,7 @@ main(int argc, const char** argv) {
 
 #define EVAL_NO_TRAP(MESSAGE, TYPE, X, EXPR)				\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "   Testing " << MESSAGE << "\n   " << #EXPR << "\n"	\
-            << "--------------------------------------------------------------------\n"; \
+	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
   {									\
     TYPE X;								\
     X = test. X;							\
@@ -133,8 +129,7 @@ main(int argc, const char** argv) {
 
 #define EVAL2_NO_TRAP(MESSAGE, TYPEX, X, TYPEY, Y, EXPR)			\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "   Testing " << MESSAGE << "\n   " << #EXPR << "\n"		\
-	    << "--------------------------------------------------------------------\n"; \
+	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
   {									\
     TYPEX X;								\
     X = test. X;							\

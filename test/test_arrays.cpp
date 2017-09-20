@@ -38,8 +38,8 @@ main(int argc, const char** argv) {
   Stack stack;
 #endif
   
-#define HEADING(MESSAGE) \
-  std::cout << "####################################################################\n"	\
+#define HEADING(MESSAGE)						\
+  std::cout << "====================================================================\n" \
 	    << "   TESTING " << MESSAGE << "\n"
 
 #define COMMA ,
