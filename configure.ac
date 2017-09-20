@@ -32,10 +32,7 @@ AC_SUBST(AM_CXXFLAGS,"$OPENMP_CXXFLAGS")
 AC_F77_LIBRARY_LDFLAGS
 # The following tests for both BLAS and LAPACK
 AX_LAPACK
-if test "$ax_blas_ok" = no
-then
-	AC_MSG_ERROR([Unable to find a working BLAS library])
-fi
+
 # Dependencies dictate the following order of libraries
 LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS"
 # FLIBS should be included in LDADD or LIBADD in the relevant
@@ -46,15 +43,19 @@ LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS"
 # can clash with Adept's use of OpenMP, leading to suboptimal
 # performance.
 ac_have_openblas_cblas_header=no
-if test "x$BLAS_LIBS" = "x-lopenblas"
+
+if test "$ax_blas_ok" = yes
 then
-	AC_MSG_CHECKING([whether cblas.h is from OpenBLAS])
-	AC_TRY_LINK([#include <cblas.h>],
-	[openblas_set_num_threads(1)],
-	[ac_have_openblas_cblas_header=yes
-	AC_MSG_RESULT(yes)
-	AC_DEFINE([HAVE_OPENBLAS_CBLAS_HEADER],1,[Is the clbas.h header file from OpenBLAS?])],
-	AC_MSG_RESULT(no))
+	if test "x$BLAS_LIBS" = "x-lopenblas"
+	then	
+		AC_MSG_CHECKING([whether cblas.h is from OpenBLAS])
+		AC_TRY_LINK([#include <cblas.h>],
+		[openblas_set_num_threads(1)],
+		[ac_have_openblas_cblas_header=yes
+		AC_MSG_RESULT(yes)
+		AC_DEFINE([HAVE_OPENBLAS_CBLAS_HEADER],1,[Is the clbas.h header file from OpenBLAS?])],
+		AC_MSG_RESULT(no))
+	fi
 fi
 
 ### LIBRARIES THAT MAY BE USED BY TEST PROGRAMS ###
@@ -129,14 +130,14 @@ then
 	   AC_MSG_NOTICE([  Number of BLAS threads may be controlled at run time])
 	fi
 else
-	AC_MSG_NOTICE([BLAS (Basic Linear Algebra Subprograms) will not be used])
+	AC_MSG_NOTICE([BLAS (Basic Linear Algebra Subprograms) will not be used: MATRIX MULTIPLICATION IS UNAVAILABLE])
 	ac_warn_given=yes
 fi
 if test "$ax_lapack_ok" = yes
 then
 	AC_MSG_NOTICE([LAPACK (Linear Algebra Package) will be used: LAPACK_LIBS = $LAPACK_LIBS])
 else
-	AC_MSG_NOTICE([LAPACK (Linear Algebra Package) will not be used])
+	AC_MSG_NOTICE([LAPACK (Linear Algebra Package) will not be used: LINEAR ALGEBRA ROUTINES ARE UNAVAILABLE])
 	ac_warn_given=yes
 fi
 

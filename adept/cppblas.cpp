@@ -12,6 +12,7 @@
 
 */
 
+#include <adept/exception.h>
 #include <adept/cppblas.h>
 
 #ifdef HAVE_CONFIG_H
@@ -179,5 +180,87 @@ namespace adept {
 } // End namespace adept
   
 
-  
+#else // Don't have BLAS
+
+
+namespace adept {
+
+  namespace internal {
+    
+    // Matrix-matrix multiplication for general dense matrices
+#define ADEPT_DEFINE_GEMM(T, FUNC, FUNC_COMPLEX)		\
+    void cppblas_gemm(BLAS_ORDER Order,				\
+		      BLAS_TRANSPOSE TransA,			\
+		      BLAS_TRANSPOSE TransB,			\
+		      int M, int N,				\
+		      int K, T alpha, const T *A,		\
+		      int lda, const T *B, int ldb,		\
+		      T beta, T *C, int ldc) {			\
+      throw feature_not_available("Cannot perform matrix-matrix multiplication because compiled without BLAS"); \
+    }
+    ADEPT_DEFINE_GEMM(double, dgemm_, zgemm_);
+    ADEPT_DEFINE_GEMM(float,  sgemm_, cgemm_);
+#undef ADEPT_DEFINE_GEMM
+    
+    // Matrix-vector multiplication for a general dense matrix
+#define ADEPT_DEFINE_GEMV(T, FUNC, FUNC_COMPLEX)		\
+    void cppblas_gemv(const BLAS_ORDER Order,			\
+		      const BLAS_TRANSPOSE TransA,		\
+		      const int M, const int N,			\
+		      const T alpha, const T *A, const int lda,	\
+		      const T *X, const int incX, const T beta,	\
+		      T *Y, const int incY) {			\
+      throw feature_not_available("Cannot perform matrix-vector multiplication because compiled without BLAS"); \
+    }
+    ADEPT_DEFINE_GEMV(double, dgemv_, zgemv_);
+    ADEPT_DEFINE_GEMV(float,  sgemv_, cgemv_);
+#undef ADEPT_DEFINE_GEMV
+    
+    // Matrix-matrix multiplication where matrix A is symmetric
+    // FIX! CHECK ROW MAJOR VERSION IS RIGHT			
+#define ADEPT_DEFINE_SYMM(T, FUNC, FUNC_COMPLEX)			\
+    void cppblas_symm(const BLAS_ORDER Order,				\
+		      const BLAS_SIDE Side,				\
+		      const BLAS_UPLO Uplo,				\
+		      const int M, const int N,				\
+		      const T alpha, const T *A, const int lda,		\
+		      const T *B, const int ldb, const T beta,		\
+		      T *C, const int ldc) {				\
+      throw feature_not_available("Cannot perform symmetric matrix-matrix multiplication because compiled without BLAS"); \
+    }
+    ADEPT_DEFINE_SYMM(double, dsymm_, zsymm_);
+    ADEPT_DEFINE_SYMM(float,  ssymm_, csymm_);
+#undef ADEPT_DEFINE_SYMM
+    
+    // Matrix-vector multiplication where the matrix is symmetric
+#define ADEPT_DEFINE_SYMV(T, FUNC, FUNC_COMPLEX)			\
+    void cppblas_symv(const BLAS_ORDER Order,				\
+		      const BLAS_UPLO Uplo,				\
+		      const int N, const T alpha, const T *A,		\
+		      const int lda, const T *X, const int incX,	\
+		      const T beta, T *Y, const int incY) {		\
+      throw feature_not_available("Cannot perform symmetric matrix-vector multiplication because compiled without BLAS"); \
+    }
+    ADEPT_DEFINE_SYMV(double, dsymv_, zsymv_);
+    ADEPT_DEFINE_SYMV(float,  ssymv_, csymv_);
+#undef ADEPT_DEFINE_SYMV
+    
+    // Matrix-vector multiplication for a general band matrix
+#define ADEPT_DEFINE_GBMV(T, FUNC, FUNC_COMPLEX)		\
+    void cppblas_gbmv(const BLAS_ORDER Order,			\
+		      const BLAS_TRANSPOSE TransA,		\
+		      const int M, const int N,			\
+		      const int KL, const int KU, const T alpha,\
+		      const T *A, const int lda, const T *X,	\
+		      const int incX, const T beta, T *Y,	\
+		      const int incY) {				\
+      throw feature_not_available("Cannot perform band matrix-vector multiplication because compiled without BLAS"); \
+    }
+    ADEPT_DEFINE_GBMV(double, dgbmv_, zgbmv_);
+    ADEPT_DEFINE_GBMV(float,  sgbmv_, cgbmv_);
+#undef ADEPT_DEFINE_GBMV
+
+  }
+}
+
 #endif

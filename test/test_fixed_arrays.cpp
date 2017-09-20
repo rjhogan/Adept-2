@@ -352,7 +352,7 @@ main(int argc, const char** argv) {
 
 #ifndef MARVEL_STYLE
   HEADING("MATRIX MULTIPLICATION");
-  EVAL2_NO_TRAP("Matrix-Matrix multiplication", myMatrix33, S, myMatrix23, M, S = M.T() ** M);
+  EVAL2("Matrix-Matrix multiplication", myMatrix33, S, myMatrix23, M, S = M.T() ** M);
   EVAL2("Matrix-Matrix multiplication with matmul", myMatrix33, S, myMatrix23, M, S = matmul(M.T(), M));
 
   should_fail = true;

@@ -38,21 +38,22 @@ echo "/* $ADEPT_SOURCE_HEADER - Source code for the Adept library
   that is usable on non-Unix platforms that are unable to use the
   autoconf configure script to build external libraries.
 
-  Adept programs must be linked to a functioning BLAS library for
-  matrix multiplication, although a header file does not need to be
-  included.  If HAVE_LAPACK is defined the linear algebra routines
-  will be enabled (matrix inverse and solving linear systems of
-  equations); again, the LAPACK library should be provided at the link
-  stage although no header file is required.
+  If HAVE_BLAS is defined below then matrix multiplication will be
+  enabled; the BLAS library should be provided at the link stage
+  although no header file is required.  If HAVE_LAPACK is defined
+  below then linear algebra routines will be enabled (matrix inverse
+  and solving linear systems of equations); again, the LAPACK library
+  should be provided at the link stage although no header file is
+  required.
 
 */
 
-#warning \"The adept_source.h header file has not been edited so LAPACK linear-algebra support has been disabled\"
+#warning \"The adept_source.h header file has not been edited so BLAS matrix multiplication and LAPACK linear-algebra support have been disabled\"
 
-/* The BLAS library is required */
-#define HAVE_BLAS 1
+/* Uncomment this if you are linking to the BLAS library (header file
+not required) to enable matrix multiplication */ //#define HAVE_BLAS 1
 
-/* Uncomment this if you have the LAPACK library (header file not required) */
+/* Uncomment this if you are linking to the LAPACK library (header file not required) */
 //#define HAVE_LAPACK 1
 
 /* Uncomment this if you have the cblas.h header from OpenBLAS */
