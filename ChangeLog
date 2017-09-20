@@ -15,6 +15,8 @@ version 1.9.10 (September 2017)
 	- "make check" now runs test script test/run_tests.sh
 	- inv and solve now take general expression arguments
 	- Enabled indexed arrays to be assigned to an initializer list
+	- BLAS now optional (without it matrix multiplication causes
+	run-time exception)
 
 version 1.9.9 (August 2017)
 	- Put on GitHub as rjhogan/Adept-2

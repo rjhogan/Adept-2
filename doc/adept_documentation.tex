@@ -199,15 +199,17 @@ section \ref{sec:non-unix}.
 \label{sec:unix}
 On a Unix-like system, do the following:
 \begin{enumerate}
-\item Ensure you have a BLAS library installed, necessary for matrix
-  multiplication.  For the best performance in matrix operations it is
-  recommended that you install an optimized package such as
-  OpenBLAS\footnote{OpenBLAS is available from
-    \url{http://www.openblas.net/}.} or ATLAS\footnote{ATLAS is
-    available from \url{http://math-atlas.sourceforge.net/}.}.  If you
-  have multiple BLAS libraries available on your system you can
-  specify the one you want by calling the \code{configure} script
-  below with \code{--with-blas=openblas} or similar.
+\item Install the BLAS library to enable matrix multiplication.  For
+  the best performance in matrix operations it is recommended that you
+  install an optimized package such as OpenBLAS\footnote{OpenBLAS is
+    available from \url{http://www.openblas.net/}.} or
+  ATLAS\footnote{ATLAS is available from
+    \url{http://math-atlas.sourceforge.net/}.}.  If you have multiple
+  BLAS libraries available on your system you can specify the one you
+  want by calling the \code{configure} script below with
+  \code{--with-blas=openblas} or similar.  If \Adept\ is compiled
+  without BLAS support then matrix multiplication will fail at run
+  time.
 \item Optionally install the LAPACK library, necessary for matrix
   inversion and solving linear systems of equations. If you do not
   install this then \Adept\ will still compile but the functions
@@ -356,16 +358,18 @@ includes it, you compile in all the functionally of the
 include only the \code{adept.h} or \code{adept\_arrays.h} header file
 as normal.  When you link all your object files together to make an
 executable, the \Adept\ functionality will be built in, even though
-you did not link to an external \Adept\ library. Since \Adept\ depends
-on BLAS for matrix multiplication, you will still need to link to a
-functioning BLAS library (such as OpenBLAS). By default,
-\code{adept\_arrays.h} does not enable LAPACK (needed for matrix
-inversion and solving linear systems of equations); to enable it, edit
-the line near the top of \code{adept\_source.h} containing
-\code{HAVE\_LAPACK}, and link against a functioning LAPACK library.  A
-demonstration of the use of \code{adept\_source.h} is in the
-\code{test/test\_no\_lib.cpp} source file, which needs to be compiled
-together with \code{test/algorithm.cpp} to make an executable.
+you did not link to an external \Adept\ library.
+
+By default, \code{adept\_arrays.h} does not enable BLAS (needed for
+matrix multiplication) or LAPACK (needed for matrix inversion and
+solving linear systems of equations); to enable either BLAS alone, or
+both BLAS and LAPACK, uncomment the lines near the top of
+\code{adept\_source.h} defining \code{HAVE\_BLAS} and
+\code{HAVE\_LAPACK}, and link against functioning BLAS and LAPACK
+library. A demonstration of the use of \code{adept\_source.h} is in
+the \code{test/test\_no\_lib.cpp} source file, which needs to be
+compiled together with \code{test/algorithm.cpp} to make an
+executable.
 %
 It is hoped that this feature will make it easy to use \Adept\ on
 non-Unix platforms, although of course this feature works just as well
@@ -2937,8 +2941,9 @@ differentiation and inherit directly from \code{adept::exception}::
 \citem{feature\_not\_available} This exception is thrown by deprecated
 functions, such as \code{Stack::start()}. It is also thrown by
 functions that are not available because a certain library is not
-being used, such as \code{inv} if LAPACK was not available at compile
-time.
+being used, such as \code{inv} if \Adept\ was compiled without LAPACK
+support, or matrix multiplciation via the `\code{**}' psudo-operator
+if \Adept\ was compiled without BLAS support.
 \end{description}
 
 \subsection{Automatic-differentiation exceptions}
