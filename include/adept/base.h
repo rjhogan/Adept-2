@@ -160,6 +160,14 @@
 // 4: Miscellaneous
 // ---------------------------------------------------------------------
 
+// Various C++11 features
+#if __cplusplus > 199711L
+// We can optimize the returning of Arrays from functions with move
+// semantics
+#define ADEPT_MOVE_SEMANTICS 1
+#define ADEPT_CXX11_FEATURES 1
+#endif
+
 // The following attempt to align the data to facilitate SSE2
 // vectorization did not work so is disabled
 #ifdef __GNUC__
@@ -179,14 +187,16 @@
 // it off and provide a blank definition of ADEPT_THREAD_LOCAL
 #define ADEPT_STACK_THREAD_UNSAFE 1
 #define ADEPT_THREAD_LOCAL
+#elif defined(ADEPT_CXX11_FEATURES)
+// C++11 has thread_local as part of the language, and should be
+// supported on non-Mac C++11 platforms
+#define ADEPT_THREAD_LOCAL thread_local
 #elif defined(_WIN32)
-// Windows has a different way to specify thread-local storage from
-// the GCC/Intel/Sun/IBM compilers.  Note that this is unified with
-// C++11 but the older formats are still supported and it would be
-// more complicated to check for C++11 support.
+// Windows C++98 has a different way to specify thread-local storage
+// from the GCC/Intel/Sun/IBM compilers.
 #define ADEPT_THREAD_LOCAL __declspec(thread)
 #else
-// The following should work on GCC/Intel/Sun/IBM compilers
+// The following should work on GCC/Intel/Sun/IBM C++98 compilers
 #define ADEPT_THREAD_LOCAL __thread
 #endif
 #endif
@@ -198,14 +208,6 @@
 #define ADEPT_THREAD_LOCAL_IF_OPENMP ADEPT_THREAD_LOCAL
 #else
 #define ADEPT_THREAD_LOCAL_IF_OPENMP
-#endif
-
-// Various C++11 features
-#if __cplusplus > 199711L
-// We can optimize the returning of Arrays from functions with move
-// semantics
-#define ADEPT_MOVE_SEMANTICS 1
-#define ADEPT_CXX11_FEATURES 1
 #endif
 
 
