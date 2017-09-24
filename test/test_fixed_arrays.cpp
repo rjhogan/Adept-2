@@ -34,7 +34,7 @@ main(int argc, const char** argv) {
 
 #define EVAL(MESSAGE, TYPE, X, EXPR)					\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
+	    << "### " << MESSAGE << "\n### " << #EXPR << "\n";	\
   try {								\
     TYPE X;								\
     X = test. X;							\
@@ -58,7 +58,7 @@ main(int argc, const char** argv) {
 
 #define EVAL2(MESSAGE, TYPEX, X, TYPEY, Y, EXPR)			\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
+	    << "### " << MESSAGE << "\n### " << #EXPR << "\n";	\
   try {									\
     TYPEX X;								\
     X = test. X;							\
@@ -85,7 +85,7 @@ main(int argc, const char** argv) {
 
 #define EVAL3(MESSAGE, TYPEX, X, TYPEY, Y, TYPEZ, Z, EXPR)		\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
+	    << "### " << MESSAGE << "\n### " << #EXPR << "\n";	\
   try {									\
     TYPEX X;								\
     X = test. X;							\
@@ -113,7 +113,7 @@ main(int argc, const char** argv) {
 
 #define EVAL_NO_TRAP(MESSAGE, TYPE, X, EXPR)				\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
+	    << "### " << MESSAGE << "\n### " << #EXPR << "\n";	\
   {									\
     TYPE X;								\
     X = test. X;							\
@@ -129,7 +129,7 @@ main(int argc, const char** argv) {
 
 #define EVAL2_NO_TRAP(MESSAGE, TYPEX, X, TYPEY, Y, EXPR)			\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
+	    << "### " << MESSAGE << "\n### " << #EXPR << "\n";	\
   {									\
     TYPEX X;								\
     X = test. X;							\

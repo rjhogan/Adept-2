@@ -503,9 +503,34 @@ namespace adept {
       return Array<Rank,NewType,IsActive>(const_cast<Array<Rank,OldType,IsActive>&>(arg));
     }
 
-    // If the argument is a special matrix then convert it to the new
-    // type; this will only involve a copy of the raw data if the type
-    // is changed, otherwise the new array will simply link to the old
+#ifdef ADEPT_ONLY_DIFFERENTIATE_DENSE_MATRIX_MULTIPLICATION
+    // If the argument is an active special matrix then it must be
+    // copied to a dense "Array" because differentiation of the
+    // various types of special matrix (symmetric, band, upper, lower
+    // etc) is not yet implemented.
+    template <typename NewType, typename OldType, class Engine>
+    inline
+    Array<2,NewType,true>
+    promote_array(const SpecialMatrix<OldType,Engine,true>& arg) {
+      return Array<2,NewType,true>(
+	   const_cast<SpecialMatrix<OldType,Engine,true>&>(arg));
+    }
+    // If the argument is an inactive special matrix then convert it
+    // to the new type; this will only involve a copy of the raw data
+    // if the type is changed, otherwise the new array will simply
+    // link to the old
+    template <typename NewType, typename OldType, class Engine>
+    inline
+    SpecialMatrix<OldType,Engine,false>
+    promote_array(const SpecialMatrix<OldType,Engine,false>& arg) {
+      return SpecialMatrix<NewType,Engine,false>(
+	 const_cast<SpecialMatrix<OldType,Engine,false>&>(arg));
+    }
+
+#else
+    // The following assumes that the Adept library knows how to
+    // differentiate special matrices: currently it doesn't so this
+    // path is likely to throw a run-time exception.
     template <typename NewType, typename OldType, class Engine, bool IsActive>
     inline
     SpecialMatrix<OldType,Engine,IsActive>
@@ -513,6 +538,7 @@ namespace adept {
       return SpecialMatrix<NewType,Engine,IsActive>(
 		     const_cast<SpecialMatrix<OldType,Engine,IsActive>&>(arg));
     }
+#endif
 
     // If the argument is a fixed array of a different type then copy it
     template <typename NewType, typename OldType, bool IsActive, Index J0,

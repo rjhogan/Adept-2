@@ -95,7 +95,6 @@
 
 
 
-
 // ---------------------------------------------------------------------
 // 2: Defines requiring a library recompile
 // ---------------------------------------------------------------------
@@ -133,16 +132,16 @@
 //#define ADEPT_FLOATING_POINT_TYPE long double
 
 // Thread-local storage is used for the global Stack pointer to ensure
-// thread safety.  Thread-local variables are declared in different
-// ways by different compilers, the most common ones being detected in
-// section 4 below.  Some platforms (particularly some Mac platforms)
-// do not implement thread-local storage, and therefore on Mac
-// thread-local storage is disabled. If you want to manually specify
-// how thread-local storage is declared, you may do it here,
-// e.g. using the C++11 keyword "thread_local".  If thread-local
-// storage is not available on your platform but is not detected in
-// section 4, and consequently you cannot get the code to compile,
-// then you can make an empty declaration here.
+// thread safety.  In pre-C++11 compilers, thread-local variables are
+// declared in different ways by different compilers, the most common
+// ones being detected in section 4 below.  Some platforms
+// (particularly some Mac platforms) do not implement thread-local
+// storage, and therefore on Mac thread-local storage is disabled. If
+// you want to manually specify how thread-local storage is declared,
+// you may do it here.  If thread-local storage is not available on
+// your platform but is not detected in section 4, and consequently
+// you cannot get the code to compile, then you can make an empty
+// declaration here.
 //#define ADEPT_THREAD_LOCAL thread_local
 
 // Define the following if you wish to use OpenMP to accelerate array
@@ -151,7 +150,6 @@
 
 // Do we disable automatic alias checking in array operations?
 //#define ADEPT_NO_ALIAS_CHECKING
-
 
 // This cannot be changed without rewriting the Adept library
 #define ADEPT_MAX_ARRAY_DIMENSIONS 7
@@ -163,8 +161,10 @@
 // Various C++11 features
 #if __cplusplus > 199711L
 // We can optimize the returning of Arrays from functions with move
-// semantics
+// semantics:
 #define ADEPT_MOVE_SEMANTICS 1
+// Other C++11 features such as initializer lists, thread_local
+// keyword, extra mathematical functions etc:
 #define ADEPT_CXX11_FEATURES 1
 #endif
 
@@ -179,7 +179,7 @@
 
 // The way thread-local variables are specified pre-C++11 is compiler
 // specific.  You can specify this manually by defining the
-// ADEPT_THREAD_LOCAL preprocessor variable (e.g. to "thread_local");
+// ADEPT_THREAD_LOCAL preprocessor variable in the previous section,
 // otherwise it is defined here depending on your compiler
 #ifndef ADEPT_THREAD_LOCAL
 #if defined(__APPLE__)
@@ -209,6 +209,18 @@
 #else
 #define ADEPT_THREAD_LOCAL_IF_OPENMP
 #endif
+
+// Currently the design of the stack means that automatic
+// differentiation of matrix multiplication is very inefficient. A
+// future version of Adept will redesign the stack to store directives
+// enabling efficient implementation of the derivative of a matrix
+// multiplication, and this will be applicable to different types of
+// matrix (dense, symmetric, banded, upper and lower). But for now,
+// only differentiation of dense active matrices
+// (i.e. Array<2,Real,true>>) is implemented.  Therefore other types
+// of active matrix need to be converted to this type before they can
+// be used in matrix multiplication.
+#define ADEPT_ONLY_DIFFERENTIATE_DENSE_MATRIX_MULTIPLICATION 1
 
 
 // ---------------------------------------------------------------------

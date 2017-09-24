@@ -46,7 +46,7 @@ main(int argc, const char** argv) {
 
 #define EVAL(MESSAGE, TYPE, X, INIT, EXPR)				\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
+	    << "### " << MESSAGE << "\n### " << #EXPR << "\n";	\
   try {								\
     TYPE X;								\
     if (INIT) {								\
@@ -75,7 +75,7 @@ main(int argc, const char** argv) {
 
 #define EVAL2(MESSAGE, TYPEX, X, INITX, TYPEY, Y, EXPR)			\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
+	    << "### " << MESSAGE << "\n### " << #EXPR << "\n";	\
   try {									\
     TYPEX X;								\
     if (INITX) {							\
@@ -107,7 +107,7 @@ main(int argc, const char** argv) {
 
 #define EVAL3(MESSAGE, TYPEX, X, INITX, TYPEY, Y, TYPEZ, Z, EXPR)	\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n"; \
+	    << "### " << MESSAGE << "\n### " << #EXPR << "\n"; \
   try {									\
     TYPEX X;								\
     if (INITX) {							\
@@ -141,7 +141,7 @@ main(int argc, const char** argv) {
 
 #define EVAL_NO_TRAP(MESSAGE, TYPE, X, INIT, EXPR)				\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "### Testing " << MESSAGE << "\n### " << #EXPR << "\n";	\
+	    << "### " << MESSAGE << "\n### " << #EXPR << "\n";	\
   {									\
     TYPE X;								\
     if (INIT) {								\
@@ -162,7 +162,7 @@ main(int argc, const char** argv) {
 
 #define EVAL2_NO_TRAP(MESSAGE, TYPEX, X, INITX, TYPEY, Y, EXPR)			\
   std::cout << "--------------------------------------------------------------------\n" \
-	    << "### Testing " << MESSAGE << "\n###  " << #EXPR << "\n";	\
+	    << "### " << MESSAGE << "\n###  " << #EXPR << "\n";	\
   {									\
     TYPEX X;								\
     if (INITX) {								\
@@ -572,6 +572,7 @@ main(int argc, const char** argv) {
   EVAL2("Solving linear equations Ax=b with symmetric A", myVector, v, true, mySymmMatrix, O, v = solve(O,v));
   EVAL2("Solving linear equations AX=B with symmetric A", myMatrix, M, true, mySymmMatrix, O, M.T() = solve(O,M.T()));
   EVAL3("Solving linear equations AX=B with symmetric A and B", myMatrix, S, false, mySymmMatrix, O, mySymmMatrix, P, S = solve(O,P));
+  EVAL2("Solving linear equations Ax=b with upper-triangular A", myVector, v, true, myUpperMatrix, U, v = solve(U,v));
   EVAL2("Invert general matrix", myMatrix, M, false, myMatrix, S, M = inv(S));
   EVAL2("Invert symmetric matrix", mySymmMatrix, P, false, mySymmMatrix, O, P = inv(O));
 #else

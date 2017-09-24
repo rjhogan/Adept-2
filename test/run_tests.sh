@@ -13,7 +13,7 @@ echo
 echo "Writing output of test programs to $LOG"
 echo
 
-FAILURES=1
+FAILURES=0
 
 for TEST in "$@"
 do

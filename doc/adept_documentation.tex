@@ -2653,20 +2653,31 @@ that users should be aware of in order to get the best performance:
 \end{lstlisting}
 \end{itemize}
 
-A final member function to mention in this section is
+An additional member function to mention in this section is
 \code{in\_place\_transpose()}, which is only applicable to
 matrices. It transposes the matrix by swapping the dimensions and the
 offsets to each dimension, but leaving the actual data untouched.
 This means that a matrix with row-major storage will be changed to
 column-major, and vice versa.
 
+\Adept\ can differentiate expressions involving matrix multiplcation,
+but this is far from optimal in \Adept\ version 2.0, for two
+reasons. Firstly, only differentiation of dense matrices has been
+implemented, so when matrix multiplication is applied to active
+``special matrices'' (symmetric, band, upper-triangular and
+lower-triangular matrices), they are first copied to a dense
+matrix. Secondly, the \Adept\ stack format can currently only store
+differential statements for scalar expressions, which for matrix
+multiplication leads to lots of repeated values on the stack. A future
+version of \Adept\ will redesign the stack to allow matrices to be
+stored in it; this will be much faster and much less memory-hungry.
+
 \section{Linear algebra}
 \label{sec:la}
 \Adept\ provides the functions \code{solve} and \code{inv} to solve
 systems of linear equations and to invert a matrix, respectively,
 which themselves call the most appropriate function from
-LAPACK.\footnote{Statements involving \code{solve} and \code{inv}
-  cannot yet be automatically differentiated.}
+LAPACK.
 \begin{lstlisting}
  Matrix A(5,5), Ainv(5,5), X(5,5), B(5,5);
  SymmMatrix S(5), Sinv(5);
@@ -2684,6 +2695,9 @@ fastest-varying dimensions that are contiguous and increasing, then
 performing the operation.
 \fi
 
+Statements involving \code{solve} and \code{inv} cannot yet be
+automatically differentiated. When the \Adept\ stack is redesigned to
+hold matrices, this capability will be added.
 
 \section{Bounds and alias checking}
 \label{sec:bounds}

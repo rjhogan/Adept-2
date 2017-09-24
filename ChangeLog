@@ -25,6 +25,9 @@ version 1.9.10 (September 2017)
 	- Added atan2 support
 	- C++11 on non-Mac platforms uses thread_local keyword instead of
 	C++98 compiler extensions
+	- Matrix multiplication on active special matrices implemented by
+	copying them to a dense Array<2,Real,true>. Very inefficient, but
+	it works.
 
 version 1.9.9 (August 2017)
 	- Put on GitHub as rjhogan/Adept-2
