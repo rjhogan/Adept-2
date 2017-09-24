@@ -406,8 +406,8 @@ main(int argc, const char** argv) {
   EVAL("contiguous subarray lvalue using subset", myVector, v, true, v.subset(end-1,end) *= 10.0);
   EVAL2("regular subarray rvalue", myVector, v, false, myVector, w, v = w(stride(end,0,-1)));
   EVAL2("regular subarray lvalue", myMatrix, M, true, myVector, w, M(0,stride(0,end,2)) *= w(stride(end,0,-2)));
-  //  EVAL2("irregular subarray rvalue", myMatrix, M, false, myMatrix, N, M = N(stride(1,0,-1),find(N(0,__)>18)));
-  EVAL("irregular subarray rvalue", myMatrix, M, true, M(stride(1,0,-1),find(M(0,__)>4)) = 0);
+  EVAL2("irregular subarray rvalue", myMatrix, M, false, myMatrix, N, M = N(stride(1,0,-1),find(N(0,__)>18)));
+  EVAL("irregular subarray lvalue", myMatrix, M, true, M(stride(1,0,-1),find(M(0,__)>4)) = 0);
   EVAL("slice leading dimension", myMatrix, M, true, M[end] = 0);
   EVAL("slice two dimensions", myMatrix, M, true, M[end][0] = 0);
   EVAL2("diag_vector member function as rvalue", myVector, v, false, myMatrix, S, v = diag_vector(S,1));
@@ -417,7 +417,7 @@ main(int argc, const char** argv) {
   EVAL2("transpose as rvalue via T member function", myMatrix, N, false, myMatrix, M, N = 2 * M.T());
   EVAL2("transpose as rvalue via permute member function", myMatrix, N, false, myMatrix, M, N = 2 * M.permute(1,0));
   EVAL3("2D arbitrary index as rvalue", myMatrix, M, false, myMatrix, N, intVector, index, M = const_cast<const myMatrix&>(N)(index,index));
-//EVAL3("2D arbitrary index as lvalue assigned to scalar", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = (myReal)(4.0));
+  EVAL3("2D arbitrary index as lvalue assigned to scalar expression", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = 2.0*(myReal)(4.0));
   EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = N(__,range(1,2)));
   EVAL2("2D arbitrary index as lvalue with assign-multiply operator", myMatrix, M, true, intVector, index, M(index,index) *= 10.0);
   EVAL2("2D arbitrary index as lvalue with aliased right-hand-side", myMatrix, M, true, intVector, index, M(index,index) += M(__,range(1,2)));
@@ -474,6 +474,9 @@ main(int argc, const char** argv) {
   EVAL2("TridiagMatrix as rvalue", myMatrix, M, false, myTridiagMatrix, T, M = T);
   EVAL2("LowerMatrix as rvalue", myMatrix, M, false, myLowerMatrix, L, M = L);
   EVAL2("UpperMatrix as rvalue", myMatrix, M, false, myUpperMatrix, U, M = U);
+  EVAL("SymmMatrix assign from scalar expression", mySymmMatrix, O, true, O = 2.0*(myReal)(4.0));
+  EVAL("UpperMatrix assign from scalar expression", myUpperMatrix, U, true, U = 2.0*(myReal)(4.0));
+
 
   EVAL("SymmMatrix diag_vector member function as lvalue (upper)", mySymmMatrix, O, true, O.diag_vector(1) = 0);
   EVAL("SymmMatrix diag_vector member function as lvalue (lower)", mySymmMatrix, O, true, O.diag_vector(-2) += 10);
@@ -553,6 +556,9 @@ main(int argc, const char** argv) {
   EVAL2("DiagMatrix-Vector multiplication", myVector, v, true, myDiagMatrix, D, v = D ** v);
   EVAL2("TridiagMatrix-Vector multiplication", myVector, v, true, myTridiagMatrix, T, v = T ** v);
   EVAL2("TridiagMatrix-Matrix multiplication", myMatrix, S, true, myTridiagMatrix, T, S = T ** S);
+
+  //  EVAL2("LowerMatrix-Matrix multiplication", myMatrix, S, true, myLowerMatrix, L, S = L ** S);
+
   EVAL2("Vector-TridiagMatrix multiplication", myVector, v, true, myTridiagMatrix, T, v = v ** T);
   EVAL2("Matrix-TridiagMatrix multiplication", myMatrix, M, true, myTridiagMatrix, T, M = M ** T);
   

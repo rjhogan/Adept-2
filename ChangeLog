@@ -17,6 +17,10 @@ version 1.9.10 (September 2017)
 	- Enabled indexed arrays to be assigned to an initializer list
 	- BLAS now optional (without it matrix multiplication causes
 	run-time exception)
+	- Added test_derivatives to test quality of derivatives for all
+	mathematical functions
+	- Enabled SpecialMatrix and IndexedArray to be assigned to an
+	active scalar expression
 
 version 1.9.9 (August 2017)
 	- Put on GitHub as rjhogan/Adept-2
