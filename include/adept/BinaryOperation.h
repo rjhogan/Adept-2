@@ -220,7 +220,7 @@ namespace adept {
 						     MyScratchNum+L::n_scratch+n_local_scratch>(loc, scratch));
       }
       // In differentiating "a/b", it helps to store "1/b";
-      // "operation_store" is only provided by Divide
+      // "operation_store" is only provided by Divide and Atan2
       template <int StoreResult, int MyArrayNum, int MyScratchNum, 
 		int NArrays, int NScratch>
       typename enable_if<StoreResult==2, Type>::type
@@ -992,6 +992,67 @@ namespace adept {
       }
     };
 
+
+    // Policy class implementing function atan2
+    struct Atan2 {
+      static const bool is_operator  = false; // Operator or function for expression_string()
+      static const int  store_result = 2;     // Do we need any scratch space? Yes: for left^2+right^2
+      static const bool is_vectorized = false;
+
+      const char* operation_string() const { return "atan2"; } // For expression_string()
+      
+      // Implement the basic operation
+      template <class LType, class RType>
+      typename promote<LType, RType>::type
+      operation(const LType& left, const RType& right) const {
+	using std::atan2;
+	return atan2(left, right);
+      }
+      // Implement the basic operation
+      template <class LType, class RType>
+      typename promote<LType, RType>::type
+      operation_store(const LType& left, const RType& right, Real& saved_term) const {
+	using std::atan2;
+	saved_term = 1.0 / (left*left + right*right);
+	return atan2(left, right);
+      }
+            
+      // Calculate the gradient of the left-hand argument
+      template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R>
+      void calc_left(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
+			       const ScratchVector<NScratch>& scratch) const {
+        left.template calc_gradient_<MyArrayNum, MyScratchNum+store_result>(stack, loc, scratch, 
+	   right.template value_stored_<MyArrayNum+L::n_arrays,MyScratchNum+L::n_scratch+store_result>(loc, scratch)
+	    *scratch[MyScratchNum+1]);
+      }
+
+      // Calculate the gradient of the right-hand argument
+      template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R>
+      void calc_right(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
+			       const ScratchVector<NScratch>& scratch) const {
+        right.template calc_gradient_<MyArrayNum+L::n_arrays, MyScratchNum+L::n_scratch+store_result>(stack, loc, scratch, 
+	  -left.template value_stored_<MyArrayNum,MyScratchNum+store_result>(loc, scratch)*scratch[MyScratchNum+1]);
+      }
+
+      // Calculate the gradient of the left-hand argument with a multiplier
+      template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R, typename MyType>
+      void calc_left(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
+			       const ScratchVector<NScratch>& scratch, MyType multiplier) const {
+        left.template calc_gradient_<MyArrayNum, MyScratchNum+store_result>(stack, loc, scratch, 
+	   right.template value_stored_<MyArrayNum+L::n_arrays,MyScratchNum+L::n_scratch+store_result>(loc, scratch)
+	    *scratch[MyScratchNum+1]*multiplier);
+      }
+
+      // Calculate the gradient of the right-hand argument with a multiplier
+      template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R, typename MyType>
+      void calc_right(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
+			       const ScratchVector<NScratch>& scratch, MyType multiplier) const {
+        right.template calc_gradient_<MyArrayNum+L::n_arrays, MyScratchNum+L::n_scratch+store_result>(stack, loc, scratch, 
+	  -left.template value_stored_<MyArrayNum,MyScratchNum+store_result>(loc, scratch)*scratch[MyScratchNum+1]*multiplier);
+      }
+    };
+
+
     // Policy class implementing function max
     struct Max {
       static const bool is_operator  = false; // Operator or function for expression_string()
@@ -1186,9 +1247,10 @@ namespace adept {
   ADEPT_DEFINE_OPERATION(Multiply, operator*);
   ADEPT_DEFINE_OPERATION(Divide, operator/);
   ADEPT_DEFINE_OPERATION(Pow, pow);
+  ADEPT_DEFINE_OPERATION(Atan2, atan2);
+
   ADEPT_DEFINE_OPERATION(Max, max);
   ADEPT_DEFINE_OPERATION(Min, min);
-
   // If std::max has been brought into scope via a "using" directive
   // then calling "max" with two arguments of the same type will call
   // the std::max rather than adept::max function, even if these

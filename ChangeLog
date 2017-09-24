@@ -22,6 +22,7 @@ version 1.9.10 (September 2017)
 	- Enabled SpecialMatrix and IndexedArray to be assigned to an
 	active scalar expression
 	- Added fmax and fmin functions (even if C++11 not used)
+	- Added atan2 support
 
 version 1.9.9 (August 2017)
 	- Put on GitHub as rjhogan/Adept-2

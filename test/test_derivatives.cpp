@@ -157,6 +157,7 @@ main(int argc, const char** argv) {
   std::cout << "x and y by " << dx << " is less than " << MAX_FRAC_ERR << ".\n";    
 
   TEST_BINARY_FUNC(pow);
+  TEST_BINARY_FUNC(atan2);
   TEST_BINARY_FUNC(max);
   TEST_BINARY_FUNC(min);
   TEST_BINARY_FUNC(fmax);
