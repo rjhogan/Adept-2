@@ -543,6 +543,59 @@ namespace adept {
 	return *this;
       }
 
+
+      // Assign active scalar expression to an active array by first
+      // converting the RHS to an active scalar
+      template <typename EType, class E>
+      typename enable_if<E::rank == 0 && (Rank > 0) && IsActive && !E::is_lvalue,
+	IndexedArray&>::type
+	operator=(const Expression<EType,E>& rhs) {
+	Active<EType> x = rhs;
+	*this = x;
+	return *this;
+      }
+
+      // Assign an active scalar to an active array
+      template <typename PType>
+      typename enable_if<!is_active<PType>::value && IsActive, IndexedArray&>::type
+      operator=(const Active<PType>& rhs) {
+	ADEPT_STATIC_ASSERT(IsActive, ATTEMPT_TO_ASSIGN_ACTIVE_SCALAR_TO_INACTIVE_INDEXED_ARRAY);
+	if (!empty()) {
+#ifdef ADEPT_RECORDING_PAUSABLE
+	  if (!ADEPT_ACTIVE_STACK->is_recording()) {
+	    assign_inactive_scalar_<false>(rhs.scalar_value());
+	    return *this;
+	  }
+#endif
+	  
+	  ExpressionSize<Rank> coords(0);
+	  ExpressionSize<a_rank> a_coords(0);
+	  ExpressionSize<1> a_loc(0);
+	  Type val = rhs.scalar_value();
+	  int dim;
+	  static const int last = Rank-1;
+	  do {
+ 	    coords[last] = 0;
+	    // Convert between the coordinates of the IndexedArray
+	    // object to the coordinates of the Array object
+	    translate_coords_<0,0>(coords, a_coords);
+	    a_.set_location(a_coords, a_loc);
+	    // Innermost loop
+	    for ( ; coords[last] < dimensions_[last]; ++coords[last]) {
+	      Index index = a_loc[0]
+		+ last_offset_
+		* get_value_with_len_<a_fastest_varying_dim>(coords[last]);
+	      a_.data()[index] = val;
+	      ADEPT_ACTIVE_STACK->push_rhs(1.0, rhs.gradient_index());
+	      ADEPT_ACTIVE_STACK->push_lhs(a_.gradient_index()+index);
+	    }
+	    advance_index(dim, coords);
+	  } while (dim >= 0);
+        }
+        return *this;
+      } 
+
+
 #define ADEPT_DEFINE_OPERATOR(OPERATOR, OPSYMBOL)	\
     template <class RType>			\
     IndexedArray& OPERATOR(const RType& rhs) {	\

@@ -1172,6 +1172,46 @@ namespace adept {
       return *this;
     }
 
+    // Assign active scalar expression to an active array by first
+    // converting the RHS to an active scalar
+    template <typename EType, class E>
+    typename enable_if<E::rank == 0 && IsActive && !E::is_lvalue,
+      SpecialMatrix&>::type
+      operator=(const Expression<EType,E>& rhs) {
+      Active<EType> x = rhs;
+      *this = x;
+      return *this;
+    }
+
+  
+    // An active array being assigned to an active scalar
+    template <typename PType>
+    typename enable_if<!is_active<PType>::value && IsActive, SpecialMatrix&>::type
+    operator=(const Active<PType>& rhs) {
+      // If not recording we call the inactive version instead
+#ifdef ADEPT_RECORDING_PAUSABLE
+      if (! ADEPT_ACTIVE_STACK->is_recording()) {
+	assign_inactive_scalar<false>(rhs.scalar_value());
+	return *this;
+      }
+#endif
+      Type val = rhs.scalar_value();
+      Index j_start, j_end_plus_1, index, index_stride;
+      for (Index i = 0 ; i < dimension_; ++i) {
+	Engine::get_row_range(i, dimension_, offset_, 
+			      j_start, j_end_plus_1, index, index_stride);
+	for (Index j = j_start; j < j_end_plus_1; ++j, index += index_stride) {
+	  data_[index] = val;
+	  ADEPT_ACTIVE_STACK->push_rhs(1.0, rhs.gradient_index());
+	  ADEPT_ACTIVE_STACK->push_lhs(gradient_index()+index);	  
+	}
+      }
+      return *this;
+    }
+
+
+
+
     // All the compound assignment operators are unpacked, i.e. a+=b
     // becomes a=a+b; first for an Expression on the rhs.  We use
     // "noalias" sine there is no need for the entirety of the
