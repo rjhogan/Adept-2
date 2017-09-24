@@ -176,7 +176,7 @@ namespace adept {
 	using std::exp;							\
 	return DERIVATIVE;						\
       }									\
-      Type fast_sqr(Type val) { return val*val; }			\
+      Type fast_sqr(Type val) const { return val*val; }			\
     };									\
   } /* End namespace internal */					\
   template <class Type, class R>					\
