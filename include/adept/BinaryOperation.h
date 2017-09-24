@@ -14,6 +14,11 @@
 
 #include <adept/ArrayWrapper.h>
 
+#ifdef ADEPT_CXX11_FEATURES
+#include <type_traits> // for std::is_floating_point
+#endif
+
+
 namespace adept {
   namespace internal {
 
@@ -996,10 +1001,23 @@ namespace adept {
       const char* operation_string() const { return "max"; } // For expression_string()
       
       // Implement the basic operation
+#ifndef ADEPT_CXX11_FEATURES
+      // For C++98, use simple ternary operation
       template <class LType, class RType>
       typename promote<LType, RType>::type
       operation(const LType& left, const RType& right) const { return left < right ? right : left; }
-      
+#else
+      // For C++11 use the (hopefully faster) fmax function for floating-point functions
+      template <class LType, class RType>
+      typename enable_if<!std::is_floating_point<LType>::value || !std::is_floating_point<RType>::value,
+			 typename promote<LType, RType>::type>::type
+      operation(const LType& left, const RType& right) const { return left < right ? right : left; }
+
+      template <class LType, class RType>
+      typename enable_if<std::is_floating_point<LType>::value && std::is_floating_point<RType>::value,
+			 typename promote<LType, RType>::type>::type
+      operation(const LType& left, const RType& right) const { return std::fmax(left,right); }
+#endif
       // Calculate the gradient of the left-hand argument
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R>
       void calc_left(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
@@ -1055,10 +1073,24 @@ namespace adept {
       const char* operation_string() const { return "min"; } // For expression_string()
       
       // Implement the basic operation
+#ifndef ADEPT_CXX11_FEATURES
+      // For C++98, use simple ternary operation
       template <class LType, class RType>
       typename promote<LType, RType>::type
       operation(const LType& left, const RType& right) const { return left < right ? left : right; }
-      
+#else
+      // For C++11 use the (hopefully faster) fmin function for floating-point functions
+      template <class LType, class RType>
+      typename enable_if<!std::is_floating_point<LType>::value || !std::is_floating_point<RType>::value,
+			 typename promote<LType, RType>::type>::type
+      operation(const LType& left, const RType& right) const { return left < right ? left : right; }
+
+      template <class LType, class RType>
+      typename enable_if<std::is_floating_point<LType>::value && std::is_floating_point<RType>::value,
+			 typename promote<LType, RType>::type>::type
+      operation(const LType& left, const RType& right) const { return std::fmin(left,right); }
+#endif
+  
       // Calculate the gradient of the left-hand argument
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class L, class R>
       void calc_left(Stack& stack, const L& left, const R& right, const ExpressionSize<NArrays>& loc,
@@ -1156,6 +1188,18 @@ namespace adept {
   ADEPT_DEFINE_OPERATION(Pow, pow);
   ADEPT_DEFINE_OPERATION(Max, max);
   ADEPT_DEFINE_OPERATION(Min, min);
+
+  // If std::max has been brought into scope via a "using" directive
+  // then calling "max" with two arguments of the same type will call
+  // the std::max rather than adept::max function, even if these
+  // arguments are from the adept namespace. This will cause a compile
+  // failure. Likewise with std::min. To avoid this, either don't use
+  // "using std::max", or alternatively use Adept's "fmax" and "fmin"
+  // functions, which do the same thing but match the C++11 functions
+  // std::fmax and std::fmin for floating-point types.  Note that you
+  // can use these Adept functions even if you are not using C++11.
+  ADEPT_DEFINE_OPERATION(Max, fmax);
+  ADEPT_DEFINE_OPERATION(Min, fmin);
 
   ADEPT_DEFINE_SCALAR_RHS_OPERATION(Add, operator+);
   ADEPT_DEFINE_SCALAR_RHS_OPERATION(Subtract, operator-);

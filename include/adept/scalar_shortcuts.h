@@ -54,10 +54,6 @@ namespace adept {
 
   inline Real value(Real x) { return x; }
 
-  #include <cmath>
-  using std::max;
-  using std::min;
-
 } // End namespace adept
 
 #endif
