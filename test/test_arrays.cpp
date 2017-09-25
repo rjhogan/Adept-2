@@ -119,7 +119,6 @@ main(int argc, const char** argv) {
     }									\
     TYPEY Y; Y.link( test. Y );						\
     TYPEZ Z; Z.link( test. Z );						\
-    std::cout << #Y << ".info = " << Y.info_string() << "\n";		\
     std::cout << #TYPEY << " " << #Y << " = " << Y << "\n";		\
     std::cout << #TYPEZ << " " << #Z << " = " << Z << "\n";		\
     std::cout << "Evaluating " << #EXPR << "\n";			\
@@ -420,7 +419,8 @@ main(int argc, const char** argv) {
   EVAL3("2D arbitrary index as lvalue assigned to scalar expression", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = 2.0*(myReal)(4.0));
   EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = N(__,range(1,2)));
   EVAL2("2D arbitrary index as lvalue with assign-multiply operator", myMatrix, M, true, intVector, index, M(index,index) *= 10.0);
-  EVAL2("2D arbitrary index as lvalue with aliased right-hand-side", myMatrix, M, true, intVector, index, M(index,index) += M(__,range(1,2)));
+  EVAL2("2D arbitrary index as lvalue with aliased right-hand-side", myMatrix, M, true, intVector, index, M(index,index) = M(__,range(0,1)));
+  EVAL2("2D arbitrary index as lvalue with aliased right-hand-side and eval function", myMatrix, M, true, intVector, index, M(index,index) = eval(M(__,range(0,1))));
   EVAL2("reshape member function", myMatrix, M, false, myVector, vlong, M >>= vlong.reshape(3,4));
   should_fail=true;
   EVAL2("reshape member function with invalid dimensions", myMatrix, M, false, myVector, vlong, M >>= vlong.reshape(5,5));

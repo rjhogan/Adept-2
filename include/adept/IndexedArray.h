@@ -492,14 +492,7 @@ namespace adept {
 	}
 	return *this;
       }
-      /*
-    protected:
-      // Helper function: definition in Array.h due to use of Array
-      // class
-      template <typename EType, class E>
-      inline
-      void assign_to_aliased_expression_(const Expression<EType,E>& rhs);
-      */
+
     public:
       // Assignment to an array expression of the same rank
       template <typename EType, class E>
@@ -520,25 +513,24 @@ namespace adept {
 	}
 
 	if (!empty()) {
+#ifndef ADEPT_NO_ALIAS_CHECKING
 	  // Check for aliasing first
 	  Type const * ptr_begin;
 	  Type const * ptr_end;
 	  a_.data_range(ptr_begin, ptr_end);
 	  if (rhs.is_aliased(ptr_begin, ptr_end)) {
-	    //	    std::cout << "ALIASED in IndexedArray\n";
-	    /*
 	    Array<Rank,Type,IsActive> copy;
-	    copy = x;
-	    //	    *this = copy;
+	    copy = rhs;
 	    assign_expression_<IsActive, E::is_active>(copy);
-	    */
-	    //	    assign_to_aliased_expression_(rhs);
 	    //	    std::cout << "Warning: alias correction not applied in IndexedArray\n";
-	    assign_expression_<IsActive, E::is_active>(rhs);
+	    //assign_expression_<IsActive, E::is_active>(rhs);
 	  }
 	  else {
+#endif
 	    assign_expression_<IsActive, E::is_active>(rhs);
+#ifndef ADEPT_NO_ALIAS_CHECKING
 	  }
+#endif
 	}
 	return *this;
       }

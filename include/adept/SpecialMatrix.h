@@ -1102,23 +1102,24 @@ namespace adept {
       }
 
       if (!empty()) {
+#ifndef ADEPT_NO_ALIAS_CHECKING
 	// Check for aliasing first
 	Type const * ptr_begin;
 	Type const * ptr_end;
 	data_range(ptr_begin, ptr_end);
 	if (rhs.is_aliased(ptr_begin, ptr_end)) {
-	  std::cout << "ALIASED - making copy...\n";
-	  std::cout << ptr_begin << " " << ptr_end << " " << ptr_end-ptr_begin << "\n";
 	  SpecialMatrix copy;
 	  copy = rhs;
 	  assign_expression_<IsActive, E::is_active>(copy);
-	  //	  *this = copy;
 	}
 	else {
+#endif
 	  // Select active/passive version by delegating to a
 	  // protected function
 	  assign_expression_<IsActive, E::is_active>(rhs);
+#ifndef ADEPT_NO_ALIAS_CHECKING
 	}
+#endif
       }
       return *this;
     }

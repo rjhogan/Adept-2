@@ -30,6 +30,11 @@ version 1.9.10 (September 2017)
 	it works.
 	- Matrix multiplication on inactive triangular and "square"
 	matrices now works by converting to them to a dense Array<2,Real,false>.
+	- Added alias detection in IndexedArray
+	- Alias detection in IndexedArray and SpecialMatrix can be
+	deactivated with ADEPT_NO_ALIAS_CHECKING
+	- Added "eval" function to evaluate an expression that might be
+	subject to aliasing
 
 version 1.9.9 (August 2017)
 	- Put on GitHub as rjhogan/Adept-2
