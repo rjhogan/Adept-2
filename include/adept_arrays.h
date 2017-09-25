@@ -23,6 +23,7 @@
 #include <adept/interp.h>
 #include <adept/spread.h>
 #include <adept/outer_product.h>
+#include <adept/eval.h>
 #include <adept/array_shortcuts.h>
 #include <adept/vector_utilities.h>
 
