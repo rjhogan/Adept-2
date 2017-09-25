@@ -2725,7 +2725,7 @@ time and at runtime:
   array expressions of rank $n$ then \Adept\ checks at run-time that
   each of the $n$ dimensions has the same length. Otherwise, a
   \code{size\_mismatch} exception is thrown.
-\item[Alias check.] \Adept\ checks to see whether the memory
+\item[Alias check.] By default, \Adept\ checks to see whether the memory
   referenced in the array object on the left-hand-side of a statement
   overlaps with the memory referenced by any of the objects on the
   right-hand-side, as in this example of a shift-right operation:
@@ -2736,7 +2736,7 @@ time and at runtime:
   In order to prevent the right-hand-side changing during the
   operation, \Adept\ copies the expression on the right-hand-side to a
   temporary array and then assigns the left-hand-side array to this
-  temporary, which is equivalent to the following
+  temporary, which is equivalent to the following:
 \begin{lstlisting}
  {
    Vector tmp;
@@ -2745,17 +2745,37 @@ time and at runtime:
  } // tmp goes out of scope here
 \end{lstlisting}
   However, for speed \Adept\ does not check to see whether individual
-  memory locations are shared, which means that for certain strided
-  operations this copying to a temporary array is unnecessary.  Nor is
-  it necessary if elements of an array will be accessed in exactly the
-  same order on the left-hand-side as the right-hand-side. If the user
-  is sure that alias checking is not necessary then he or she can
-  override alias checking for part or all of an array expression using
-  the \code{noalias} function, as follows:
+  memory locations are shared; rather the start and end memory
+  locations are checked to see if they overlap. This means that for
+  certain strided operations, copying to a temporary array is
+  unnecessary.  Nor is it necessary if elements of an array will be
+  accessed in exactly the same order on the left-hand-side as the
+  right-hand-side. If the user is sure that alias checking is not
+  necessary then he or she can override alias checking for part or all
+  of an array expression using the \code{noalias} function, as
+  follows:
 \begin{lstlisting}
  v(stride(1,end,2)) = noalias(v(stride(0,end-1,2))); // No overlap between RHS and LHS
  v = 1.0 + noalias(exp(v));                          // LHS & RHS accessed in same order 
 \end{lstlisting}
+  Note that for speed, alias checking is not performed if the
+  left-hand-side is a \code{FixedArray}, since such arrays can never
+  point to another location and therefore aliasing is less likely to
+  arise. Aliasing is still possible if one of the terms on the
+  right-hand-side points to the data in the \code{FixedArray} on the
+  left. In this case, you can use the \code{eval} function, which
+  takes a non-scalar expression as an argument, and returns an array
+  containing a copy of the data. For example:
+\begin{lstlisting}
+ FixedArray<Real,false,3> v = {1.0, 2.0, 3.0}; // C++11 initialization of inactive vector
+ v = v(stride(end,0,-1));                      // Aliasing leads to v = {3.0, 2.0, 3.0}
+ v = eval(v(stride(end,0,-1)));                // Expected result:  v = {3.0, 2.0, 1.0}
+\end{lstlisting}
+  To avoid the overhead of alias checking, you can define the
+  preprocessor variable \code{ADEPT\_NO\_ALIAS\_CHECKING}, but then it
+  is up to the user to identify the statements where aliasing will
+  occur and use the \code{eval} function to ensure the correct
+  behaviour.
 \item[Bounds check.] If the preprocessor variable
   \code{ADEPT\_BOUNDS\_CHECKING} is defined then additional run-time
   checks will be performed when an array is indexed or sliced using
@@ -3131,6 +3151,12 @@ variable is not defined then these checks are not performed, which is
 faster but means that attempts to access arrays out of bounds will
 result either of corruption of other memory used by the process, or a
 segmentation fault. 
+\citem{ADEPT\_NO\_ALIAS\_CHECKING} This variable turns off alias
+checking, which results in faster code, but may lead to unexpected
+results if the right-hand-side of an array statement shares data with
+the left-hand-side of the expression. If this is likely for a
+particular statement then use the \code{eval} function, described in
+section \ref{sec:bounds}.
 \end{description}
 
 \subsection{Modifications requiring a library recompile}
