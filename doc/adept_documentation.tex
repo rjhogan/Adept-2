@@ -1872,8 +1872,11 @@ relinked or cleared completely as follows:
  M.clear();           // Returns array to original empty state
 \end{lstlisting}
 The member functions \code{resize} and \code{clear} unlink from any
-existing data, while \code{link} can only be used if the array is
-already in an empty state.  Note that if you assign one array to
+existing data, which involves deallocation if no other array is
+pointing to the same data. If the \code{link} function, or the
+alternative ``\code{>>=}'' syntax, is applied with a non-empty array
+on the left-hand-side then the existing data will be quietly cleared
+before linking to the new data. Note that if you assign one array to
 another (e.g.\ \code{N=M}), then they must be of the same size; if
 they are not then you should clear the left-hand-side first.
 
