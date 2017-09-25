@@ -515,17 +515,37 @@ namespace adept {
       return Array<2,NewType,true>(
 	   const_cast<SpecialMatrix<OldType,Engine,true>&>(arg));
     }
-    // If the argument is an inactive special matrix then convert it
-    // to the new type; this will only involve a copy of the raw data
-    // if the type is changed, otherwise the new array will simply
-    // link to the old
+
+    // If the argument is an inactive symmetric or band matrix then
+    // convert the element type; this will only involve a copy of the
+    // raw data if the type is changed, otherwise the new array will
+    // simply link to the old
+    template <typename NewType, typename OldType, SymmMatrixOrientation Orient>
+    inline
+    SpecialMatrix<NewType,internal::SymmEngine<Orient>,false>
+    promote_array(const SpecialMatrix<OldType,internal::SymmEngine<Orient>,false>& arg) {
+      return SpecialMatrix<NewType,internal::SymmEngine<Orient>,false>(
+	 const_cast<SpecialMatrix<OldType,internal::SymmEngine<Orient>,false>&>(arg));
+    }
+    template <typename NewType, typename OldType, 
+      MatrixStorageOrder Order, Index LDiags, Index UDiags>
+    inline
+    SpecialMatrix<NewType,internal::BandEngine<Order,LDiags,UDiags>,false>
+    promote_array(const SpecialMatrix<OldType,internal::BandEngine<Order,LDiags,UDiags>,false>& arg) {
+      return SpecialMatrix<NewType,internal::BandEngine<Order,LDiags,UDiags>,false>(
+	 const_cast<SpecialMatrix<OldType,internal::BandEngine<Order,LDiags,UDiags>,false>&>(arg));
+    } 
+
+    // For other special matrices (square and triangular), specific
+    // matrix multiplication functions have not yet been added, so we
+    // have to convert to a dense array first
     template <typename NewType, typename OldType, class Engine>
     inline
-    SpecialMatrix<OldType,Engine,false>
+    Array<2,NewType,false>
     promote_array(const SpecialMatrix<OldType,Engine,false>& arg) {
-      return SpecialMatrix<NewType,Engine,false>(
+      return Array<2,NewType,false>(
 	 const_cast<SpecialMatrix<OldType,Engine,false>&>(arg));
-    }
+    } 
 
 #else
     // The following assumes that the Adept library knows how to
@@ -533,7 +553,7 @@ namespace adept {
     // path is likely to throw a run-time exception.
     template <typename NewType, typename OldType, class Engine, bool IsActive>
     inline
-    SpecialMatrix<OldType,Engine,IsActive>
+    SpecialMatrix<NewType,Engine,IsActive>
     promote_array(const SpecialMatrix<OldType,Engine,IsActive>& arg) {
       return SpecialMatrix<NewType,Engine,IsActive>(
 		     const_cast<SpecialMatrix<OldType,Engine,IsActive>&>(arg));

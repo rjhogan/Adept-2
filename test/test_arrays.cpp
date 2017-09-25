@@ -557,7 +557,7 @@ main(int argc, const char** argv) {
   EVAL2("TridiagMatrix-Vector multiplication", myVector, v, true, myTridiagMatrix, T, v = T ** v);
   EVAL2("TridiagMatrix-Matrix multiplication", myMatrix, S, true, myTridiagMatrix, T, S = T ** S);
 
-  //  EVAL2("LowerMatrix-Matrix multiplication", myMatrix, S, true, myLowerMatrix, L, S = L ** S);
+  EVAL2("LowerMatrix-Matrix multiplication", myMatrix, S, true, myLowerMatrix, L, S = L ** S);
 
   EVAL2("Vector-TridiagMatrix multiplication", myVector, v, true, myTridiagMatrix, T, v = v ** T);
   EVAL2("Matrix-TridiagMatrix multiplication", myMatrix, M, true, myTridiagMatrix, T, M = M ** T);

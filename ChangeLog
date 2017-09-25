@@ -28,6 +28,8 @@ version 1.9.10 (September 2017)
 	- Matrix multiplication on active special matrices implemented by
 	copying them to a dense Array<2,Real,true>. Very inefficient, but
 	it works.
+	- Matrix multiplication on inactive triangular and "square"
+	matrices now works by converting to them to a dense Array<2,Real,false>.
 
 version 1.9.9 (August 2017)
 	- Put on GitHub as rjhogan/Adept-2
