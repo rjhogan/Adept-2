@@ -520,7 +520,7 @@ namespace adept {
 	  a_.data_range(ptr_begin, ptr_end);
 	  if (rhs.is_aliased(ptr_begin, ptr_end)) {
 	    Array<Rank,Type,IsActive> copy;
-	    copy = rhs;
+	    copy = noalias(rhs);
 	    assign_expression_<IsActive, E::is_active>(copy);
 	    //	    std::cout << "Warning: alias correction not applied in IndexedArray\n";
 	    //assign_expression_<IsActive, E::is_active>(rhs);

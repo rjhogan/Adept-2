@@ -478,7 +478,7 @@ namespace adept {
 	if (rhs.is_aliased(ptr_begin, ptr_end)) {
 	  //	  std::cout << "ALIASED - making copy ...\n";
 	  Array<Rank,Type,IsActive> copy;
-	  copy = rhs;
+	  copy = noalias(rhs);
 	  //*this = copy;
 	  assign_expression_<Rank, IsActive, E::is_active>(copy);
 	}

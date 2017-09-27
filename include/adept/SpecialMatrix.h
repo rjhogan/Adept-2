@@ -1109,7 +1109,7 @@ namespace adept {
 	data_range(ptr_begin, ptr_end);
 	if (rhs.is_aliased(ptr_begin, ptr_end)) {
 	  SpecialMatrix copy;
-	  copy = rhs;
+	  copy = noalias(rhs);
 	  assign_expression_<IsActive, E::is_active>(copy);
 	}
 	else {
