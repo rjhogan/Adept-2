@@ -12,7 +12,8 @@ pkginclude_HEADERS = adept/Active.h adept/ActiveReference.h adept/Allocator.h \
 	adept/scalar_shortcuts.h adept/solve.h adept/traits.h adept/where.h \
 	adept/vector_utilities.h adept/FixedArray.h adept/Packet.h \
 	adept/UnaryOperation.h adept/BinaryOperation.h adept/ArrayWrapper.h \
-	adept/outer_product.h adept/spread.h adept/inv.h adept/eval.h
+	adept/outer_product.h adept/spread.h adept/inv.h adept/eval.h \
+	adept/noalias.h
 
 EXTRA_DIST = Timer.h create_adept_source_header adept_source.h
 

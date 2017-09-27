@@ -33,6 +33,7 @@
 #include <adept/ActiveConstReference.h>
 #include <adept/IndexedArray.h>
 #include <adept/where.h>
+#include <adept/noalias.h>
 
 namespace adept {
   using namespace adept::internal;
@@ -476,9 +477,13 @@ namespace adept {
 	Type const * ptr_end;
 	data_range(ptr_begin, ptr_end);
 	if (rhs.is_aliased(ptr_begin, ptr_end)) {
-	  //	  std::cout << "ALIASED - making copy ...\n";
 	  Array<Rank,Type,IsActive> copy;
-	  copy = noalias(rhs);
+	  // It would be nice to wrap noalias around rhs, but then
+	  // this leads to infinite template recursion since the "="
+	  // operator calls the current function but with a modified
+	  // expression type. perhaps a better way would be to make
+	  // copy.assign_no_alias(rhs) work.
+	  copy = rhs;
 	  //*this = copy;
 	  assign_expression_<Rank, IsActive, E::is_active>(copy);
 	}

@@ -1109,7 +1109,12 @@ namespace adept {
 	data_range(ptr_begin, ptr_end);
 	if (rhs.is_aliased(ptr_begin, ptr_end)) {
 	  SpecialMatrix copy;
-	  copy = noalias(rhs);
+	  // It would be nice to wrap noalias around rhs, but then
+	  // this leads to infinite template recursion since the "="
+	  // operator calls the current function but with a modified
+	  // expression type. perhaps a better way would be to make
+	  // copy.assign_no_alias(rhs) work.
+	  copy = rhs;
 	  assign_expression_<IsActive, E::is_active>(copy);
 	}
 	else {
