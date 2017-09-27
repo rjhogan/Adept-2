@@ -1719,13 +1719,6 @@ namespace adept {
       return A;
     }
 
-    /*
-    // Out-of-place transpose
-    SpecialMatrix<2,Type,IsActive>
-    T() {
-      return my_T<Rank>();
-    }
-    */
 
     // -------------------------------------------------------------------
     // SpecialMatrix: 6. Member functions accessed by the Expression class
