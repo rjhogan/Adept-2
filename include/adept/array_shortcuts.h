@@ -1,6 +1,6 @@
 /* array_shortcuts.h -- Definitions of "shortcut" typedefs for array types
 
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -28,28 +28,34 @@ namespace adept {
   typedef Array<5> Array5D;
   typedef Array<6> Array6D;
   typedef Array<7> Array7D;
-
-
   typedef Array<1,Index> IntVector;
   typedef Array<2,Index> IntMatrix;
-  typedef Array<3,Index> IntArray3;
+  typedef Array<3,Index> IntArray3; // Deprecated
   typedef Array<3,Index> IntArray3D;
   typedef Array<1,int> intVector;
   typedef Array<2,int> intMatrix;
-  typedef Array<3,int> intArray3;
+  typedef Array<3,int> intArray3; // Deprecated
   typedef Array<3,int> intArray3D;
+  typedef Array<4,int> intArray4D;
+  typedef Array<5,int> intArray5D;
+  typedef Array<6,int> intArray6D;
+  typedef Array<7,int> intArray7D;
   typedef Array<1,bool> boolVector;
   typedef Array<2,bool> boolMatrix;
-  typedef Array<3,bool> boolArray3;
+  typedef Array<3,bool> boolArray3; // Deprecated
   typedef Array<3,bool> boolArray3D;
+  typedef Array<4,bool> boolArray4D;
+  typedef Array<5,bool> boolArray5D;
+  typedef Array<6,bool> boolArray6D;
+  typedef Array<7,bool> boolArray7D;
   typedef Array<1,float> floatVector;
   typedef Array<2,float> floatMatrix;
-  typedef Array<3,float> floatArray3;
+  typedef Array<3,float> floatArray3; // Deprecated
   typedef Array<3,float> floatArray3D;
-  typedef Array<3,float> floatArray4D;
-  typedef Array<3,float> floatArray5D;
-  typedef Array<3,float> floatArray6D;
-  typedef Array<3,float> floatArray7D;
+  typedef Array<4,float> floatArray4D;
+  typedef Array<5,float> floatArray5D;
+  typedef Array<6,float> floatArray6D;
+  typedef Array<7,float> floatArray7D;
 
   typedef SpecialMatrix<Real,internal::SquareEngine<ROW_MAJOR>,
     false> SquareMatrix;
