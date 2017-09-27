@@ -228,10 +228,10 @@ namespace adept {
     // Similar to the above, but with the gradient index supplied explicitly,
     // needed when an active FixedArray is being sliced, which
     // produces an active Array
-    Array(Type* data0, Index data_offset, const ExpressionSize<Rank>& dims,
+    Array(const Type* data0, Index data_offset, const ExpressionSize<Rank>& dims,
 	  const ExpressionSize<Rank>& offset, Index gradient_index0)
       : GradientIndex<IsActive>(gradient_index0, data_offset),
-	data_(data0+data_offset), storage_(0), dimensions_(dims), offset_(offset) { }
+	data_(const_cast<Type*>(data0)+data_offset), storage_(0), dimensions_(dims), offset_(offset) { }
 
     // Initialize an array pointing at existing data: the fact that
     // storage_ is a null pointer is used to convey the information
@@ -2475,9 +2475,11 @@ namespace adept {
     { return reshape(ExpressionSize<2>(i0,i1,i2,i3,i4,i5,i6)); }
 
 
-    // 
+    // Place gradients associated with the present active array into
+    // the equivalent passive array provided as an argument
     template <typename MyType>
     void get_gradient(Array<Rank,MyType,false>& gradient) const {
+      ADEPT_STATIC_ASSERT(IsActive,CANNOT_USE_GET_GRADIENT_ON_INACTIVE_ARRAY);
       if (gradient.empty()) {
 	gradient.resize(dimensions_);
       }
@@ -2501,13 +2503,15 @@ namespace adept {
 	}
 	ADEPT_ACTIVE_STACK->get_gradients(gradient_index()+index,
 				  gradient_index()+index+last_dim_stretch,
-				  target, offset_[last], target_offset[last]);
+				  target+index_target, offset_[last], target_offset[last]);
 	index += last_dim_stretch;
 	advance_index(index, rank, i);
       } while (rank >= 0);
     }
 
-
+    // Return an inactive array of the same type and rank as the
+    // present active array containing the gradients associated with
+    // it
     Array<Rank,Type,false> get_gradient() const {
       Array<Rank,Type,false> gradient;
       get_gradient(gradient);

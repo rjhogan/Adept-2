@@ -1,6 +1,6 @@
 /* FixedArray.h -- active or inactive FixedArray of arbitrary rank
 
-    Copyright (C) 2014-2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -184,7 +184,7 @@ namespace adept {
     template<typename EType, class E>
     FixedArray(const Expression<EType, E>& rhs,
 	  typename enable_if<E::rank == rank_,int>::type = 0)
-      : GradientIndex<IsActive>(length_, 0)
+      : GradientIndex<IsActive>(length_, false)
     { *this = rhs; }
 
 #ifdef ADEPT_CXX11_FEATURES
@@ -198,20 +198,20 @@ namespace adept {
     template <typename T>
     FixedArray(std::initializer_list<
 	  std::initializer_list<T> > list)
-      : GradientIndex<IsActive>(length_,0) { *this = list; }
+      : GradientIndex<IsActive>(length_,false) { *this = list; }
 
     template <typename T>
     FixedArray(std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<T> > > list)
-      : GradientIndex<IsActive>(length_,0) { *this = list; }
+      : GradientIndex<IsActive>(length_,false) { *this = list; }
 
     template <typename T>
     FixedArray(std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<T> > > > list)
-      : GradientIndex<IsActive>(length_,0) { *this = list; }
+      : GradientIndex<IsActive>(length_,false) { *this = list; }
 
     template <typename T>
     FixedArray(std::initializer_list<
@@ -219,7 +219,7 @@ namespace adept {
 	  std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<T> > > > > list)
-      : GradientIndex<IsActive>(length_,0) { *this = list; }
+      : GradientIndex<IsActive>(length_,false) { *this = list; }
 
     template <typename T>
     FixedArray(std::initializer_list<
@@ -228,7 +228,7 @@ namespace adept {
 	  std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<T> > > > > > list)
-      : GradientIndex<IsActive>(length_,0) { *this = list; }
+      : GradientIndex<IsActive>(length_,false) { *this = list; }
 
     template <typename T>
     FixedArray(std::initializer_list<
@@ -238,7 +238,7 @@ namespace adept {
 	  std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<T> > > > > > > list)
-      : GradientIndex<IsActive>(length_,0) { *this = list; }
+      : GradientIndex<IsActive>(length_,false) { *this = list; }
     
 #endif
 
@@ -900,8 +900,8 @@ namespace adept {
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
       Index ibegin = 0;
-      update_index(0, i0, inew_rank, ibegin, new_dim, new_offset);
-      update_index(1, i1, inew_rank, ibegin, new_dim, new_offset);
+      update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
+      update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
 					   GradientIndex<IsActive>::get());
     }
@@ -915,9 +915,9 @@ namespace adept {
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
       Index ibegin = 0;
-      update_index(0, i0, inew_rank, ibegin, new_dim, new_offset);
-      update_index(1, i1, inew_rank, ibegin, new_dim, new_offset);
-      update_index(2, i2, inew_rank, ibegin, new_dim, new_offset);
+      update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
+      update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
+      update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
 					   GradientIndex<IsActive>::get());
     }
@@ -931,9 +931,9 @@ namespace adept {
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
       Index ibegin = 0;
-      update_index(0, i0, inew_rank, ibegin, new_dim, new_offset);
-      update_index(1, i1, inew_rank, ibegin, new_dim, new_offset);
-      update_index(2, i2, inew_rank, ibegin, new_dim, new_offset);
+      update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
+      update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
+      update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
 					   GradientIndex<IsActive>::get());
     }
@@ -947,10 +947,10 @@ namespace adept {
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
       Index ibegin = 0;
-      update_index(0, i0, inew_rank, ibegin, new_dim, new_offset);
-      update_index(1, i1, inew_rank, ibegin, new_dim, new_offset);
-      update_index(2, i2, inew_rank, ibegin, new_dim, new_offset);
-      update_index(3, i3, inew_rank, ibegin, new_dim, new_offset);
+      update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
+      update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
+      update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
+      update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
 					   GradientIndex<IsActive>::get());
     }
@@ -964,10 +964,10 @@ namespace adept {
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
       Index ibegin = 0;
-      update_index(0, i0, inew_rank, ibegin, new_dim, new_offset);
-      update_index(1, i1, inew_rank, ibegin, new_dim, new_offset);
-      update_index(2, i2, inew_rank, ibegin, new_dim, new_offset);
-      update_index(3, i3, inew_rank, ibegin, new_dim, new_offset);
+      update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
+      update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
+      update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
+      update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
 					   GradientIndex<IsActive>::get());
     }
@@ -982,11 +982,11 @@ namespace adept {
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
       Index ibegin = 0;
-      update_index(0, i0, inew_rank, ibegin, new_dim, new_offset);
-      update_index(1, i1, inew_rank, ibegin, new_dim, new_offset);
-      update_index(2, i2, inew_rank, ibegin, new_dim, new_offset);
-      update_index(3, i3, inew_rank, ibegin, new_dim, new_offset);
-      update_index(4, i4, inew_rank, ibegin, new_dim, new_offset);
+      update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
+      update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
+      update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
+      update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
+      update_index<4>(i4, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
 					   GradientIndex<IsActive>::get());
     }
@@ -1001,11 +1001,11 @@ namespace adept {
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
       Index ibegin = 0;
-      update_index(0, i0, inew_rank, ibegin, new_dim, new_offset);
-      update_index(1, i1, inew_rank, ibegin, new_dim, new_offset);
-      update_index(2, i2, inew_rank, ibegin, new_dim, new_offset);
-      update_index(3, i3, inew_rank, ibegin, new_dim, new_offset);
-      update_index(4, i4, inew_rank, ibegin, new_dim, new_offset);
+      update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
+      update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
+      update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
+      update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
+      update_index<4>(i4, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
 					   GradientIndex<IsActive>::get());
     }
@@ -1020,12 +1020,12 @@ namespace adept {
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
       Index ibegin = 0;
-      update_index(0, i0, inew_rank, ibegin, new_dim, new_offset);
-      update_index(1, i1, inew_rank, ibegin, new_dim, new_offset);
-      update_index(2, i2, inew_rank, ibegin, new_dim, new_offset);
-      update_index(3, i3, inew_rank, ibegin, new_dim, new_offset);
-      update_index(4, i4, inew_rank, ibegin, new_dim, new_offset);
-      update_index(5, i5, inew_rank, ibegin, new_dim, new_offset);
+      update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
+      update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
+      update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
+      update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
+      update_index<4>(i4, inew_rank, ibegin, new_dim, new_offset);
+      update_index<5>(i5, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
 					   GradientIndex<IsActive>::get());
     }
@@ -1041,12 +1041,12 @@ namespace adept {
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
       Index ibegin = 0;
-      update_index(0, i0, inew_rank, ibegin, new_dim, new_offset);
-      update_index(1, i1, inew_rank, ibegin, new_dim, new_offset);
-      update_index(2, i2, inew_rank, ibegin, new_dim, new_offset);
-      update_index(3, i3, inew_rank, ibegin, new_dim, new_offset);
-      update_index(4, i4, inew_rank, ibegin, new_dim, new_offset);
-      update_index(5, i5, inew_rank, ibegin, new_dim, new_offset);
+      update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
+      update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
+      update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
+      update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
+      update_index<4>(i4, inew_rank, ibegin, new_dim, new_offset);
+      update_index<5>(i5, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
 					   GradientIndex<IsActive>::get());
     }
@@ -1061,13 +1061,13 @@ namespace adept {
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
       Index ibegin = 0;
-      update_index(0, i0, inew_rank, ibegin, new_dim, new_offset);
-      update_index(1, i1, inew_rank, ibegin, new_dim, new_offset);
-      update_index(2, i2, inew_rank, ibegin, new_dim, new_offset);
-      update_index(3, i3, inew_rank, ibegin, new_dim, new_offset);
-      update_index(4, i4, inew_rank, ibegin, new_dim, new_offset);
-      update_index(5, i5, inew_rank, ibegin, new_dim, new_offset);
-      update_index(6, i6, inew_rank, ibegin, new_dim, new_offset);
+      update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
+      update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
+      update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
+      update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
+      update_index<4>(i4, inew_rank, ibegin, new_dim, new_offset);
+      update_index<5>(i5, inew_rank, ibegin, new_dim, new_offset);
+      update_index<6>(i6, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
 					   GradientIndex<IsActive>::get());
     }
@@ -1082,13 +1082,13 @@ namespace adept {
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
       Index ibegin = 0;
-      update_index(0, i0, inew_rank, ibegin, new_dim, new_offset);
-      update_index(1, i1, inew_rank, ibegin, new_dim, new_offset);
-      update_index(2, i2, inew_rank, ibegin, new_dim, new_offset);
-      update_index(3, i3, inew_rank, ibegin, new_dim, new_offset);
-      update_index(4, i4, inew_rank, ibegin, new_dim, new_offset);
-      update_index(5, i5, inew_rank, ibegin, new_dim, new_offset);
-      update_index(6, i6, inew_rank, ibegin, new_dim, new_offset);
+      update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
+      update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
+      update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
+      update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
+      update_index<4>(i4, inew_rank, ibegin, new_dim, new_offset);
+      update_index<5>(i5, inew_rank, ibegin, new_dim, new_offset);
+      update_index<6>(i6, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
 					   GradientIndex<IsActive>::get());
     }
@@ -1815,8 +1815,6 @@ namespace adept {
       return my_T<rank_>();
     }
 
-    // GOT HERE
-
     // "permute" is a generalized transpose, returning an FixedArray linked
     // to the current one but with the dimensions rearranged according
     // to idim: idim[0] is the 0-based number of the dimension of the
@@ -1872,11 +1870,14 @@ namespace adept {
       return permute(idim);
     }
 
-    // 
+    // Return an inactive array of the same type and rank as the
+    // present active fixed array, containing the gradients associated
+    // with it
     template <typename MyType>
     void get_gradient(Array<rank_,MyType,false>& gradient) const {
+      ADEPT_STATIC_ASSERT(IsActive,CANNOT_USE_GET_GRADIENT_ON_INACTIVE_ARRAY);
       if (gradient.empty()) {
-	gradient.resize(dimension());
+	gradient.resize(dimensions());
       }
       else if (gradient.dimensions() != dimensions()) {
 	throw size_mismatch("Attempt to get_gradient with array of different dimensions"
@@ -1898,13 +1899,16 @@ namespace adept {
 	}
 	ADEPT_ACTIVE_STACK->get_gradients(gradient_index()+index,
 				  gradient_index()+index+last_dim_stretch,
-					  target, offset_<rank_-1>::value, target_offset[last]);
+					  target+index_target, offset_<rank_-1>::value, target_offset[last]);
 	index += last_dim_stretch;
 	advance_index(index, rank, i);
       } while (rank >= 0);
     }
 
 
+    // Return an inactive array of the same type and rank as the
+    // present active array containing the gradients associated with
+    // it
     Array<rank_,Type,false> get_gradient() const {
       Array<rank_,Type,false> gradient;
       get_gradient(gradient);
