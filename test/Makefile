@@ -104,7 +104,7 @@ test_thread_safe: test_thread_safe.o $(LIBADEPT)
 test_no_lib: test_no_lib.o algorithm.o
 	$(CXXLINK_NOLIB) test_no_lib.o algorithm.o $(MYLIBS)
 
-# Test program 9
+# Test program 9a
 test_arrays: test_arrays.o $(LIBADEPT)
 	$(CXXLINK) test_arrays.o $(MYLIBS)
 
@@ -125,7 +125,7 @@ test_array_speed: test_array_speed.o $(LIBADEPT)
 test_radiances_array: simulate_radiances.o test_radiances_array.o $(LIBADEPT)
 	$(CXXLINK) simulate_radiances.o test_radiances_array.o $(MYLIBS)
 
-# Test program 12
+# Test program 12a
 test_fixed_arrays: test_fixed_arrays.o $(LIBADEPT)
 	$(CXXLINK) test_fixed_arrays.o $(MYLIBS)
 

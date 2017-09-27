@@ -181,14 +181,15 @@ Microsoft Windows that cannot natively run the configure shell script.
 
 
 
-TEST 9: ARRAY FUNCTIONALITY
+TEST 9a,b,c: ARRAY FUNCTIONALITY
 
-Executable: test_arrays
+Executables: (a) test_arrays, (b) test_arrays_active, (c)
+test_arrays_active_pausable
 
 Source files: test_arrays.cpp
 
-Demonstrates: array functionality.  Note that you can edit the
-ALL_ACTIVE line to have all the arrays as active or passive.
+Demonstrates: array functionality for (a) passive arrays, (b) active
+arrays, and (c) active arrays but with stack recording "paused".
 
 
 
@@ -212,12 +213,42 @@ simulate_radiances.h
 Demonstrates: use of arrays with add/append_derivative_dependence
 
 
-TEST 12: FIXED-ARRAY FUNCTIONALITY
+TEST 12a,b: FIXED-ARRAY FUNCTIONALITY
 
-Executable: test_fixed_arrays
+Executables: (a) test_fixed_arrays, (b) test_fixed_arrays_active
 
 Source file: test_fixed_arrays.cpp
 
 Demonstrates: functionality of fixed arrays, i.e. those whose
-dimensions are set at compile time.  Note that you can edit the
-ALL_ACTIVE line to have all the arrays as active or passive.
+dimensions are set at compile time: (a) passive version, and (b)
+active version.
+
+
+TEST 13: ARRAY CONSTRUCTORS
+
+Executable: test_constructors
+
+Source file: test_constructors.cpp
+
+Demonstrates: different ways of constructing, assigning and linking
+arrays, and passing them to and from functions.
+
+
+TEST 14: DERIVATIVES
+
+Exeutable: test_derivatives
+
+Source file: test_derivatives.cpp
+
+Demonstrates: validity of the automatic differentiation of all
+mathematical functions supported by Adept, via finite differencing.
+
+
+TEST 15: ARRAY DERIVATIVES
+
+Exeutable: test_array_derivatives
+
+Source file: test_array_derivatives.cpp
+
+Demonstrates: validity of the automatic differentiation of selected
+array operations, on both Array types and FixedArray types.

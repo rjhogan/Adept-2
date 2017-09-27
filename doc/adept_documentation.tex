@@ -276,7 +276,7 @@ This will create the static and shared libraries in \code{adept/.libs}.
 If this is to be installed to a system directory, you will need to log
 in as the super-user first, or run \code{sudo make install} on
 depending on your system.
-\item Build the example and benchmarking programs by running
+\item Build and run the test programs by running
 \begin{lstlisting}
  make check
 \end{lstlisting}
@@ -305,19 +305,31 @@ programs in the \code{test} directory:
   described in chapter \ref{chap:arrays}.
 \item\code{test\_arrays\_active}: tests the same array capabilities
   but with active arrays.
+\item\code{test\_arrays\_active\_pasuable}: tests that active array
+  operations can be paused as described in setion \ref{sec:pausable}.
 \item\code{test\_fixed\_arrays}: tests the similar capabilities of
   arrays with fixed dimensions (known at compile time).
+\item\code{test\_fixed\_arrays\_active}: as \code{test\_fixed\_arrays}
+  but with active arrays.
+\item\code{test\_constructors}: test the different ways of
+  constructing, assigning and linking arrays, and passing them to and
+  from functions.
+\item\code{test\_derivatives}: tests that all mathematical functions
+  supported by \Adept\ differentiate correctly.
+\item\code{test\_array\_derivatives}: tests that selected array
+  operations differentiate correctly.
 \end{itemize}
-In the \code{benchmark} directory it compiles
-\code{autodiff\_benchmark} for comparing the speed of the
-differentiation of two advection algorithms using \Adept, ADOL-C,
-CppAD and Sacado (or whichever subset of these tools you have on your
-system).  It also compiles \code{animate} for visualizing at a
-terminal what the algorithms are doing.  Further information on
-running these programs can be found in the \code{README} files in the
-relevant directories.  Note that despite the implication, ``\code{make
-  check}'' does not automatically run any of the programs it makes to
-check they function correctly.
+After compiling these programs, they are run one by one; if any fail
+due to an incorrect result then \code{make check} will fail.
+
+The \code{make check} operation also compiles
+\code{autodiff\_benchmark} in the \code{benchmark} directory for
+comparing the speed of the differentiation of two advection algorithms
+using \Adept, ADOL-C, CppAD and Sacado (or whichever subset of these
+tools you have on your system).  It also compiles \code{animate} for
+visualizing at a terminal what the algorithms are doing.  Further
+information on running these programs can be found in the
+\code{README} files in the relevant directories.
 \end{enumerate}
 
 To compile source files that use the \Adept\ library, you need to make
@@ -2784,6 +2796,25 @@ time and at runtime:
   be thrown.  This makes indexing and slicing of arrays slower so
   would normally only be used for debugging.
 \end{description}
+
+\section{Automatic differentiation capabilities specific to arrays}
+Section \ref{sec:adjoint} described how the \code{get\_gradient()}
+member function could be used to extract the gradients from a scalar
+\code{adouble} object after applying forward- or reverse-mode
+differentiation. In the same way, gradients may be extracted from
+active \code{Array} and \code{FixedArray} objects, returning an
+inactive \code{Array} of the same rank and size. For example, to
+compute the derivative of a \code{norm2} operation, we could do the
+following:
+\begin{lstlisting}
+ Stack stack;                     // Stack to store differential statements
+ aVector x = {1.0, 2.0, 3.0};     // C++11 initialization
+ stack.new_recording();           // Clear any stored differential statements
+ aReal y = norm2(x);              // Perform operation to be differentiated
+ y.set_gradient(1.0);             // Seed the independent variable
+ stack.reverse();                 // Reverse-mode differentiation
+ Vector dy_dx = x.get_gradient(); // Extract vector of derivatives
+\end{lstlisting}
 
 \chapter{General considerations}
 \label{chap:gen}
