@@ -318,6 +318,9 @@ programs in the \code{test} directory:
   supported by \Adept\ differentiate correctly.
 \item\code{test\_array\_derivatives}: tests that selected array
   operations differentiate correctly.
+\item\code{test\_thread\_safe\_arrays}: tests two ways to ensure
+  arrays may be accessed and subsetted safely in a multi-threaded
+  environment.
 \end{itemize}
 After compiling these programs, they are run one by one; if any fail
 due to an incorrect result then \code{make check} will fail.
@@ -2816,6 +2819,47 @@ following:
  Vector dy_dx = x.get_gradient(); // Extract vector of derivatives
 \end{lstlisting}
 
+\section{Array thread safety}
+\label{sec:thread}
+There are numerous ways of obtaining an \code{Array} that links to
+data in another \code{Array} object; not only the ``\code{>>=}'' link
+operator described in section \ref{sec:array}, but also the various
+subsetting member functions described in section \ref{sec:slice}, and
+even just passing arrays to and from functions. This avoids deep
+copying and so improves efficiency. In addition to the new \code{Array}
+pointing to the same data, it also points to the same \code{Storage}
+object, and when a new link is created, the counter in this object
+indicating the number of objects pointing to it is incremented. This
+ensures that the data will remain provided there is at least one
+object linking to it.  A down side of this model is that if multiple
+threads access an array simultaneously, even if just to read it, then
+the reference counter can become corrupted.  There are two solutions
+to this problem. 
+
+\cxx11 \begin{leftbar} If you are using C++11 then you can define the
+  \code{ADEPT\_STORAGE\_THREAD\_SAFE} preprocessor variable, which
+  makes the reference counter in \code{Storage} objects of type
+  \code{std::atomic<int>} and thereby protects all operations on them
+  by a mutex. This may degrade the efficiency of your code since the
+  mutex will be redundant in single-threaded code. \end{leftbar}
+
+Alternatively, we use the capability of arrays to access data not held
+in a \code{Storage} object. The \code{Array} and \code{SpecialMatrix}
+classes have a \code{soft\_link()} member function that returns an
+object of the same type, size and activeness, which points to the same
+data but does not contain a link to the \code{Storage} object:
+\begin{lstlisting}
+ Matrix M(2,2);
+ // ...enter multi-threaded environment
+ Matrix N;
+ N >>= M.soft_link();            // N links to same data as M but without Storage object
+ Vector v = M.soft_link()(__,0); // v links to subset of M but without Storage object
+                                 // (recall that the copy constructor is called here) 
+\end{lstlisting}
+The linked objects may be used in the same way as any other
+\code{Array}. This is demonstrated in the
+\code{test\_thread\_safe\_arrays} test program.
+
 \chapter{General considerations}
 \label{chap:gen}
 
@@ -3188,6 +3232,12 @@ results if the right-hand-side of an array statement shares data with
 the left-hand-side of the expression. If this is likely for a
 particular statement then use the \code{eval} function, described in
 section \ref{sec:bounds}.
+\citem{ADEPT\_STORAGE\_THREAD\_SAFE} This variable ensures that
+accesses to the reference counter in \code{Storage} objects are
+atomic, enabling the \code{Array} and \code{SpecialMatrix} objects
+that use them to be accessed safely in a multi-threaded
+environment. Note that this may incur a performance penalty, and is
+only available in C++11. See section \ref{sec:thread}.
 \end{description}
 
 \subsection{Modifications requiring a library recompile}
