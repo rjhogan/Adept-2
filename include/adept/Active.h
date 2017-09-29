@@ -1,7 +1,7 @@
 /* Active.h -- Active scalar type for automatic differentiation
 
     Copyright (C) 2012-2014 University of Reading
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -400,10 +400,13 @@ namespace adept {
     // depends on x. A fourth argument "multiplier_stride" may be used
     // to stride the indexing to the derivatives, in case they are
     // part of a matrix that is oriented in a different sense.
-    void add_derivative_dependence(const Active* rhs,
-				   const Real* multiplier,
-				   int n, 
-				   int multiplier_stride = 1) const {
+    template <typename MyReal>
+    typename internal::enable_if<internal::is_floating_point<MyReal>::value,
+		       void>::type
+    add_derivative_dependence(const Active* rhs,
+			      const MyReal* multiplier,
+			      int n, 
+			      int multiplier_stride = 1) const {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (ADEPT_ACTIVE_STACK->is_recording()) {
 #endif
@@ -434,10 +437,13 @@ namespace adept {
     // call "y.add_derivative_dependence(x, dy_dx, n);" to specify how
     // y depends on x.  To specify also how y depends on z, call
     // "y.append_derivative_dependence(z, dy_dz, n);".
-    void append_derivative_dependence(const Active* rhs,
-				      const Real* multiplier,
-				      int n,
-				      int multiplier_stride = 1) const {
+    template <typename MyReal>
+    typename internal::enable_if<internal::is_floating_point<MyReal>::value,
+		       void>::type
+    append_derivative_dependence(const Active* rhs,
+				 const MyReal* multiplier,
+				 int n,
+				 int multiplier_stride = 1) const {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (ADEPT_ACTIVE_STACK->is_recording()) {
 #endif
