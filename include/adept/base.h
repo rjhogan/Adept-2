@@ -154,6 +154,14 @@
 // This cannot be changed without rewriting the Adept library
 #define ADEPT_MAX_ARRAY_DIMENSIONS 7
 
+// Since subsetting an array causes a modification to the reference
+// counter in the underlying storage object, multiple threads
+// subsetting the same array can cause clashes unless the reference
+// counter is protected by a mutex. This is possible on C++11 by
+// making the reference counter of type std::atomic<int>, enabled by
+// defining the following:
+//#define ADEPT_STORAGE_THREAD_SAFE
+
 // ---------------------------------------------------------------------
 // 4: Miscellaneous
 // ---------------------------------------------------------------------
@@ -166,6 +174,13 @@
 // Other C++11 features such as initializer lists, thread_local
 // keyword, extra mathematical functions etc:
 #define ADEPT_CXX11_FEATURES 1
+#endif
+
+// Check C++11 is being used if thread-safe array storage is required
+#ifdef ADEPT_STORAGE_THREAD_SAFE
+#ifndef ADEPT_CXX11_FEATURES
+#error "Thread-safe array storage is only available with C++11"
+#endif
 #endif
 
 // The following attempt to align the data to facilitate SSE2
@@ -217,7 +232,7 @@
 // multiplication, and this will be applicable to different types of
 // matrix (dense, symmetric, banded, upper and lower). But for now,
 // only differentiation of dense active matrices
-// (i.e. Array<2,Real,true>>) is implemented.  Therefore other types
+// (i.e. Array<2,Real,true>) is implemented.  Therefore other types
 // of active matrix need to be converted to this type before they can
 // be used in matrix multiplication.
 #define ADEPT_ONLY_DIFFERENTIATE_DENSE_MATRIX_MULTIPLICATION 1

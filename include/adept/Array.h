@@ -2480,6 +2480,19 @@ namespace adept {
     { return reshape(ExpressionSize<2>(i0,i1,i2,i3,i4,i5,i6)); }
 
 
+    // Return an Array that is a "soft" link to the data in the
+    // present array; that is, it does not copy the Storage object and
+    // increase the reference counter therein. This is useful in a
+    // multi-threaded environment when multiple threads may wish to
+    // subset the same array.
+    Array soft_link() {
+      return Array(data_,0,dimensions_,offset_,gradient_index());
+    }
+    const Array soft_link() const {
+      return Array(data_,0,dimensions_,offset_,gradient_index());
+    }
+
+
     // Place gradients associated with the present active array into
     // the equivalent passive array provided as an argument
     template <typename MyType>

@@ -11,6 +11,9 @@ version 1.9.11 (September 2017)
 	- Active::add_derivative_dependence and
 	append_derivative_dependence no longer only accept arguments of
 	type "Real"
+	- ADEPT_STORAGE_THREAD_SAFE option to protect Storage reference
+	counter in multi-threaded environment (C++11 only)
+	- Added Array::soft_link() as another means to get thread safety
 
 version 1.9.10 (25 September 2017)
 	- Added link syntax A >>= B

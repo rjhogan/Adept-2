@@ -1007,10 +1007,10 @@ namespace adept {
     }
     // Similar to the above, but with the gradient index supplied explicitly,
     // needed when an active FixedArray is being sliced
-    SpecialMatrix(Type* data0, Index data_offset, Index dim, Index offset,
+    SpecialMatrix(const Type* data0, Index data_offset, Index dim, Index offset,
 		  Index gradient_index0)
       : GradientIndex<IsActive>(gradient_index0, data_offset),
-	data_(data0+data_offset), storage_(0), dimension_(dim), offset_(offset) { }
+	data_(const_cast<Type*>(data0)+data_offset), storage_(0), dimension_(dim), offset_(offset) { }
 
 
     // Initialize an array pointing at existing data: the fact that
@@ -1370,6 +1370,19 @@ namespace adept {
       return SpecialMatrix<Type, typename Engine::transpose_engine, 
 	IsActive>(data_, storage_, dimension_, offset_);
     }
+
+    // Return a SpecialMatrix that is a "soft" link to the data in the
+    // present array; that is, it does not copy the Storage object and
+    // increase the reference counter therein. This is useful in a
+    // multi-threaded environment when multiple threads may wish to
+    // subset the same array.
+    SpecialMatrix soft_link() {
+      return SpecialMatrix(data_,0,dimension_,offset_,gradient_index());
+    }
+    const SpecialMatrix soft_link() const {
+      return SpecialMatrix(data_,0,dimension_,offset_,gradient_index());
+    }
+    
 
     // -------------------------------------------------------------------
     // SpecialMatrix: 5. Public member functions

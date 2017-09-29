@@ -26,6 +26,11 @@
 #include <adept/Stack.h>
 #include <adept/Packet.h>
 
+#ifdef ADEPT_STORAGE_THREAD_SAFE
+#include <atomic>
+#endif
+
+
 namespace adept {
 
   // -------------------------------------------------------------------
@@ -98,7 +103,9 @@ namespace adept {
     void add_link()
     { n_links_++; } 
     
-    // Remove link as follows
+    // Remove link as follows; this is only safe in a multi-threaded
+    // environment if ADEPT_STORAGE_THREAD_SAFE is defined, making
+    // n_links_ atomic
     void remove_link() {
       if (n_links_ == 0) {
 	throw invalid_operation("Attempt to remove more links to a storage object than set"
@@ -148,7 +155,14 @@ namespace adept {
     // Number of links to the storage object allowing for arrays and
     // array slices to point to the same data. If this falls to zero
     // the Storage object will destruct itself
+#ifdef ADEPT_STORAGE_THREAD_SAFE
+    // If multiple threads are to simultaneously read subsets of this
+    // array then accesses to the reference counter must be made
+    // atomic
+    std::atomic<int> n_links_;
+#else
     int n_links_;
+#endif
     // For active variables, this s the gradient index of the first
     // element.  It would be better to only store this if Type is
     // floating point.
