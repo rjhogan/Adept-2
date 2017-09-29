@@ -108,6 +108,12 @@ main(int argc, const char** argv) {
   y_save << 0.9, 0.6, 0.1;
 
   Real dx = 1.0e-8;
+
+  if (sizeof(Real) < 8) {
+    // Single precision only works with larger perturbations
+    dx = 1.0e-5;
+  }
+
   Real dy = dx;
 
   bool error_too_large = false;  
@@ -166,6 +172,11 @@ main(int argc, const char** argv) {
 
   if (error_too_large) {
     std::cerr << "*** Error: fractional error in the derivatives of some functions too large\n";
+
+    if (sizeof(Real) < 8) {
+      std::cerr << "*** (but you are using less than double precision so it is not surprising)\n";
+    }
+
     return 1;
   }
   else {

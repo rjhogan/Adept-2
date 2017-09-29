@@ -8,12 +8,14 @@
   without any warranty.
 */
 
+#include <adept.h>
+
 void simulate_radiances(int n, // Size of temperature array
 			// Input variables:
-			double surface_temperature, 
-			const double* temperature,
+			adept::Real surface_temperature, 
+			const adept::Real* temperature,
 			// Output variables:
-			double radiance[2],
+			adept::Real radiance[2],
 			// Output Jacobians:
-			double dradiance_dsurface_temperature[2],
-			double* dradiance_dtemperature);
+			adept::Real dradiance_dsurface_temperature[2],
+			adept::Real* dradiance_dtemperature);

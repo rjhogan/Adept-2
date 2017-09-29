@@ -28,6 +28,7 @@ int
 main(int argc, char** argv)
 {
   using adept::adouble;
+  using adept::Real;
 
   // Start an Adept stack before the first adouble object is
   // constructed
@@ -125,7 +126,7 @@ main(int argc, char** argv)
 
   s.independent(x, 2); // Declare independents
   s.dependent(y);      // Declare dependents
-  double jac[2];
+  Real jac[2];         // Jacobian data must be of type "Real"
   s.jacobian(jac);     // Compute Jacobian
 
 

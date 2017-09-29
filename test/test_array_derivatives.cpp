@@ -38,7 +38,12 @@ main(int argc, const char** argv) {
   static const Real MAX_FRAC_ERR = 1.0e-5;
 
   // Perturbation size for numerical calculation
-  static const Real dx = 1.0e-6;
+  Real dx = 1.0e-6;
+
+  if (sizeof(Real) < 8) {
+    // Single precision only works with larger perturbations
+    dx = 1.0e-4;
+  }
 
   // Maximum fractional error
   Real max_frac_err;
@@ -148,6 +153,11 @@ main(int argc, const char** argv) {
 
   if (error_too_large) {
     std::cerr << "*** Error: fractional error in the derivatives of some configurations too large\n";
+
+    if (sizeof(Real) < 8) {
+      std::cerr << "*** (but you are using less than double precision so it is not surprising)\n";
+    }
+
     return 1;
   }
   else {

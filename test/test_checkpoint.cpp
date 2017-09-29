@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <cmath>
+//#include <fenv.h>
 
 #include "adept.h"
 // This header file is in the same directory as adept.h in the Adept
@@ -43,6 +44,10 @@ main(int argc, char** argv)
   Timer timer;
   timer.print_on_exit(true);
 
+  // Note that in single precision the derivative calculation causes a
+  // floating-point error due to negative overflow
+  //  feenableexcept(FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
+
   const double pi = 4.0*atan(1.0);
 
   // Edit these variables to change properties of simulation
@@ -63,6 +68,8 @@ main(int argc, char** argv)
   // once with
   int full_id = timer.new_activity("Non-checkpointed simulation");
   int checkpointed_id = timer.new_activity("Checkpointed simulation");
+
+  bool nan_appeared = false;
 
 
   // PART 1: NON-CHECKPOINTED SIMULATION
@@ -119,6 +126,7 @@ main(int argc, char** argv)
     std::cout << "dJ_dq=[";
     for (int i = 0; i < NX; i++) {
       std::cout << " " << dJ_dq[i];
+      nan_appeared = nan_appeared || std::isnan(dJ_dq[i]);
     }
     std::cout << "]\n";
     std::cout << stack;
@@ -220,12 +228,19 @@ main(int argc, char** argv)
     std::cout << "dJ_dq=[";
     for (int i = 0; i < NX; i++) {
       std::cout << " " << dJ_dq[i];
+      nan_appeared = nan_appeared || std::isnan(dJ_dq[i]);
     }
     std::cout << "]\n";
     std::cout << stack;
   }
   timer.stop();
 
-  return 0;
+  if (nan_appeared) {
+    std::cerr << "*** Error: some NaNs appeared\n";
+    return 1;
+  }
+  else {
+    return 0;
+  }
 
 }

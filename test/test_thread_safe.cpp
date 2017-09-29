@@ -26,6 +26,7 @@
 #include "adept.h"
 
 using adept::adouble;
+using adept::Real;
 
 // Number of points in spatial grid of simulation
 #define NX 128
@@ -76,8 +77,8 @@ compute(int i, int nt, double dt, double q_init_save[NX])
 
   s.independent(q_init, NX); // Declare independents
   s.dependent(q, NX);        // Declare dependents
-  double jac_for[NX*NX];     // Where the Jacobian will be stored from forward computation
-  double jac_rev[NX*NX];     // Where the Jacobian will be stored from reverse computation
+  Real jac_for[NX*NX];       // Where Jacobian will be stored from forward computation
+  Real jac_rev[NX*NX];       // Where Jacobian will be stored from reverse computation
   // Compute Jacobian two ways
   s.jacobian_forward(jac_for);
   s.jacobian_reverse(jac_rev);

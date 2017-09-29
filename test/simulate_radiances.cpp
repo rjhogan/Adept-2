@@ -11,7 +11,8 @@
 #include "adept.h"
 #include "simulate_radiances.h"
 
-using adept::adouble;
+using adept::aReal;
+using adept::Real;
 
 // Simulate a single radiance (W sr-1 m-3) given the wavelength (m),
 // emissivity profile, surface temperature (K) and temperature profile
@@ -20,18 +21,18 @@ using adept::adouble;
 // from within this file; the public interface is the
 // simulate_radiance function.
 static
-adouble
+aReal
 simulate_radiance_private(int n,
-			  double wavelength,
-			  const double* emissivity,
-			  const adouble& surface_temperature,
-			  const adouble* temperature)
+			  Real wavelength,
+			  const Real* emissivity,
+			  const aReal& surface_temperature,
+			  const aReal* temperature)
 {
-  static const double BOLTZMANN_CONSTANT = 1.380648813e-23;
-  static const double SPEED_OF_LIGHT = 299792458.0;
+  static const Real BOLTZMANN_CONSTANT = 1.380648813e-23;
+  static const Real SPEED_OF_LIGHT = 299792458.0;
 
   int i;
-  adouble bt = surface_temperature; // Brightness temperature in K
+  aReal bt = surface_temperature; // Brightness temperature in K
   // Loop up through the atmosphere working out the contribution from
   // each layer
   for (i = 0; i < n; i++) {
@@ -50,13 +51,13 @@ simulate_radiance_private(int n,
 void
 simulate_radiances(int n, // Size of temperature array
 		   // Input variables:
-		   double surface_temperature, 
-		   const double* temperature,
+		   Real surface_temperature, 
+		   const Real* temperature,
 		   // Output variables:
-		   double radiance[2],
+		   Real radiance[2],
 		   // Output Jacobians:
-		   double dradiance_dsurface_temperature[2],
-		   double* dradiance_dtemperature)
+		   Real dradiance_dsurface_temperature[2],
+		   Real* dradiance_dtemperature)
 {
   // First temporarily deactivate any existing Adept stack used by the
   // calling function
@@ -69,29 +70,29 @@ simulate_radiances(int n, // Size of temperature array
   // will be used
   {
     // Ficticious oxygen channels around 60 GHz: wavelength in m
-    static const double wavelength[2] = {0.006, 0.0061}; 
+    static const Real wavelength[2] = {0.006, 0.0061}; 
     // Mass absorption coefficient of oxygen in m2 kg-1
-    static const double mass_abs_coefft[2] = {3.0e-5, 3.0e-3};
+    static const Real mass_abs_coefft[2] = {3.0e-5, 3.0e-3};
     // Layer thickness in m
-    static const double dz = 1000.0;
+    static const Real dz = 1000.0;
 
     // Density of oxygen in kg m-3
-    std::vector<double> density_oxygen(n);
+    std::vector<Real> density_oxygen(n);
     // Emissivity at a particular microwave wavelength
-    std::vector<double> emissivity(n);
+    std::vector<Real> emissivity(n);
 
     // Start a new stack
     adept::Stack s;
 
     // Create local active variables: surface temperature, temperature
     // and radiance
-    adouble st = surface_temperature;
-    std::vector<adouble> t(n);
-    adouble r[2];
+    aReal st = surface_temperature;
+    std::vector<aReal> t(n);
+    aReal r[2];
 
     // Initialize the oxygen density and temperature
     for (int i = 0; i < n; i++) {
-      double altitude = i*dz;
+      Real altitude = i*dz;
       // Oxygen density uses an assumed volume mixing ratio with air
       // of 21%, molecular mass of 16 (compared to 29 for air), a
       // surface air density of 1.2 kg m-3 and an atmospheric scale
@@ -112,7 +113,7 @@ simulate_radiances(int n, // Size of temperature array
       // Simulate the radiance
       r[ichan] = simulate_radiance_private(n, wavelength[ichan], 
 					   &emissivity[0], st, &t[0]);
-      // Copy the adouble variable to the double variable
+      // Copy the aReal variable to the Real variable
       radiance[ichan] = r[ichan].value();
     }
 
@@ -123,7 +124,7 @@ simulate_radiances(int n, // Size of temperature array
     s.dependent(r, 2);
     
     // Compute Jacobian matrix
-    std::vector<double> jacobian((n+1)*2);
+    std::vector<Real> jacobian((n+1)*2);
     s.jacobian(&jacobian[0]);
 
     // Copy elements of Jacobian matrix into the calling arrays
