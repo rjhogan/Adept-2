@@ -1,7 +1,7 @@
 /* traits.h -- Traits used to support array/automatic differentiation expressions
 
     Copyright (C) 2012-2014 University of Reading
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -49,6 +49,7 @@ namespace adept {
     // 15. remove_reference
     // 16. initializer_list_rank
     // 17. matrix_op_defined
+    // 18. is_floating_point
     // --------------------
 
     // ---------------------------------------------------------------------
@@ -399,19 +400,32 @@ namespace adept {
 #endif
 
     // ---------------------------------------------------------------------
-    // 14. matrix_op_defined
+    // 17. matrix_op_defined
     // ---------------------------------------------------------------------
 
     // Return true if a type is float or double, false otherwise
-    template<typename T>
+    template <typename T>
     struct matrix_op_defined { static const bool value = false;  };
     
-    template<>
+    template <>
     struct matrix_op_defined<float>  { static const bool value = true; };
 
-    template<>
+    template <>
     struct matrix_op_defined<double>  { static const bool value = true; };
  
+    // ---------------------------------------------------------------------
+    // 17. is_floating_point
+    // ---------------------------------------------------------------------
+
+    template <typename T>
+    struct is_floating_point { static const bool value = false; };
+
+    template <>
+    struct is_floating_point<float> { static const bool value = true; };
+    template <>
+    struct is_floating_point<double> { static const bool value = true; };
+    template <>
+    struct is_floating_point<long double> { static const bool value = true; };
 
   } // End namespace internal
 
