@@ -85,9 +85,10 @@ namespace adept {
       // stack with no corresponding right-hand-side, appropriate if
       // an array of active variables contiguous in memory (or
       // separated by a fixed stride) has been assigned to inactive
-      // numbers.
-      void push_lhs_range(const uIndex& first, const uIndex& n, 
-			  const uIndex& stride = 1) {
+      // numbers. Note that the second and third arguments must not be
+      // references, since they may be compile-time constants for
+      // FixedArray objects.
+      void push_lhs_range(const uIndex& first, uIndex n, uIndex stride = 1) {
 	uIndex last_plus_1 = first+n*stride;
 #ifndef ADEPT_MANUAL_MEMORY_ALLOCATION
 	if (n_statements_+n > n_allocated_statements_) {
@@ -102,7 +103,7 @@ namespace adept {
 
       // Check whether the operation stack contains enough space for n
       // new operations; if not, grow it
-      void check_space(const uIndex& n) {
+      void check_space(uIndex n) {
 	if (n_allocated_operations_ < n_operations_+n+1) {
 	  grow_operation_stack(n);
 	}

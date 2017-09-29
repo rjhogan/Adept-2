@@ -1,7 +1,7 @@
 /* Stack.h -- Storage of automatic differentiation information
 
     Copyright (C) 2012-2014 University of Reading
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -38,6 +38,7 @@
 #include <adept/exception.h>
 #include <adept/StackStorageOrig.h>
 #include <adept/StackStorageOrigStl.h>
+#include <adept/traits.h>
 
 namespace adept {
 
@@ -283,8 +284,11 @@ namespace adept {
 
     // Set the gradients in the list with indexs between start and
     // end_plus_one-1 to the values pointed to by "gradient"
-    void set_gradients(uIndex start, uIndex end_plus_one,
-		       const Real* gradient) {
+    template <typename MyReal>
+    typename internal::enable_if<internal::is_floating_point<MyReal>::value,
+		       void>::type
+    set_gradients(uIndex start, uIndex end_plus_one,
+		  const MyReal* gradient) {
       // Need to initialize the gradient list if not already done
       if (!gradients_are_initialized()) {
 	initialize_gradients();
@@ -300,8 +304,11 @@ namespace adept {
     // Get the gradients in the list with indexs between start and
     // end_plus_one-1 and put them in the location pointed to by
     // "gradient"
-    void get_gradients(uIndex start, uIndex end_plus_one,
-		       Real* gradient) const {
+    template <typename MyReal>
+    typename internal::enable_if<internal::is_floating_point<MyReal>::value,
+		       void>::type
+    get_gradients(uIndex start, uIndex end_plus_one,
+		  MyReal* gradient) const {
       if (!gradients_are_initialized()) {
 	throw gradients_not_initialized();
       }
@@ -312,8 +319,11 @@ namespace adept {
 	gradient[j] = gradient_[i];
       }
     }
-    void get_gradients(uIndex start, uIndex end_plus_one,
-		       Real* gradient, Index src_stride, Index target_stride) const {
+    template <typename MyReal>
+    typename internal::enable_if<internal::is_floating_point<MyReal>::value,
+		       void>::type
+    get_gradients(uIndex start, uIndex end_plus_one,
+		  MyReal* gradient, Index src_stride, Index target_stride) const {
       if (!gradients_are_initialized()) {
 	throw gradients_not_initialized();
       }
