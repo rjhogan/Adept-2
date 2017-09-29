@@ -16,14 +16,17 @@
 
 #include "differentiator.h"
 
+#include <adept.h>
+using adept::Real;
+
 static
-double
-rms(const std::vector<double>& a, const std::vector<double>&b)
+Real
+rms(const std::vector<Real>& a, const std::vector<Real>&b)
 {
   if (a.size() != b.size()) {
     throw differentiator_exception("Attempt to compute RMS difference between vectors of different size");
   }
-  double sum = 0.0;
+  Real sum = 0.0;
   for (size_t i = 0; i < a.size(); i++) {
     sum += (a[i]-b[i])*(a[i]-b[i]);
   }
@@ -64,8 +67,8 @@ main(int argc, char** argv)
   int nt = 2000;
   int nr = 100;
   int nr_jacobian = nr/10;
-  double dt = 0.125;
-  double tolerance = 1.0e-5;
+  Real dt = 0.125;
+  Real tolerance = 1.0e-5;
   int force_jacobian = 0;
 
   bool verbose = false;
@@ -244,7 +247,7 @@ main(int argc, char** argv)
 	else {
 	  std::string msg = "Failed to read \"";
 	  msg += argv[iarg];
-	  msg += "\"as a double";
+	  msg += "\"as a Real";
 	  throw differentiator_exception(msg.c_str());
 	}
       }
@@ -263,14 +266,14 @@ main(int argc, char** argv)
     iarg++;
   }
 
-  double pi = 4.0*atan(1.0);
-  std::vector<double> q_init(NX);
-  std::vector<double> q(NX);
-  std::vector<double> q_AD(NX);
-  std::vector<double> q_init_AD(NX);
-  std::vector<double> q_init_AD_reference(NX);
-  std::vector<double> jac(NX*NX);
-  std::vector<double> jac_reference(NX*NX);
+  Real pi = 4.0*atan(1.0);
+  std::vector<Real> q_init(NX);
+  std::vector<Real> q(NX);
+  std::vector<Real> q_AD(NX);
+  std::vector<Real> q_init_AD(NX);
+  std::vector<Real> q_init_AD_reference(NX);
+  std::vector<Real> jac(NX*NX);
+  std::vector<Real> jac_reference(NX*NX);
 
   int nr_warm_up = nr/10;
   int nr_jacobian_warm_up = nr_jacobian/10;
@@ -379,8 +382,8 @@ main(int argc, char** argv)
 	std::cout << "]\n";
       }
       if (print_jacobian) {
-	double (&q_K)[NX][NX]
-	  = *reinterpret_cast<double(*)[NX][NX]>(&jac_reference[0]);
+	Real (&q_K)[NX][NX]
+	  = *reinterpret_cast<Real(*)[NX][NX]>(&jac_reference[0]);
 	std::cout << "jacobian = [\n";
 	for (int i = 0; i < NX; i++) {
 	  std::cout << q_K[i][0];
@@ -392,7 +395,7 @@ main(int argc, char** argv)
 	std::cout << "]\n";
       }
       
-      double base_time = timer.timing(hand_coded_differentiator.base_timer_id());
+      Real base_time = timer.timing(hand_coded_differentiator.base_timer_id());
       
       if (!verify_only) {
 	std::cout << "      Time of original algorithm: " << base_time << " seconds\n";
@@ -430,7 +433,7 @@ main(int argc, char** argv)
 	  for (int i = 0; i < nr_warm_up; i++) {
 	    differentiator->adjoint(ta, q_init, q, q_AD, q_init_AD);
 	  }
-	  double rms_verify = rms(q_init_AD, q_init_AD_reference);
+	  Real rms_verify = rms(q_init_AD, q_init_AD_reference);
 	  if (rms_verify > tolerance) {
 	    std::cout << "      *** Adjoint RMS difference with hand-coded of " << rms_verify << " is greater than tolerance of " << tolerance << " ***\n";
 	    verify_error = true;
@@ -458,12 +461,12 @@ main(int argc, char** argv)
 	      differentiator->adjoint(ta, q_init, q, q_AD, q_init_AD);
 	    }
 
-	    double relative_record_time = timer.timing(differentiator->base_timer_id())
+	    Real relative_record_time = timer.timing(differentiator->base_timer_id())
 	      / base_time;
-	    double relative_adjoint_time
+	    Real relative_adjoint_time
 	      = timer.timing(differentiator->adjoint_compute_timer_id())
 	      / base_time;
-	    double relative_adjoint_prep_time
+	    Real relative_adjoint_prep_time
 	      = timer.timing(differentiator->adjoint_prep_timer_id())
 	      / base_time;
 
@@ -496,8 +499,8 @@ main(int argc, char** argv)
 	  }
 	  
 	  if (print_jacobian) {
-	    double (&q_K)[NX][NX]
-	      = *reinterpret_cast<double(*)[NX][NX]>(&jac[0]);
+	    Real (&q_K)[NX][NX]
+	      = *reinterpret_cast<Real(*)[NX][NX]>(&jac[0]);
 	    std::cout << "jacobian_auto = [\n";
 	    for (int i = 0; i < NX; i++) {
 	      std::cout << q_K[i][0];
@@ -510,11 +513,11 @@ main(int argc, char** argv)
 	  }
 	  
 	  if (!verify_only) {
-	    double relative_record_time = (nr*timer.timing(differentiator->base_timer_id()))
+	    Real relative_record_time = (nr*timer.timing(differentiator->base_timer_id()))
 	      /(nr_jacobian*base_time);
-	    double relative_jacobian_time = (nr*timer.timing(differentiator->jacobian_timer_id()))
+	    Real relative_jacobian_time = (nr*timer.timing(differentiator->jacobian_timer_id()))
 	      /(nr_jacobian*base_time);
-	    double relative_adjoint_prep_time = (nr*timer.timing(differentiator->adjoint_prep_timer_id()))
+	    Real relative_adjoint_prep_time = (nr*timer.timing(differentiator->adjoint_prep_timer_id()))
 	      /(nr_jacobian*base_time);
 	    std::cout << "      Absolute time of Jacobian: "
 		      << timer.timing(differentiator->base_timer_id())

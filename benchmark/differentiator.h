@@ -22,6 +22,8 @@
 
 #include "adept.h"
 
+using adept::Real;
+
 #ifdef HAVE_ADOLC
 #include "adolc/adolc.h"
 #endif
@@ -85,7 +87,7 @@ public:
 
   virtual void print() { }
 
-  void initialize(int nt, double c) {
+  void initialize(int nt, Real c) {
     nt_ = nt;
     c_ = c;
   }
@@ -111,17 +113,17 @@ public:
   }
 
   virtual bool adjoint(TestAlgorithm test_algorithm,
-		       const std::vector<double>& x,
-		       std::vector<double>& y,
-		       const std::vector<double>& y_AD,
-		       std::vector<double>& x_AD) {
+		       const std::vector<Real>& x,
+		       std::vector<Real>& y,
+		       const std::vector<Real>& y_AD,
+		       std::vector<Real>& x_AD) {
     return false;
   }
 
   virtual bool jacobian(TestAlgorithm test_algorithm,
-			const std::vector<double>& x,
-			std::vector<double>& y,
-			std::vector<double>& jac,
+			const std::vector<Real>& x,
+			std::vector<Real>& y,
+			std::vector<Real>& jac,
 			int force_jacobian = 0) {
     return false;
   }
@@ -153,7 +155,7 @@ protected:
 protected:
   Timer& timer_;
   int nt_; // Number of timesteps to run
-  double c_;  // Courant number
+  Real c_;  // Courant number
   int base_timer_id_;
   int adjoint_prep_timer_id_;
   int adjoint_compute_timer_id_;
@@ -172,10 +174,10 @@ public:
   }
 
   virtual bool adjoint(TestAlgorithm test_algorithm,
-		       const std::vector<double>& x,
-		       std::vector<double>& y,
-		       const std::vector<double>& y_AD,
-		       std::vector<double>& x_AD) {
+		       const std::vector<Real>& x,
+		       std::vector<Real>& y,
+		       const std::vector<Real>& y_AD,
+		       std::vector<Real>& x_AD) {
     if (test_algorithm == TEST_ALGORITHM_LAX_WENDROFF) {
       timer_.start(adjoint_compute_timer_id_);
       lax_wendroff_AD(nt_, c_, &x[0], &y[0], &y_AD[0], &x_AD[0]);
@@ -204,9 +206,9 @@ public:
   }
 
   virtual bool jacobian(TestAlgorithm test_algorithm,
-			const std::vector<double>& x,
-			std::vector<double>& y,
-			std::vector<double>& jac,
+			const std::vector<Real>& x,
+			std::vector<Real>& y,
+			std::vector<Real>& jac,
 			int force_jacobian = 0) {
     jac.resize(NX*NX);
     if (test_algorithm == TEST_ALGORITHM_LAX_WENDROFF) {
@@ -252,18 +254,18 @@ public:
   virtual ~AdeptDifferentiator() { }
 
   virtual bool adjoint(TestAlgorithm test_algorithm,
-		       const std::vector<double>& x,
-		       std::vector<double>& y,
-		       const std::vector<double>& y_AD,
-		       std::vector<double>& x_AD) {
+		       const std::vector<Real>& x,
+		       std::vector<Real>& y,
+		       const std::vector<Real>& y_AD,
+		       std::vector<Real>& x_AD) {
     if (x.size() != NX || y_AD.size() != NX) {
       throw differentiator_exception("One of input vectors not of size NX in call to AdeptDifferentiator::adjoint");
     }
     y.resize(NX);
     x_AD.resize(NX);
 
-    std::vector<adept::adouble> q_init(NX);
-    std::vector<adept::adouble> q(NX);
+    std::vector<adept::aReal> q_init(NX);
+    std::vector<adept::aReal> q(NX);
 
     adept::set_values(&q_init[0], NX, &x[0]);
 
@@ -283,9 +285,9 @@ public:
 
 
   virtual bool jacobian(TestAlgorithm test_algorithm,
-			const std::vector<double>& x,
-			std::vector<double>& y,
-			std::vector<double>& jac,
+			const std::vector<Real>& x,
+			std::vector<Real>& y,
+			std::vector<Real>& jac,
 			int force_jacobian = 0) {
     if (x.size() != NX) {
       throw differentiator_exception("Input vector x not of size NX in call to AdeptDifferentiator::jacobian");
@@ -293,8 +295,8 @@ public:
     y.resize(NX);
     jac.resize(NX*NX);
 
-    std::vector<adept::adouble> q_init(NX);
-    std::vector<adept::adouble> q(NX);
+    std::vector<adept::aReal> q_init(NX);
+    std::vector<adept::aReal> q(NX);
 
     adept::set_values(&q_init[0], NX, &x[0]);
 
@@ -368,18 +370,18 @@ public:
   }
 
   virtual bool adjoint(TestAlgorithm test_algorithm,
-		       const std::vector<double>& x,
-		       std::vector<double>& y,
-		       const std::vector<double>& y_AD,
-		       std::vector<double>& x_AD) {
+		       const std::vector<Real>& x,
+		       std::vector<Real>& y,
+		       const std::vector<Real>& y_AD,
+		       std::vector<Real>& x_AD) {
     if (x.size() != NX || y_AD.size() != NX) {
       throw differentiator_exception("One of input vectors not of size NX in call to AdolcDifferentiator::adjoint");
     }
     y.resize(NX);
     x_AD.resize(NX);
 
-    std::vector<adouble> q_init(NX);
-    std::vector<adouble> q(NX);
+    std::vector<aReal> q_init(NX);
+    std::vector<aReal> q(NX);
 
     trace_on(1,1);
 
@@ -397,7 +399,7 @@ public:
 
     timer_.start(adjoint_compute_timer_id_);
 
-    reverse(1, NX, NX, 0, const_cast<double*>(&y_AD[0]), &x_AD[0]);                                                
+    reverse(1, NX, NX, 0, const_cast<Real*>(&y_AD[0]), &x_AD[0]);                                                
 
     timer_.stop();
     return true;
@@ -405,9 +407,9 @@ public:
 
 
   virtual bool jacobian(TestAlgorithm test_algorithm,
-			const std::vector<double>& x,
-			std::vector<double>& y,
-			std::vector<double>& jac_,
+			const std::vector<Real>& x,
+			std::vector<Real>& y,
+			std::vector<Real>& jac_,
 			int force_jacobian = 0) {
     if (x.size() != NX) {
       throw differentiator_exception("Input vector x not of size NX in call to AdolcDifferentiator::jacobian");
@@ -415,8 +417,8 @@ public:
     y.resize(NX);
     jac_.resize(NX*NX);
 
-    std::vector<adouble> q_init(NX);
-    std::vector<adouble> q(NX);
+    std::vector<aReal> q_init(NX);
+    std::vector<aReal> q(NX);
 
     trace_on(1,1);
 
@@ -470,9 +472,9 @@ public:
   virtual std::string name() const { return "ADOL-C"; }
 
 private:
-  double** jac;
-  double** I;
-  double* result;
+  Real** jac;
+  Real** I;
+  Real* result;
 };
 
 #endif // HAVE_ADOLC
@@ -485,7 +487,7 @@ private:
 class CppadDifferentiator
   : public Differentiator {
 public:
-  typedef CppAD::AD<double> adouble;
+  typedef CppAD::AD<Real> aReal;
 
   CppadDifferentiator(Timer& timer, const std::string& name_)
     : Differentiator(timer) {
@@ -496,18 +498,18 @@ public:
   virtual ~CppadDifferentiator() { }
   
   virtual bool adjoint(TestAlgorithm test_algorithm,
-		       const std::vector<double>& x,
-		       std::vector<double>& y,
-		       const std::vector<double>& y_AD,
-		       std::vector<double>& x_AD) {
+		       const std::vector<Real>& x,
+		       std::vector<Real>& y,
+		       const std::vector<Real>& y_AD,
+		       std::vector<Real>& x_AD) {
     if (x.size() != NX || y_AD.size() != NX) {
       throw differentiator_exception("One of input vectors not of size NX in call to CppadDifferentiator::adjoint");
     }
     y.resize(NX);
     x_AD.resize(NX);
 
-    std::vector<adouble> q_init(NX);
-    std::vector<adouble> q(NX);
+    std::vector<aReal> q_init(NX);
+    std::vector<aReal> q(NX);
 
     for (int i = 0; i < NX; i++) {
       q_init[i] = x[i];
@@ -522,7 +524,7 @@ public:
     }
 
     timer_.start(adjoint_prep_timer_id_);
-    CppAD::ADFun<double> f(q_init, q);
+    CppAD::ADFun<Real> f(q_init, q);
 
     timer_.start(adjoint_compute_timer_id_);
     x_AD = f.Reverse(1, y_AD);
@@ -532,9 +534,9 @@ public:
   }
 
   virtual bool jacobian(TestAlgorithm test_algorithm,
-			const std::vector<double>& x,
-			std::vector<double>& y,
-			std::vector<double>& jac,
+			const std::vector<Real>& x,
+			std::vector<Real>& y,
+			std::vector<Real>& jac,
 			int force_jacobian = 0) {
     if (x.size() != NX) {
       throw differentiator_exception("Input vector x not of size NX in call to CppadDifferentiator::jacobian");
@@ -543,8 +545,8 @@ public:
     jac.resize(NX*NX);
     jac_transpose_.resize(NX*NX);
 
-    std::vector<adouble> q_init(NX);
-    std::vector<adouble> q(NX);
+    std::vector<aReal> q_init(NX);
+    std::vector<aReal> q(NX);
 
     for (int i = 0; i < NX; i++) {
       q_init[i] = x[i];
@@ -559,7 +561,7 @@ public:
     }
 
     timer_.start(adjoint_prep_timer_id_);
-    CppAD::ADFun<double> f(q_init, q);
+    CppAD::ADFun<Real> f(q_init, q);
 
     timer_.start(jacobian_timer_id_);
 
@@ -574,8 +576,8 @@ public:
     }
 
     // Transpose Jacobian because CppAD uses the opposite convention to the other tools
-    double (&jac_transpose2)[NX][NX]
-      = *reinterpret_cast<double(*)[NX][NX]>(&jac_transpose_[0]);
+    Real (&jac_transpose2)[NX][NX]
+      = *reinterpret_cast<Real(*)[NX][NX]>(&jac_transpose_[0]);
     for (int i = 0, index = 0; i < NX; i++) {
       for (int j = 0; j < NX; j++, index++) {
 	jac[index] = jac_transpose2[j][i];
@@ -588,7 +590,7 @@ public:
   virtual std::string name() const { return "CppAD"; }
 
 private:
-  std::vector<double> jac_transpose_;
+  std::vector<Real> jac_transpose_;
 };
 
 #endif // HAVE_CPPAD
@@ -598,13 +600,13 @@ private:
 
 // ================= SACADO ================================ 
 
-template<> int Sacado::Rad::ADmemblock<double>::n_blocks = 0;
+template<> int Sacado::Rad::ADmemblock<Real>::n_blocks = 0;
 
 class SacadoDifferentiator
   : public Differentiator {
 public:
-  typedef Sacado::Rad::ADvar<double> adouble;
-  typedef Sacado::ELRFad::DFad<double> adouble_fad;
+  typedef Sacado::Rad::ADvar<Real> aReal;
+  typedef Sacado::ELRFad::DFad<Real> aReal_fad;
 
   SacadoDifferentiator(Timer& timer, const std::string& name_)
     : Differentiator(timer) { init_timer(name_); }
@@ -612,18 +614,18 @@ public:
   virtual ~SacadoDifferentiator() { }
   
   virtual bool adjoint(TestAlgorithm test_algorithm,
-		       const std::vector<double>& x,
-		       std::vector<double>& y,
-		       const std::vector<double>& y_AD,
-		       std::vector<double>& x_AD) {
+		       const std::vector<Real>& x,
+		       std::vector<Real>& y,
+		       const std::vector<Real>& y_AD,
+		       std::vector<Real>& x_AD) {
     if (x.size() != NX || y_AD.size() != NX) {
       throw differentiator_exception("One of input vectors not of size NX in call to SacadoDifferentiator::adjoint");
     }
     y.resize(NX);
     x_AD.resize(NX);
 
-    std::vector<adouble> q_init(NX);
-    std::vector<adouble> q(NX);
+    std::vector<aReal> q_init(NX);
+    std::vector<aReal> q(NX);
 
     for (int i = 0; i < NX; i++) {
       q_init[i] = x[i];
@@ -636,13 +638,13 @@ public:
     }
 
     timer_.start(base_timer_id_);
-    adouble objective_func = 0.0;
+    aReal objective_func = 0.0;
     for (int i = 0; i < NX; i++) {
       objective_func += q[i] * y_AD[i];
     }
 
     timer_.start(adjoint_compute_timer_id_);
-    Sacado::Rad::ADvar<double>::Gradcomp();
+    Sacado::Rad::ADvar<Real>::Gradcomp();
     for (int i = 0; i < NX; i++) { 
       x_AD[i] = q_init[i].adj();
     }
@@ -653,9 +655,9 @@ public:
 
 
   virtual bool jacobian(TestAlgorithm test_algorithm,
-			const std::vector<double>& x,
-			std::vector<double>& y,
-			std::vector<double>& jac,
+			const std::vector<Real>& x,
+			std::vector<Real>& y,
+			std::vector<Real>& jac,
 			int force_jacobian = 0) {
     if (x.size() != NX) {
       throw differentiator_exception("Input vector x not of size NX in call to SacadoDifferentiator::jacobian");
@@ -663,8 +665,8 @@ public:
     y.resize(NX);
     jac.resize(NX*NX);
 
-    std::vector<adouble_fad> q_init(NX);
-    std::vector<adouble_fad> q(NX);
+    std::vector<aReal_fad> q_init(NX);
+    std::vector<aReal_fad> q(NX);
 
     for (int i = 0; i < NX; i++) {
       q_init[i] = x[i];

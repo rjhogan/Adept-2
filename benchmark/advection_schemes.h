@@ -21,9 +21,9 @@
 #include "nx.h"
 
 // Lax-Wendroff scheme applied to linear advection
-template <class adouble>
-void lax_wendroff(int nt, double c, const adouble q_init[NX], adouble q[NX]) {
-  adouble flux[NX-1];                        // Fluxes between boxes
+template <class aReal, typename Real>
+void lax_wendroff(int nt, Real c, const aReal q_init[NX], aReal q[NX]) {
+  aReal flux[NX-1];                        // Fluxes between boxes
   for (int i=0; i<NX; i++) q[i] = q_init[i]; // Initialize q 
   for (int j=0; j<nt; j++) {                 // Main loop in time
     for (int i=0; i<NX-1; i++) flux[i] = 0.5*c*(q[i]+q[i+1]+c*(q[i]-q[i+1]));
@@ -33,9 +33,9 @@ void lax_wendroff(int nt, double c, const adouble q_init[NX], adouble q[NX]) {
 }
 
 // Toon advection scheme applied to linear advection
-template <class adouble>
-void toon(int nt, double c, const adouble q_init[NX], adouble q[NX]) {
-  adouble flux[NX-1];                        // Fluxes between boxes
+template <class aReal, typename Real>
+void toon(int nt, Real c, const aReal q_init[NX], aReal q[NX]) {
+  aReal flux[NX-1];                        // Fluxes between boxes
   for (int i=0; i<NX; i++) q[i] = q_init[i]; // Initialize q
   for (int j=0; j<nt; j++) {                 // Main loop in time
     for (int i=0; i<NX-1; i++) {
@@ -43,7 +43,7 @@ void toon(int nt, double c, const adouble q_init[NX], adouble q[NX]) {
       // not too small or we end up with close to 0/0.  Unfortunately
       // the "fabs" function is not always available in CppAD, hence
       // the following.
-      //      adouble bigdiff = (q[i]-q[i+1])*1.0e6;
+      //      aReal bigdiff = (q[i]-q[i+1])*1.0e6;
       //      if (bigdiff > q[i] || bigdiff < -q[i]) {
 	flux[i] = (exp(c*log(q[i]/q[i+1]))-1.0)
 	  * q[i]*q[i+1] / (q[i]-q[i+1]);
@@ -61,15 +61,15 @@ void toon(int nt, double c, const adouble q_init[NX], adouble q[NX]) {
 
 
 template <typename T> struct is_active { static const bool value = false; };
-template <> struct is_active<adept::adouble> { static const bool value = true; };
+template <> struct is_active<adept::aReal> { static const bool value = true; };
 
 // Lax-Wendroff scheme applied to linear advection
-template <typename adouble>
-void lax_wendroff_vector(int nt, double c, const adouble q_init[NX], 
-			 adouble q[NX]) {
+template <typename aReal, typename Real>
+void lax_wendroff_vector(int nt, Real c, const aReal q_init[NX], 
+			 aReal q[NX]) {
   using namespace adept;
-  typedef adept::Array<1,double,::is_active<adouble>::value> my_vector;
-  //  typedef adept::Array<1,double,true> my_vector;
+  typedef adept::Array<1,Real,::is_active<aReal>::value> my_vector;
+  //  typedef adept::Array<1,Real,true> my_vector;
   my_vector Q(NX);
   my_vector F(NX-1);
   my_vector Qleft = Q(range(0,end-1));
@@ -87,10 +87,10 @@ void lax_wendroff_vector(int nt, double c, const adouble q_init[NX],
   for (int i=0; i<NX; i++) q[i] = Q(i);
 }
 
-template <class adouble>
-void toon_vector(int nt, double c, const adouble q_init[NX], adouble q[NX]) {
+template <class aReal, typename Real>
+void toon_vector(int nt, Real c, const aReal q_init[NX], aReal q[NX]) {
   using namespace adept;
-  typedef adept::Array<1,double,::is_active<adouble>::value> my_vector;
+  typedef adept::Array<1,Real,::is_active<aReal>::value> my_vector;
   my_vector Q(NX);
   my_vector F(NX-1);
   my_vector Qleft = Q(range(0,end-1));
