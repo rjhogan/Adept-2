@@ -137,6 +137,7 @@ namespace adept {
 		       const Index& len) {
       Index i = ind.value_with_len(j, len);
       if (i < 0 || i >= len) {
+	abort();
 	throw index_out_of_bounds("Index out of bounds in IndexedArray"
 				  ADEPT_EXCEPTION_LOCATION);
       }
@@ -1018,8 +1019,9 @@ namespace adept {
       const I4& i4_;
       const I5& i5_;
       const I6& i6_;
-      // Dimensions of the array being indexed
-      const ExpressionSize<ArrayType::rank>& a_dims_;
+      // Dimensions of the array being indexed (cannot be a reference
+      // because FixedArrays do not store their dimensions explicitly)
+      ExpressionSize<ArrayType::rank> a_dims_;
       // Dimensions of the IndexedArray
       ExpressionSize<Rank> dimensions_;
       // Separation of elements of the array objects in the dimension
