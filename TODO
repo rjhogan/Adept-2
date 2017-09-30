@@ -1,0 +1,104 @@
+DESIRABLE BUT NEEDS NEW STACK
+Differentiated BLAS operations on symmetric matrices etc
+Implement general OpenMP for forward pass
+
+OPTIMIZATION
+Vectorize active expressions
+Fix vectorization of spread and outer_product by storing pointer to start of row and not using index
+Communicate band diagonals statically to optimize Array = band expression (e.g. 2*TridiagMatrix)
+Implement active scalar precomputation
+Optimize reciprocal to use 1.0 or 1.0f; vectorize
+Optimize storage of data range
+sqrt, min and max are vectorized
+SquareMatrix::is_vectorizable = true
+
+FEATURES
+long double calls double matmul functions?
+std::string configuration function returning options for this compilation unit
+Mathematical functions copysign, fdim, hypot, remainder?
+Implement user elemental function
+Implement user choice of Jacobian array ordering
+Clean-up benchmark and test_arrays/test_array_speed code
+Check can do Array<*,Active<Real>,false>
+Rename ExpressionSize
+Enable functions taking ExpressionSize arguments (e.g. resize and array constructor) to take equivalent arguments, e.g. std::vector, initializer lists etc
+Fall-back if BLAS not available
+Implement pow<int> and sqr
+Implement non-member functions merge?, reshape, shape?, size, [un]pack(?), minloc, maxloc
+Implement matlab-like tile (generic repmat) plus zeros and ones
+Implement iterators
+Triangular/symmetric views
+Const link does not increment reference counter
+Cannot link non-const to const either by construction or explicit link
+Should reduce functions take dimensions as template arguments?
+reduce operations have a template version with the reduce dimension provided statically
+
+CHECK
+Check Square matmul
+All vectorization combinations work, e.g. double/int, aligned/unaligned LHS
+Set whole arrays as independent/dependent
+Reduce RMS difference in Toon case
+
+CLEAN
+References to OpenMP for array operations - remove?
+
+OLDER IDEAS
+Clarify vector orientation when in matrix multiplication
+Vector orientation changed with row(), col()?
+Implement move semantics and make copy constructors do deep copy ADEPT_***
+Implement OpenMP passive array operations
+Implement OpenMP active array operations
+Link can only be performed on empty object
+
+
+If new Expression types are to be added, they should provide the
+following interface:
+
+      static const int  rank_      = 0;
+      static const int  n_scratch_ = 0;
+      static const int  n_active_ = 0;
+      static const int  n_arrays_ = 0;
+      static const bool is_active_ = false;
+      static const bool is_vectorizable_ = true;
+
+      bool get_dimensions_(ExpressionSize<0>& dim) const;
+
+      std::string expression_string_() const;
+
+      bool is_aliased_(const Type* mem1, const Type* mem2) const;
+
+      Type value_with_len_(const Index& j, const Index& len) const;
+
+      template <int MyArrayNum, int NArrays>
+      void advance_location_(ExpressionSize<NArrays>& loc) const;
+
+      template <int MyArrayNum, int NArrays>
+      Type value_at_location_(const ExpressionSize<NArrays>& loc) const;
+
+      template <int MyArrayNum, int NArrays>
+      Packet<Type>
+      packet_at_location_(const ExpressionSize<NArrays>& loc) const;
+
+      template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
+      Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
+				    ScratchVector<NScratch>& scratch) const;
+
+      template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
+      Type value_stored_(const ExpressionSize<NArrays>& loc,
+			 const ScratchVector<NScratch>& scratch) const;
+
+      template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
+      void calc_gradient_(Stack& stack, 
+			  const ExpressionSize<NArrays>& loc,
+			  const ScratchVector<NScratch>& scratch) const;
+
+      template <int MyArrayNum, int MyScratchNum, 
+		int NArrays, int NScratch, typename MyType>
+      void calc_gradient_(Stack& stack, 
+			  const ExpressionSize<NArrays>& loc,
+			  const ScratchVector<NScratch>& scratch,
+			  const MyType& multiplier) const;
+
+      template <int MyArrayNum, int Rank, int NArrays>
+      void set_location_(const ExpressionSize<Rank>& i, 
+			 ExpressionSize<NArrays>& index) const;
