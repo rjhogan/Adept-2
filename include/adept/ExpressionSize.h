@@ -244,11 +244,32 @@ namespace adept {
 
   } // End namespace internal
 
+  // Deprecated
   inline ExpressionSize<1> expression_size(Index j0)
   { return ExpressionSize<1>(j0); }
-
   inline ExpressionSize<2> expression_size(Index j0, Index j1)
   { return ExpressionSize<2>(j0, j1); }
+
+  // Use this instead
+  inline ExpressionSize<1> dimensions(Index j0)
+  { return ExpressionSize<1>(j0); }
+  inline ExpressionSize<2> dimensions(Index j0, Index j1)
+  { return ExpressionSize<2>(j0, j1); }
+  inline ExpressionSize<3> dimensions(Index j0, Index j1, Index j2)
+  { return ExpressionSize<3>(j0, j1, j2); }
+  inline ExpressionSize<4> dimensions(Index j0, Index j1, Index j2,
+				      Index j3)
+  { return ExpressionSize<4>(j0, j1, j2, j3); }
+  inline ExpressionSize<5> dimensions(Index j0, Index j1, Index j2,
+				      Index j3, Index j4)
+  { return ExpressionSize<5>(j0, j1, j2, j3, j4); }
+  inline ExpressionSize<6> dimensions(Index j0, Index j1, Index j2,
+				      Index j3, Index j4, Index j5)
+  { return ExpressionSize<6>(j0, j1, j2, j3, j4, j5); }
+  inline ExpressionSize<7> dimensions(Index j0, Index j1, Index j2,
+				      Index j3, Index j4, Index j5, Index j6)
+  { return ExpressionSize<7>(j0, j1, j2, j3, j4, j5, j6); }
+
 
 } // End namespace adept
 

@@ -340,6 +340,7 @@ main(int argc, const char** argv) {
   should_fail=true;
   EVAL("Array \"resize\" with invalid dimensions", myMatrix, M, true, M.resize(1));
   should_fail=false;
+  EVAL("Array \"resize\" with \"dimensions\" function", myMatrix, M, true, M.resize(dimensions(4,2)));
 
   EVAL("Array \"clear\" member function", myMatrix, M, true, M.clear());
 
