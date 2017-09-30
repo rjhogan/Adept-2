@@ -34,7 +34,8 @@ expression templates in C++. ACM Trans. Math. Soft., 40, 26:1-26:16.
 INSTALLING
 
 Full installation instructions are provided in section 1.2 of the
-documentation in doc/adept_documentation.pdf
+Adept User Guide, which is on the Adept web site and in the "doc"
+directory (type "make" to create the PDF).
 
 First ensure you have a BLAS library installed (e.g. OpenBLAS from
 http://www.openblas.net), needed for matrix multiplication and linear
@@ -80,8 +81,7 @@ the test program "test_gsl_interface" but if it is not found this test
 program will not be built.
 
 For more information on the use of the configure script, see the
-INSTALL file, type "./configure --help", or see the
-doc/adept_documentation.pdf file.
+INSTALL file, type "./configure --help", or see the User Guide.
 
 Once you've configured the build, you can build the Adept library with
 
@@ -114,7 +114,7 @@ Adept and also compare it to other automatic differentiation libraries
 on the Lax-Wendroff and Toon algorithms used by Hogan (2014). See
 benchmark/README for details. Note that in order for these programs to
 work without Adept being installed, they have been linked statically,
-which means that the executables are rather large.
+which means that the executables may be rather large.
 
 Version 1.0 of Adept included the "Multiscatter" algorithm adapted to
 use Adept, which provided a further two benchmarks ("PVC" and "TDTS")
@@ -126,8 +126,9 @@ still available from the Adept web site.
 
 DOCUMENTATION
 
-This is a PDF file in the doc/ directory, along with the latex source
-file available under the GNU Free Documentation License in doc/COPYING.
+See the User Guide, which may be created from the LaTeX source by
+typing "make" in the doc/ directory. It is available under the GNU
+Free Documentation License (in doc/COPYING).
 
 If this documentation, the Hogan (2014) paper and the information on
 the Adept web site do not answer your questions, then feel free to

@@ -31,4 +31,5 @@ Then the normal make sequence:
 
     ./configure
     make
+    make check
     make install

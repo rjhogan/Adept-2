@@ -91,7 +91,7 @@ fi
 
 ### CREATE MAKEFILES AND CONFIG HEADER ###
 
-AC_CONFIG_FILES([Makefile makefile_include adept/Makefile include/Makefile doc/Makefile benchmark/Makefile])
+AC_CONFIG_FILES([Makefile makefile_include adept/Makefile include/Makefile benchmark/Makefile])
 
 AC_DEFINE_UNQUOTED([CXX],["$CXX"],[C++ compiler])
 AC_DEFINE_UNQUOTED([CXXFLAGS],["$CXXFLAGS"],[Flags passed to C++ compiler])

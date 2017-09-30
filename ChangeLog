@@ -1,5 +1,7 @@
 version 2.0 (September 2017)
 	- Finalized version for release
+	- PDF documentation is no longer installed, so that Git users are
+	not obliged to have pdflatex
 
 version 1.9.11 (30 September 2017)
 	- Fixed get_gradient member function of Array and FixedArray
