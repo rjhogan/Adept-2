@@ -15,6 +15,7 @@ version 1.9.11 (September 2017)
 	counter in multi-threaded environment (C++11 only)
 	- Added Array::soft_link() as another means to get thread safety
 	- Added test program test_thread_safe_arrays
+	- Added adept_reference latex file to doc directory
 
 version 1.9.10 (25 September 2017)
 	- Added link syntax A >>= B

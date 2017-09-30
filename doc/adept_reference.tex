@@ -1,0 +1,406 @@
+\documentclass[10pt,a4,landscape]{article}
+% Page set up
+\setlength{\oddsidemargin}{0cm} %{0.5cm}
+\setlength{\evensidemargin}{0cm} %{0.5cm}
+\setlength{\topmargin}{-5cm}
+\setlength{\textheight}{24cm}
+\setlength{\textwidth}{16cm}
+\setlength{\marginparsep}{0.5cm}
+\setlength{\marginparwidth}{0cm}
+\setlength{\parindent}{1em}
+\setlength{\parskip}{0cm}
+\renewcommand{\baselinestretch}{1.1}
+\sloppy
+
+\usepackage{lmodern}\usepackage[T1]{fontenc}
+\usepackage{color}
+%\renewcommand{\rmdefault}{sbc}
+\usepackage[figuresright]{rotating}
+\DeclareFontFamily{T1}{lmttc}{\hyphenchar \font-1 }
+\DeclareFontShape{T1}{lmttc}{m}{n}
+     {<-> ec-lmtlc10}{}
+\DeclareFontShape{T1}{lmttc}{m}{it}
+     {<->sub*lmttc/m/sl}{}
+\DeclareFontShape{T1}{lmttc}{m}{sl}
+     {<-> ec-lmtlco10}{}
+\begin{document}
+\pagestyle{empty}
+\def\myfont{\fontfamily{cmss}\fontseries{lmtt}\selectfont}
+\def\mysize{\footnotesize}
+\def\mysize{\normalsize}
+
+\def\Y{\textbf{Y}}
+\def\r#1{\rotatebox{90}{#1}}
+\iffalse
+\begin{table}[tb!]
+\fontfamily{cmss}\fontseries{lmtt}\selectfont
+\caption{Comparison of optimized matrix-vector capabilities}
+\begin{tabular}{lccccccc}
+\hline
+Property & \r{Fortran 9x} & \r{Blitz} & \r{Boost/uBLAS} & \r{Eigen}
+& \r{Blaze} & \r{Adept} & \r{valarray (GNU)} \\
+\hline
+Maximum array rank 
+& 7/15 & $n$ & 2 & 2 & 2 & 7 & 1 \\
+Bounds checking option 
+& \Y & ? & \Y & \Y & ? & \Y & N \\
+Fixed-length class 
+& \Y & \Y & N? & \Y & \Y & N & N \\
+Parallelization 
+& \Y? & N & ? & vectorization & ? & N & ? \\
+Reference counting 
+& N & N? & ? & ? & ? & \Y & N \\
+Linear algebra 
+& N & N & \Y & \Y & N & \Y & N \\
+%Stack class: stack(x)
+Linking 
+& \Y & N? & ? & ? & ? & \Y & ? \\
+Arbitrary templated types 
+& N & \Y & \Y & \Y & \Y? & \Y? & \Y\\
+Arbitrary storage
+& N & \Y & \Y & \Y & N? & \Y & N\\
+Sparse
+& N & N & \Y & \Y & N & N & N\\
+Triangular/banded/symmetric
+& N & N & \Y & diag & ? & \Y & N\\
+Alias checking
+& \Y? & \Y? & manual & \Y & ? & \Y & ?\\
+Automatic alias fix
+& N & ? & ? N & ? & \Y & ? \\
+Arbitrary starting index
+& \Y & ? & ? & ? & ? & N & N\\
+Algorithmic differentiation
+& N & N & N & N & N & \Y & N\\
+\hline\end{tabular}
+\end{table}
+\newpage
+\fi
+\def\code#1{\texttt{#1}}
+\begin{table}[tb!]
+%\caption{
+\begin{center}
+%\parbox{0.9\columnwidth}{
+\mysize\myfont Comparison of array syntax between
+  Fortran 90 (and later), Matlab and the C++ libraries Adept and Eigen
+%In these examples, \code{v} and \code{w} are vectors
+%  and \code{A} and \code{B} are matrices.
+%}
+
+  \footnotesize
+  \myfont
+\begin{tabular}{lllll}
+\hline
+{\large\phantom{X}}
+& \mysize Fortran 90+ & \mysize Matlab & \mysize C++ Adept & \mysize C++ Eigen \\
+\hline
+Maximum dimensions &
+7 (15 from Fortran 2008) &
+Unlimited &
+7 &
+2
+\\
+\hline
+Vector declaration &
+\code{real,dimension(:)} &
+&
+\code{Vector} &
+\code{VectorXd}
+\\
+Matrix declaration &
+\code{real,dimension(:,:)} &
+&
+\code{Matrix} &
+\code{MatrixXd, ArrayXd}
+\\
+3D array declaration &
+\code{real,dimension(:,:,:)}&
+&
+\code{Array3D}
+\\
+Fixed matrix declaration &
+\code{real,dimension(M,N)} &
+&
+\code{FixedMatrix<double,false,M,N>} &
+\code{Matrix<double,M,N>}
+\\
+Diagonal matrix declaration&
+&
+&
+\code{DiagMatrix} &
+\code{DiagonalMatrix<double,Dynamic>}
+\\
+%Tridiagonal matrix &
+%&
+%&
+%\code{TridiagMatrix} &
+%\\
+Symmetric matrix decl.&
+&
+&
+\code{SymmMatrix}
+\\
+%Upper-triangular matrix &
+%&
+%&
+%\code{UpperMatrix} &
+%\\
+Sparse matrix declaration&
+&
+%\code{sparse(A)}
+&
+&
+\code{SparseMatrix<double>}
+\\
+\hline
+Get rank &
+\code{rank(A)} &
+\code{ndims(A)} &
+\code{A::rank}
+\\
+Get total size &
+\code{size(A)} &
+\code{numel(A)} &
+\code{A.size()} &
+\code{A.size()}
+\\
+Get size of dimension &
+\code{size(A,i)} &
+\code{size(A,i)} &
+\code{A.size(i)} &
+\code{A.rows()}, \code{A.cols()}
+\\
+Get all dimensions &
+\code{shape(A)} &
+\code{size(A)} &
+\code{A.dimensions()}
+\\
+\hline
+Resize &
+\code{allocate(A(m,n))} &
+\code{A = zeros(m,n)} &
+\code{A.resize(m,n)} &
+\code{A.resize(m,n)} 
+\\
+Clear &
+\code{deallocate(A)} &
+\code{A = []} &
+\code{A.clear()} &
+\code{A.resize(0,0)}
+\\
+Link/associate &
+\code{A => B} &
+&
+\code{A >>= B} &
+%Low-level access via \code{Map}
+(Complicated)
+\\
+\hline
+Set elements to constant &
+\code{A = x} &
+\code{A(:) = x} &
+\code{A = x} &
+\code{A.fill(x)}
+\\
+Fill vector with data &
+\code{v = [0,1]} &
+\code{v = [0,1]} &
+\code{v <{}< 0,1} &
+\code{v <{}< 0,1}
+\\
+Fill matrix with data &
+\code{A=reshape([0,1,2,3],[2,2])} &
+\code{A = [1 2; 3 4]} &
+\code{A <{}< 1,2,3,4} &
+\code{A <{}< 1,2,3,4}
+\\
+\hline
+Vector subset &
+\code{v(i1:i2)} &
+\code{v(i1:i2)} &
+\code{v.subset(i1,i2)} &
+\code{v.segment(i1,m)}
+%\code{Map<VectorXd> w(v.data()+1,8)}
+\\
+Strided indexing &
+\code{v(i1:i2:s)} &
+\code{v(i1:s:i2)} &
+\code{v(stride(i1,i2,s))} &
+%\code{Map<VectorXd,0,InnerStride<> > w(v.data()+1,4,InnerStride<2>)}
+(Complicated)
+\\
+Vector end indexing &
+\code{v(i:)} &
+\code{v(i:end)} &
+\code{v.subset(i,end)} &
+\code{v.tail(n)}
+\\
+Index relative to end &
+&
+\code{v(end-1)} &
+\code{v(end-1)} &
+\\
+Index by int vector &
+\code{v(index)} &
+\code{v(index)} &
+\code{v(index)}
+\\
+\hline
+Matrix subset &
+\code{A(i1:i2,j1:j2)} &
+\code{A(i1:i2,j1:j2)} &
+\code{A.subset(i1,i2,j1,j2)} &
+\code{A.block(i1,j1,m,n)}
+\\
+Extract row &
+\code{A(i,:)} &
+\code{A(i,:)} &
+\code{A(i,\_\_)} &
+\code{A.row(i)}
+\\
+Matrix end block &
+\code{M(i:,j:)} &
+\code{M(i:end,j:end)} &
+\code{M.subset(i,end,j,end)} &
+\code{M.bottomRightCorner(m,n)}
+\\
+Diagonal matrix from vector &
+&
+\code{diag(v)} &
+\code{v.diag\_matrix()} &
+\code{v.asDiagonal()}
+\\
+Matrix diagonals as vector &
+&
+\code{diag(A)} &
+\code{A.diag\_vector()} &
+\code{A.diagonal()} 
+\\
+Matrix off-diagonals &
+&
+\code{diag(A,i)} &
+\code{A.diag\_vector(i)} &
+\code{A.diagonal(i)} 
+%\\
+%Symmetric view &
+%&
+%&
+%\code{%\color{red}
+%A.symm\_matrix<UPPER>()
+%}&
+%\code{A.selfAdjointView<Upper>()}
+%\\
+%Upper-triangular view &
+%&
+%&
+%\code{\color{red}A.upper\_matrix()} &
+%\code{A.triangularView<Upper>()}
+\\
+\hline
+Elementwise multiplication &
+\code{A * B} & 
+\code{A .* B} &
+\code{A * B} &
+\code{A.array() * B.array()}
+\\
+Elemental function &
+\code{sqrt(A)} &
+\code{sqrt(A)} &
+\code{sqrt(A)} &
+\code{A.array().sqrt()}
+\\
+Addition assignment &
+\code{A = A + B} &
+\code{A = A + B} &
+\code{A += B} &
+\code{A.array() += B}
+\\
+\hline
+Matrix multiplication &
+\code{matmul(A,B)} &
+\code{A * B} &
+\code{A ** B} &
+\code{A * B}
+\\
+Dot product &
+\code{dot\_product(v,w)} &
+\code{dot(v,w)} &
+\code{dot\_product(v,w)} &
+\code{v.dot(w)}
+\\
+Matrix transpose &
+\code{transpose(A)} &
+\code{A'} &
+\code{A.T()} &
+\code{A.transpose()}
+\\
+In-place transpose &
+&
+&
+\code{A.in\_place\_transpose()} &
+\code{A.transposeInPlace()}
+\\
+Matrix solve &
+&
+\code{A \textbackslash\ b} &
+\code{solve(A,b)} &
+\code{A.colPivHouseholderQr().solve(b)}
+\\
+Matrix inverse &
+&
+\code{inv(A)} &
+\code{inv(A)} &
+\code{A.inverse()}
+\\
+\hline
+``Find'' conditional assign &
+&
+\code{v(find(w<0)) = 0} &
+\code{v(find(w<0)) = 0}
+\\
+``Where'' conditional assign &
+\code{where(w<0) v = 0} &
+&
+\code{v.where(w<0) = 0} &
+\code{v = (w<0).select(0,v)}
+\\
+``Where'' with both cases &
+\code{...elsewhere v = 1} &
+&
+\code{v.where(w<0)=either\_or(0,1)} &
+\code{v = (w<0).select(0,1)}
+\\
+\hline
+Average all elements &
+\code{mean(A)} & 
+\code{mean(A(:)} &
+\code{mean(A)} &
+\code{A.mean()}
+\\
+Average along dimension &
+\code{mean(A,i)} & 
+\code{mean(A,i)} &
+\code{mean(A,i)} &
+\code{A.colwise().mean()}
+\\
+Maximum of all elements &
+\code{maxval(A)} &
+\code{max(A(:))} &
+\code{maxval(A)} &
+\code{A.maxCoeff()}
+\\
+Maximum of two arrays &
+\code{max(A,B)} &
+(Complicated) &
+\code{max(A,B)} &
+\code{A.max(B)}
+\\
+Spread along new dimension &
+\code{spread(A,dim,n)} &
+&
+\code{spread<dim>(A,n)}
+\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+\end{document}
