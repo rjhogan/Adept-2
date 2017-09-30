@@ -3248,13 +3248,16 @@ they must be the same when compiling both the library and the user
 code. This is safest to implement by editing section 2 of the
 \code{adept/base.h} header file.
 \begin{description}
-\citem{ADEPT\_FLOATING\_POINT\_TYPE} If you want to compile \Adept\ to
-use a precision other than double for the \code{Real} type, and hence
-for automatic differentiation, then define this preprocessor variable
-to be the floating-point type required, e.g. \code{float} or
-\code{long double}. To use from the compiler command-line, use the
-argument \code{-DADEPT\_FLOATING\_POINT\_TYPE=float} or
-\code{-DADEPT\_FLOATING\_POINT\_TYPE="long double"}.
+\citem{ADEPT\_REAL\_TYPE\_SIZE} If you want to compile \Adept\ to use
+a precision other than double for the \code{Real} type, and hence for
+automatic differentiation, then define this preprocessor variable to
+be \code{4} (for \code{float}), \code{8} (for \code{double}) or
+\code{16} (for \code{long double}). This will also change the default
+floating-point type for arrays, including shortcuts such as
+\code{Vector}, \code{Matrix}, \code{SymmMatrix}. Note that if you
+specify \code{16} but your compiler cannot support it
+(i.e.\ \code{sizeof(long double)==8}) then \Adept\ would produce
+sub-optimal code so will fail to compile.
 %
 \citem{ADEPT\_STACK\_STORAGE\_STL} Use the C++ standard template
 library \code{vector} or \code{valarray} classes for storing the

@@ -15,6 +15,7 @@
 
 #include "adept/Stack.h"
 #include "adept/Packet.h"
+#include "adept/traits.h"
 
 namespace adept {
 
@@ -24,6 +25,17 @@ namespace adept {
 
   using namespace internal;
 
+  static int _check_long_double() {
+    // The user may have requested Real to be of type "long double" by
+    // specifying ADEPT_REAL_TYPE_SIZE=16. If the present system can
+    // only support double then sizeof(long double) will be 8, but
+    // Adept will not be emitting the best code for this, so it is
+    // probably better to fail forcing the user to specify
+    // ADEPT_REAL_TYPE_SIZE=8.
+    ADEPT_STATIC_ASSERT(ADEPT_REAL_TYPE_SIZE != 16 || ADEPT_REAL_TYPE_SIZE == sizeof(Real),
+			COMPILER_DOES_NOT_SUPPORT_16_BYTE_LONG_DOUBLE);
+    return 1;
+  }
 
   /*
   void

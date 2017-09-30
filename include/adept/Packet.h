@@ -79,6 +79,7 @@
 namespace adept {
 
   namespace internal {
+
     // -------------------------------------------------------------------
     // Default packet types containing only one value
     // -------------------------------------------------------------------

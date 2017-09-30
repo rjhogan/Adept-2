@@ -126,10 +126,11 @@
 #define PACKET_SIZE_ZERO_CHECK 64
 
 // By default the precision of differentiated expressions is "double".
-// To override this, define ADEPT_FLOATING_POINT_TYPE to the type
-// required.
-//#define ADEPT_FLOATING_POINT_TYPE float
-//#define ADEPT_FLOATING_POINT_TYPE long double
+// To override this, define ADEPT_REAL_TYPE_SIZE to 4 (float), 8
+// (double) or 16 (long double). Note that if you specify 16 but on
+// your system "long double" is actually the same as double, then the
+// code will fail to compile.
+//#define ADEPT_REAL_TYPE_SIZE 8
 
 // Thread-local storage is used for the global Stack pointer to ensure
 // thread safety.  In pre-C++11 compilers, thread-local variables are
@@ -243,8 +244,10 @@
 // ---------------------------------------------------------------------
 namespace adept {
 
-  // By default everything is double precision, but this precision can
-  // be changed by defining ADEPT_FLOATING_POINT_TYPE
+  // An older version of Adept used ADEPT_FLOATING_POINT_TYPE to
+  // define alternative underlying types for "Real", but unfortunately
+  // the preprocessor cannot check if a preprocessor variable is of
+  // type "long double", so a numerical value is used instead
 #ifdef ADEPT_FLOATING_POINT_TYPE
 #undef ADEPT_FLOATING_POINT_TYPE
 #error ADEPT_FLOATING_POINT_TYPE is deprecated: use ADEPT_REAL_TYPE_SIZE instead
