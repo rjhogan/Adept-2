@@ -1817,31 +1817,29 @@ compiled to use for computing derivatives, and is usually
 algorithm.
 
 A number of typedefs are provided for the most common types of array:
-\code{Vector}, \code{Matrix} and \code{Array3D} provide inactive arrays
-of type \code{Real} and rank 1--3. The corresponding active types are
-\code{aVector}, \code{aMatrix} and \code{aArray3D}. Vectors of other
-numeric types are \code{boolVector}, \code{intVector},
+\code{Vector}, \code{Matrix}, \code{Array3D} and so on up to
+\code{Array7D} provide inactive arrays of type \code{Real} and rank
+1--7. The corresponding active types are \code{aVector},
+\code{aMatrix}, \code{aArray3D} etc. Arrays of other numeric types
+have the pattern \code{boolVector}, \code{intVector},
 \code{floatVector}, \code{afloatVector}, and similarly for matrices
-and 3D arrays of these types. If you wanted shortcuts for
-4-dimensional active and passive arrays, they could be defined using:
+and higher dimensional arrays. If you wanted shortcuts for
+other types you could do the following:
 \begin{lstlisting}
- typedef adept::Array<4> Array4D;
- typedef adept::Array<4,adept::Real,true> aArray4D;
+ typedef adept::Array<4,unsigned int> uintArray4D;
+ typedef adept::Array<2,long double,true> alongdoubleMatrix; // Active
 \end{lstlisting}
 
-An \code{Array} can be constructed in numerous ways:
+An \code{Array} with uninitialized elements can be constructed in
+numerous ways:
 \begin{lstlisting}
  using namespace adept;
- Matrix M;           // Initialize an empty matrix
- Matrix M(3,4);      // Initialize a 3-by-4 matrix (up to 7 arguments possible)
- Index dim[2]={3,4}; // "Index" is the integer type used for array dimensions
-   Matrix M(dim);    // This works for an array with an arbitrary number of dimensions
- Vector v = M(__,0); // Link to a existing array, in this case the first column of M
- Vector v(M(__,0));  // Has exactly the same effect as the previous example
- Matrix N = log(M);  // Initialize with the size and values of a mathematical expression
+ Vector v;                  // Initialize an empty vector
+ Array3D A(3,4,5);          // Initialize a 3x4x5 array (up to 7 arguments possible)
+ Matrix M(dimensions(3,4)); // The "dimensions" function takes up to 7 arguments
+ Matrix N(M.dimensions());  // Make N the same size as M
 \end{lstlisting}
-%POINT TO EXISTING DATA; ExpressionSize
-Note that in the remaining code examples it will be assumed that
+In the remaining code examples it will be assumed that
 \code{using namespace adept} has already been called.  When new memory
 is needed, the \code{Array} object creates a \code{Storage} object
 that contains the memory needed, and stores pointers to both the
@@ -1863,28 +1861,50 @@ objects. Note also that when array expressions are evaluated, the data
 are requested in row-major order, so the use of column-major arrays
 will incur a performance penalty.
 
-It can be seen from one of the constructors above (the example
-involving a \code{Vector}) that an \code{Array} can be configured to
-``link'' to part of an existing \code{Array}, and modifications to the
-numbers in one will be seen by the other. This is a very useful
-feature as it allows slices of an array to be passed to functions and
-modified; see section \ref{sec:slice}. Note that the array or
-sub-array being linked to must be of the same rank, type and
-activeness as the linking array.  Internally, linking is achieved by
-both the arrays pointing to the same \code{Storage} object, which
-itself contains a reference count of the number of arrays pointing to
-it. When an \code{Array} is destructed the reference count is reduced
-by one and only if it falls to zero will the data get deallocated.
+An \code{Array} may also be constructed such that it immediately
+contains data:
+\begin{lstlisting}
+ Vector v = M(__,0); // Link to a existing array, in this case the first column of M
+ Vector v(M(__,0));  // Has exactly the same effect as the previous example
+ Matrix N = log(M);  // Initialize with the size and values of a mathematical expression
+\end{lstlisting}
+It can be seen from the constructors involving \code{Vector}s that an
+\code{Array} can be configured to ``link'' to part of an existing
+\code{Array}, and modifications to the numbers in one will be seen by
+the other. This is a very useful feature as it allows slices of an
+array to be passed to functions and modified; see section
+\ref{sec:slice}. Note that the array or sub-array being linked to must
+be of the same rank, type and activeness as the linking array.
+Internally, linking is achieved by both the arrays pointing to the
+same \code{Storage} object, which itself contains a reference count of
+the number of arrays pointing to it. When an \code{Array} is
+destructed the reference count is reduced by one and only if it falls
+to zero will the data get deallocated. This ensures that if the
+\code{Array} being linked to goes out of scope, the linking
+\code{Array} will ``steal'' the data.
+
+You can also make an \code{Array} point to data not held in a
+\code{Storage} object, for example in a function whose interface is
+only in terms of intrinsic C types:
+\begin{lstlisting}
+ double my_norm2(int n, double* ptr) {
+   Vector x(ptr, dimensions(n)); // Create a Vector pointing to existing data
+   return norm2(x);              // Use Adept's L2-norm function
+ }
+\end{lstlisting}
+The \code{Vector} in this example can be used in the same way as any
+other array, but relies on the existing data not being deallocated for
+the lifetime of the \code{Vector}.
 
 After it has been constructed, an \code{Array} can be resized,
 relinked or cleared completely as follows:
 \begin{lstlisting}
- M.resize(5,2);       // Works up to 7 dimensions
- Index dim[2]={5,2};
-   M.resize(dim);     // Works for any number of dimensions
- v.link(M(end-1,__)); // Size of v set to that of the argument and link to data
- v >>= M(end-1,__);   // Convenient syntax for linking, similar to Fortran's "->"
- M.clear();           // Returns array to original empty state
+ M.resize(5,2);            // Works up to 7 dimensions
+ M.resize(dimension(5,2)); // As above
+ N.resize(M.dimensions()); // Resize N to be the same size as M
+ v.link(M(end-1,__));      // Size of v set to that of the argument and link to data
+ v >>= M(end-1,__);        // Convenient syntax for linking, similar to Fortran's "->"
+ M.clear();                // Returns array to original empty state
 \end{lstlisting}
 The member functions \code{resize} and \code{clear} unlink from any
 existing data, which involves deallocation if no other array is
@@ -1893,7 +1913,12 @@ alternative ``\code{>>=}'' syntax, is applied with a non-empty array
 on the left-hand-side then the existing data will be quietly cleared
 before linking to the new data. Note that if you assign one array to
 another (e.g.\ \code{N=M}), then they must be of the same size; if
-they are not then you should clear the left-hand-side first.
+they are not then you should clear the left-hand-side first. By
+default, resized arrays are row-major, unless
+\code{set\_array\_row\_major(false)} has been called. To explicitly
+specify the ordering, you may use the \code{resize\_row\_major} or
+\code{resize\_column\_major} member functions in place of
+\code{resize}.
 
 The \code{Array} class implements a number of member functions for
 inquiring about its properties:
@@ -1908,6 +1933,15 @@ index of the first element of the array, which is always positive; for
 inactive arrays it returns a negative number.
 \citem{empty()} Returns \code{true} if the array is in the empty
 state, or \code{false} otherwise.
+\citem{dimensions()} Returns a object listing the extent of each
+dimension in the \code{Array}, useful for resizing other arrays.  The
+object is actually of type \code{ExpressionSize<int Rank>} (where
+\code{Rank} is the rank of the array), a thin wrapper for a simple
+  \code{int[Rank]} C-array, although it is rare to need to use it
+  explicitly.
+\citem{offset()} Returns an object (also of type
+\code{ExpressionSize<int Rank>}) describing how array indices are
+translated into memory offsets.
 \end{description}
 
 An \code{Array} may be filled using the \code{<<} operator for the
@@ -1967,7 +2001,12 @@ an array of \code{adouble} objects, but as an array of \code{double}
 data and a single gradient index for the first element. Thus the
 pointer returned by \code{data()} will point to the underlying
 inactive data.  In contexts where the \code{Array} object is
-\code{const}, a \code{const} pointer will be returned.
+\code{const}, a \code{const} pointer will be returned. Note that in a
+multi-dimensional array, successive array dimensions are not
+guaranteed to be contiguous in memory since it is sometimes
+advantageous for vectorization for \Adept\ to pad the rows to an alignment
+boundary. You can use the output of the \code{offset()} member
+function to determine the spacing of the elements in each dimension.
 %
 \citem{const\_data()} It is sometimes convenient to specify explicitly
 that read-only access is required, in which case you can use
@@ -2174,9 +2213,9 @@ matrix, or the $-i$th subdiagonal if $i$ is negative. An
 matrix, and a compile-time error if applied to an array of rank other
 than 2.
 %
-\citem{submatrix\_on\_diagonal(ibegin,iend)} When applied to a square rank-2
-array, this function returns a square matrix that shares part of the
-diagonal of the original matrix.  Thus
+\citem{submatrix\_on\_diagonal(int ibegin,int iend)} When applied to a
+square rank-2 array, this function returns a square matrix that shares
+part of the diagonal of the original matrix.  Thus
 \code{A.submatrix\_on\_diagonal(int ibegin,int iend)} is equivalent to
 \code{A(range(ibegin,iend),range(ibegin,iend))}. Its purpose is to
 provide a subsetting facility for symmetric, triangular and
@@ -2831,7 +2870,7 @@ pointing to the same data, it also points to the same \code{Storage}
 object, and when a new link is created, the counter in this object
 indicating the number of objects pointing to it is incremented. This
 ensures that the data will remain provided there is at least one
-object linking to it.  A down side of this model is that if multiple
+object linking to it.  A downside of this model is that if multiple
 threads access an array simultaneously, even if just to read it, then
 the reference counter can become corrupted.  There are two solutions
 to this problem. 

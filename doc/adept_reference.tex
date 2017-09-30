@@ -91,7 +91,7 @@ Algorithmic differentiation
 \begin{tabular}{lllll}
 \hline
 {\large\phantom{X}}
-& \mysize Fortran 90+ & \mysize Matlab & \mysize C++ Adept & \mysize C++ Eigen \\
+& \mysize Fortran 90+ & \mysize Matlab & \mysize C++ Adept (with C++11 features) & \mysize C++ Eigen \\
 \hline
 Maximum dimensions &
 7 (15 from Fortran 2008) &
@@ -210,8 +210,13 @@ Fill vector with data &
 Fill matrix with data &
 \code{A=reshape([0,1,2,3],[2,2])} &
 \code{A = [1 2; 3 4]} &
-\code{A <{}< 1,2,3,4} &
+\code{A <{}< 1,2,3,4} or \code{A = \{\{1,2\},\{3,4\}\}} &
 \code{A <{}< 1,2,3,4}
+\\
+Vector literal &
+\code{[1.0, 2.0]} &
+\code{[1.0 2.0]} &
+\code{Vector\{1.0, 2.0\}} &
 \\
 \hline
 Vector subset &
