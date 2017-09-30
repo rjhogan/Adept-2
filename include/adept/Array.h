@@ -2090,6 +2090,34 @@ namespace adept {
       resize(dim);
     }
 
+    void
+    resize_row_major(Index m0, Index m1=-1, Index m2=-1, Index m3=-1,
+	   Index m4=-1, Index m5=-1, Index m6=-1) {
+      Index dim[7] = {m0, m1, m2, m3, m4, m5, m6};
+      // Check invalid dimensions
+      for (int i = 0; i < Rank; ++i) {
+	if (dim[i] < 0) {
+	  throw invalid_dimension("Invalid dimensions in array resize"
+				  ADEPT_EXCEPTION_LOCATION);
+	}
+      }
+      resize_row_major(dim);
+    }
+
+    void
+    resize_column_major(Index m0, Index m1=-1, Index m2=-1, Index m3=-1,
+	   Index m4=-1, Index m5=-1, Index m6=-1) {
+      Index dim[7] = {m0, m1, m2, m3, m4, m5, m6};
+      // Check invalid dimensions
+      for (int i = 0; i < Rank; ++i) {
+	if (dim[i] < 0) {
+	  throw invalid_dimension("Invalid dimensions in array resize"
+				  ADEPT_EXCEPTION_LOCATION);
+	}
+      }
+      resize_column_major(dim);
+    }
+
   protected:
     // Initialize with "MyRank" explicit dimensions, the function
     // only being defined if MyRank is equal to the actual Rank of
