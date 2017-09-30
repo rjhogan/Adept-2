@@ -1,5 +1,5 @@
 Adept: Automatic Differentiation using Expression Templates
-Version: 1.9, September 2017
+Version: 2.0, September 2017
 By Robin Hogan <r.j.hogan@ecmwf.int>
 
 
@@ -26,7 +26,6 @@ The web site for Adept version
 1.1. (http://www.met.reading.ac.uk/clouds/adept/) includes a link to
 the paper describing how the automatic differentiation capability
 works:
-
 
 Hogan, R. J., 2014: Fast reverse-mode automatic differentiation using
 expression templates in C++. ACM Trans. Math. Soft., 40, 26:1-26:16.
@@ -107,7 +106,7 @@ Once the code has been compiled, type
 
 	make check
 
-to build the example programs in the test directory and the
+to build and run the example programs in the test directory and the
 benchmarking program benchmark/autodiff_benchmark.  The test programs
 test different aspects of the library; for more information, see
 test/README.  The benchmarking program is useful to test the speed of
@@ -143,7 +142,7 @@ The code in this package has a mix of copyright reflecting my change
 of employment during the course of developing Adept:
 
 Copyright (C) 2012-2015 University of Reading
-Copyright (C) 2015-2016 European Centre for Medium-Range Weather Forecasts
+Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
 Two licenses are used for the code in this package:
 

@@ -3,7 +3,7 @@
 ### GENERAL CONFIGURATION ###
 
 AC_PREREQ([2.61])
-AC_INIT([adept], [1.9.11], [r.j.hogan@ecmwf.int], [adept], [http://www.met.reading.ac.uk/clouds/adept2/])
+AC_INIT([adept], [2.0], [r.j.hogan@ecmwf.int], [adept], [http://www.met.reading.ac.uk/clouds/adept2/])
 AC_LANG([C++])
 AC_CONFIG_SRCDIR([adept/Stack.cpp])
 AC_CONFIG_HEADERS([config.h config_platform_independent.h])

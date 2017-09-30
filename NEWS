@@ -1,4 +1,17 @@
-version 1.1
+version 2.0
+	- Fixed pausable recording and library-free compilation to provide full backwards compatibility with version 1.1
+	- C++11 features such as initializer lists
+	- Automatic vectorization of passive array statements if possible
+	- Additional mathematical functions: round, trunc, rint, nearbyint, atan2, fmin, fmax
+	- Additional array operations: spread, outer_product, count, maxval, minval, reshape
+	- Many more test programs
+
+version 1.9.8 (April 2016)
+	- First beta release of version 2.0 incorporating array capability up to 7 dimensions
+	- Matrix multiplication and basic linear from BLAS and LAPACK
+	- Options for thread-safe accessing of arrays
+
+version 1.1 (June 2015)
 	- Added ./configure script
 	- Added support for additional mathematical functions: asinh, acosh, atanh, expm1, log1p, cbrt, erf, erfc, exp2, log2
 	- License changed to Apache License, Version 2.0

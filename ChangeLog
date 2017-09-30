@@ -1,4 +1,7 @@
-version 1.9.11 (September 2017)
+version 2.0 (September 2017)
+	- Finalized version for release
+
+version 1.9.11 (30 September 2017)
 	- Fixed get_gradient member function of Array and FixedArray
 	- Added test_array_derivatives test program
 	- Fixed indexing of FixedArrays of rank>1

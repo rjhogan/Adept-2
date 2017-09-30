@@ -13,9 +13,10 @@ functionalities:
   optimization. It is backwards compatible with and as fast as Adept
   1.1.
 
-Note that version 2 is still beta software.  If you are primarily
-interested in automatic differentiation then please use Adept 1.1,
-which is mature.
+If you are not interested in the array capability of Adept 2.0 then
+Adept 1.1 may be more to your liking as a very lightweight library
+that has virtually all the automatic-differentiation capabilities of
+version 2.0.
 
 For further information see:
 * The [Adept-2 web site] (http://www.met.reading.ac.uk/clouds/adept2/)
