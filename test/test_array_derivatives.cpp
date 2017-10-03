@@ -22,7 +22,7 @@ void algorithm(const A& x, S& y) {
   A tmp;
   intVector index(2);
   index << 1, 0;
-  tmp = atan2((exp(x) ** x), spread<0>(x(index,1),2)) / x(0,0);
+  tmp = atan2((exp(x) * x), spread<0>(x(index,1),2)) / x(0,0);
   y = sum(tmp);
 }
 

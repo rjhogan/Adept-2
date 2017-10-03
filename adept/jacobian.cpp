@@ -25,7 +25,8 @@ namespace adept {
 
   using namespace internal;
 
-  static int _check_long_double() {
+  template <typename T>
+  T _check_long_double() {
     // The user may have requested Real to be of type "long double" by
     // specifying ADEPT_REAL_TYPE_SIZE=16. If the present system can
     // only support double then sizeof(long double) will be 8, but

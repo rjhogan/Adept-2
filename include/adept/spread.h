@@ -75,9 +75,9 @@ namespace adept {
 	return array.all_arrays_contiguous_();
       }
 
-      template <int n>
+      template <int N>
       int alignment_offset_() const {
-	return array.alignment_offset_<n>();
+	return array.alignment_offset_<N>();
       }
 
       // Do not implement value_with_len_
