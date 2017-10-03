@@ -421,9 +421,6 @@ main(int argc, const char** argv) {
   std::cout << "====================================================================\n";
   if (anomalous_results > 0) {
     std::cout << "*** In terms of run-time errors, there were " << anomalous_results << " incorrect results\n";
-#ifdef ALL_ACTIVE
-    std::cerr << "*** Note that " << argv[0] << " is expected to fail since Adept is not yet capable of differentiating certain matrix operations\n";
-#endif
     return 1;
   }
   else {
