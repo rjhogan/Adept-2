@@ -1,5 +1,6 @@
 language: cpp
 compiler:
   - gcc
+install: ./configure && make && make install && make check
 script:
   - cd test && ./run_test.sh
