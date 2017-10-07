@@ -1,0 +1,5 @@
+language: cpp
+compiler:
+  - gcc
+script:
+  - cd test && ./run_test.sh
