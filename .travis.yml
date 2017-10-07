@@ -7,6 +7,6 @@ compiler:
 before_install:
   - sudo apt-get install gfortran -y
   - type gfortran
-install: autoreconf -i && ./configure && make && make install && make check
+install: autoreconf -i && ./configure && make && make check
 script:
   - cd test && ./run_test.sh
