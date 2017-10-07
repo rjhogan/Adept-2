@@ -77,7 +77,7 @@ namespace adept {
 
       template <int N>
       int alignment_offset_() const {
-	return array.alignment_offset_<N>();
+	return array.template alignment_offset_<N>();
       }
 
       // Do not implement value_with_len_

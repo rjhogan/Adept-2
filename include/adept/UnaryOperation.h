@@ -73,7 +73,7 @@ namespace adept {
 	return arg.all_arrays_contiguous_();
       }
       template <int n>
-      int alignment_offset_() const { return arg.alignment_offset_<n>(); }
+      int alignment_offset_() const { return arg.template alignment_offset_<n>(); }
 
       /*
       template <int Rank>
@@ -99,19 +99,19 @@ namespace adept {
       
       template <int MyArrayNum, int NArrays>
       void advance_location_(ExpressionSize<NArrays>& loc) const {
-	arg.advance_location_<MyArrayNum>(loc);
+	arg.template advance_location_<MyArrayNum>(loc);
       }
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return operation(arg.value_at_location_<MyArrayNum>(loc));
+	return operation(arg.template value_at_location_<MyArrayNum>(loc));
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
       Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				    ScratchVector<NScratch>& scratch) const {
 	return scratch[MyScratchNum] 
-	  = operation(arg.value_at_location_store_<MyArrayNum,MyScratchNum+1>(loc, scratch));
+	  = operation(arg.template value_at_location_store_<MyArrayNum,MyScratchNum+1>(loc, scratch));
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
@@ -136,14 +136,14 @@ namespace adept {
 			  const ScratchVector<NScratch>& scratch,
 			  MyType multiplier) const {
 	arg.template calc_gradient_<MyArrayNum, MyScratchNum+1>(stack, loc, scratch,
-		multiplier*derivative(arg.value_stored_<MyArrayNum,MyScratchNum+1>(loc, scratch), 
+		multiplier*derivative(arg.template value_stored_<MyArrayNum,MyScratchNum+1>(loc, scratch), 
 				      scratch[MyScratchNum]));
       }
 
       template <int MyArrayNum, int Rank, int NArrays>
       void set_location_(const ExpressionSize<Rank>& i, 
 			 ExpressionSize<NArrays>& index) const {
-	arg.set_location_<MyArrayNum>(i, index);
+	arg.template set_location_<MyArrayNum>(i, index);
       }
 
     }; // End UnaryOperation type
@@ -422,7 +422,7 @@ namespace adept {
 	return arg.all_arrays_contiguous_(); 
       }
       template <int n>
-      int alignment_offset_() const { return arg.alignment_offset_<n>(); }
+      int alignment_offset_() const { return arg.template alignment_offset_<n>(); }
 
       template <int Rank>
       Type value_with_len_(Index i, Index len) const {

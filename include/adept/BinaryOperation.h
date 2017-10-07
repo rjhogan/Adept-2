@@ -146,8 +146,8 @@ namespace adept {
       }
       template <int n>
       int alignment_offset_() const {
-	int l = left.alignment_offset_<n>();
-	int r = right.alignment_offset_<n>();
+	int l = left.template alignment_offset_<n>();
+	int r = right.template alignment_offset_<n>();
 	if (l == r) {
 	  return l;
 	}
@@ -168,14 +168,14 @@ namespace adept {
 
       template <int MyArrayNum, int NArrays>
       void advance_location_(ExpressionSize<NArrays>& loc) const {
-	left .advance_location_<MyArrayNum>(loc);
-	right.advance_location_<MyArrayNum+L::n_arrays>(loc);
+	left.template advance_location_<MyArrayNum>(loc);
+	right.template advance_location_<MyArrayNum+L::n_arrays>(loc);
       }
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return operation(left .value_at_location_<MyArrayNum>(loc),
-			 right.value_at_location_<MyArrayNum+L::n_arrays>(loc));
+	return operation(left.template value_at_location_<MyArrayNum>(loc),
+			 right.template value_at_location_<MyArrayNum+L::n_arrays>(loc));
       }
       template <int MyArrayNum, int NArrays>
       Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
@@ -187,8 +187,8 @@ namespace adept {
 				      right.packet_at_location_<MyArrayNum+L::n_arrays>(loc))
 		  << "\n";
 	*/
-	return operation(left .packet_at_location_<MyArrayNum>(loc),
-			 right.packet_at_location_<MyArrayNum+L::n_arrays>(loc));
+	return operation(left.template packet_at_location_<MyArrayNum>(loc),
+			 right.template packet_at_location_<MyArrayNum+L::n_arrays>(loc));
       }
 
 
@@ -215,8 +215,8 @@ namespace adept {
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
 	return scratch[MyScratchNum] 
-	  = operation(left .value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch),
-		      right.value_at_location_store_<MyArrayNum+L::n_arrays,
+	  = operation(left.template value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch),
+		      right.template value_at_location_store_<MyArrayNum+L::n_arrays,
 						     MyScratchNum+L::n_scratch+n_local_scratch>(loc, scratch));
       }
       // In differentiating "a/b", it helps to store "1/b";
@@ -227,8 +227,8 @@ namespace adept {
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
 	return scratch[MyScratchNum] 
-	  = Op::operation_store(left .value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch),
-			    right.value_at_location_store_<MyArrayNum+L::n_arrays,
+	  = Op::operation_store(left.template value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch),
+			    right.template value_at_location_store_<MyArrayNum+L::n_arrays,
 			    MyScratchNum+L::n_scratch+n_local_scratch>(loc, scratch),
 			    scratch[MyScratchNum+1]);
       }
@@ -250,8 +250,8 @@ namespace adept {
 	return operation(left .value_at_location_<MyArrayNum>(loc),
 			 right.value_at_location_<MyArrayNum+L::n_arrays>(loc));
 	*/
-	return operation(left .value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch),
-			 right.value_at_location_store_<MyArrayNum+L::n_arrays,
+	return operation(left.template value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch),
+			 right.template value_at_location_store_<MyArrayNum+L::n_arrays,
 			 MyScratchNum+L::n_scratch+n_local_scratch>(loc, scratch));
       }
 
@@ -259,8 +259,8 @@ namespace adept {
       typename enable_if<StoreResult==0, Type>::type
       my_value_stored_(const ExpressionSize<NArrays>& loc,
 		       const ScratchVector<NScratch>& scratch) const {
-	return operation(left .value_at_location_<MyArrayNum>(loc),
-			 right.value_at_location_<MyArrayNum+L::n_arrays>(loc));
+	return operation(left.template value_at_location_<MyArrayNum>(loc),
+			 right.template value_at_location_<MyArrayNum+L::n_arrays>(loc));
       }
     
 
@@ -269,8 +269,8 @@ namespace adept {
       template <int MyArrayNum, int Rank, int NArrays>
       void set_location_(const ExpressionSize<Rank>& i, 
 			 ExpressionSize<NArrays>& index) const {
-	left. set_location_<MyArrayNum>(i, index);
-	right.set_location_<MyArrayNum+L::n_arrays>(i, index);
+	left.template set_location_<MyArrayNum>(i, index);
+	right.template set_location_<MyArrayNum+L::n_arrays>(i, index);
       }
 
 
@@ -405,7 +405,7 @@ namespace adept {
 	return right.all_arrays_contiguous_(); 
       }
       template <int n>
-      int alignment_offset_() const { return right.alignment_offset_<n>(); }
+      int alignment_offset_() const { return right.template alignment_offset_<n>(); }
 
       Type value_with_len_(const Index& j, const Index& len) const {
 	return operation(left.value, right.value_with_len(j,len));
@@ -413,17 +413,17 @@ namespace adept {
 
       template <int MyArrayNum, int NArrays>
       void advance_location_(ExpressionSize<NArrays>& loc) const {
-	right.advance_location_<MyArrayNum>(loc);
+	right.template advance_location_<MyArrayNum>(loc);
       }
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return operation(left.value, right.value_at_location_<MyArrayNum>(loc));
+	return operation(left.template value, right.template value_at_location_<MyArrayNum>(loc));
       }
       template <int MyArrayNum, int NArrays>
       Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
 	return operation(left, 
-			 right.packet_at_location_<MyArrayNum>(loc));
+			 right.template packet_at_location_<MyArrayNum>(loc));
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
@@ -445,7 +445,7 @@ namespace adept {
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
 	return scratch[MyScratchNum] = operation(left.value,
-		      right.value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch));
+		      right.template value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch));
       }
       template <int StoreResult, int MyArrayNum, int MyScratchNum, 
 		int NArrays, int NScratch>
@@ -486,7 +486,7 @@ namespace adept {
       template <int MyArrayNum, int Rank, int NArrays>
       void set_location_(const ExpressionSize<Rank>& i, 
 			 ExpressionSize<NArrays>& index) const {
-	right.set_location_<MyArrayNum>(i, index);
+	right.template set_location_<MyArrayNum>(i, index);
       }
 
 
@@ -593,7 +593,7 @@ namespace adept {
 	return left.all_arrays_contiguous_(); 
       }
       template <int n>
-      int alignment_offset_() const { return left.alignment_offset_<n>(); }
+      int alignment_offset_() const { return left.template alignment_offset_<n>(); }
 
       Type value_with_len_(const Index& j, const Index& len) const {
 	return operation(left.value_with_len(j,len), right.value);
@@ -601,12 +601,12 @@ namespace adept {
 
       template <int MyArrayNum, int NArrays>
       void advance_location_(ExpressionSize<NArrays>& loc) const {
-	left.advance_location_<MyArrayNum>(loc);
+	left.template advance_location_<MyArrayNum>(loc);
       }
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return operation(left.value_at_location_<MyArrayNum>(loc), right.value);
+	return operation(left.template value_at_location_<MyArrayNum>(loc), right.value);
       }
       template <int MyArrayNum, int NArrays>
       Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
@@ -641,7 +641,7 @@ namespace adept {
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
 	return scratch[MyScratchNum] = operation(
-	   left.value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch), right.value);
+	   left.template value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch), right.value);
       }
 
       template <int StoreResult, int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
@@ -673,7 +673,7 @@ namespace adept {
       template <int MyArrayNum, int Rank, int NArrays>
       void set_location_(const ExpressionSize<Rank>& i, 
 			 ExpressionSize<NArrays>& index) const {
-	left.set_location_<MyArrayNum>(i, index);
+	left.template set_location_<MyArrayNum>(i, index);
       }
 
 

@@ -51,7 +51,7 @@ namespace adept {
       
       template <int n>
       int alignment_offset_() const {
-	return array.alignment_offset_<n>();
+	return array.template alignment_offset_<n>();
       }
       
       Type value_with_len_(const Index& j, const Index& len) const {
@@ -61,7 +61,7 @@ namespace adept {
       // Optimize by storing the offset of the fastest-varying dimension?
       template <int MyArrayNum, int NArrays>
       void advance_location_(ExpressionSize<NArrays>& loc) const {
-	array.advance_location_<MyArrayNum>(loc);
+	array.template advance_location_<MyArrayNum>(loc);
       }
       
       template <int MyArrayNum, int NArrays>
@@ -89,20 +89,20 @@ namespace adept {
       template <int MyArrayNum, int NArrays>
       void set_location_(const ExpressionSize<Rank>& i, 
 			 ExpressionSize<NArrays>& index) const {
-	array.set_location_<MyArrayNum>(i, index);
+	array.template set_location_<MyArrayNum>(i, index);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
       void calc_gradient_(Stack& stack, const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch) const {
-	array.calc_gradient_<MyArrayNum,MyScratchNum>(stack, loc, scratch);
+	array.template calc_gradient_<MyArrayNum,MyScratchNum>(stack, loc, scratch);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, typename MyType>
       void calc_gradient_(Stack& stack, const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch,
 			  MyType multiplier) const {
-	array.calc_gradient_<MyArrayNum,MyScratchNum>(stack, loc, scratch, multiplier);
+	array.template calc_gradient_<MyArrayNum,MyScratchNum>(stack, loc, scratch, multiplier);
       }
          
       
