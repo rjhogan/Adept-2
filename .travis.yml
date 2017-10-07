@@ -1,4 +1,6 @@
 language: cpp
+os: linux
+dist: trusty
 compiler:
   - gcc
 install: autoreconf -i && ./configure && make && make install && make check
