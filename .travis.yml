@@ -5,9 +5,7 @@ dist: trusty
 compiler:
   - gcc
 before_install:
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update -q
-  - sudo apt-get install gcc-7 -y
+  - sudo apt-get install gfortran -y
   - type gfortran
 install: autoreconf -i && ./configure && make && make install && make check
 script:
