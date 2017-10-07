@@ -185,7 +185,7 @@ namespace adept {
     // the offset of the data in any arrays in the expression, or -1 if
     // there is a clash in offsets.
     int alignment_offset() const {
-      int val = cast().alignment_offset_<Packet<Type>::size>();
+      int val = cast().template alignment_offset_<Packet<Type>::size>();
       if (val < Packet<Type>::size) {
 	return val;
       }

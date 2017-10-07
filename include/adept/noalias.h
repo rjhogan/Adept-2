@@ -55,7 +55,9 @@ namespace adept {
 	return arg.all_arrays_contiguous_(); 
       }
       template <int n>
-      int alignment_offset_() const { return arg.alignment_offset_<n>(); }
+      int alignment_offset_() const { 
+        return arg.template alignment_offset_<n>();
+      }
 
       template <int Rank>
       Type value_with_len_(Index i, Index len) const {

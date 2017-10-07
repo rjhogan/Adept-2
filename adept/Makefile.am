@@ -5,4 +5,4 @@ libadept_la_SOURCES = Array.cpp Stack.cpp StackStorageOrig.cpp \
 	vector_utilities.cpp
 #cpplapack.cpp
 
-libadept_la_CPPFLAGS = -I../include
+libadept_la_CPPFLAGS = -I@top_srcdir@/include
