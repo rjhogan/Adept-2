@@ -7,6 +7,7 @@ compiler:
 before_install:
   - sudo apt-get install gfortran -y
   - type gfortran
-install: autoreconf -i && ./configure && make -j8 && make check -j8
-after_failure:
+install: autoreconf -i && ./configure && make -j8 
+script: 
+  - make check -j8
   - cat test/test_results.txt
