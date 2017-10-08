@@ -113,8 +113,10 @@ main() {
 
 #ifdef ADEPT_CXX11_FEATURES
   HEADING("INITIALIZER LISTS");
-  EVAL_CONSTRUCT("Construct Vector from initializer list",
-	v1, Vector v1 = {1 COMMA 2});
+  EVAL_CONSTRUCT("Construct Vector from initializer list of ints",
+	v1, Vector v1 = {1 COMMA 2 COMMA 3});
+  EVAL_CONSTRUCT("Construct Vector from initializer list of doubles",
+	v1d, Vector v1d = {1.0 COMMA 2.0 COMMA 3.0});
   EVAL_CONSTRUCT("Construct Matrix from initializer list",
 		 M, Matrix M = { {1 COMMA 2} COMMA {3} } );
   EVAL_CONSTRUCT("Construct Array3D from initializer list",
