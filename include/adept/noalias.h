@@ -55,7 +55,9 @@ namespace adept {
 	return arg.all_arrays_contiguous_(); 
       }
       template <int n>
-      int alignment_offset_() const { return arg.alignment_offset_<n>(); }
+      int alignment_offset_() const { 
+        return arg.template alignment_offset_<n>();
+      }
 
       template <int Rank>
       Type value_with_len_(Index i, Index len) const {
@@ -64,22 +66,22 @@ namespace adept {
       
       template <int MyArrayNum, int NArrays>
       void advance_location_(ExpressionSize<NArrays>& loc) const {
-	arg.advance_location_<MyArrayNum>(loc);
+	arg.template advance_location_<MyArrayNum>(loc);
       }
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return arg.value_at_location_<MyArrayNum>(loc);
+	return arg.template value_at_location_<MyArrayNum>(loc);
       }
       template <int MyArrayNum, int NArrays>
       Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return arg.packet_at_location_<MyArrayNum>(loc);
+	return arg.template packet_at_location_<MyArrayNum>(loc);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
       Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				    ScratchVector<NScratch>& scratch) const {
-	return arg.value_at_location_store_<MyArrayNum,MyScratchNum>(loc, 
+	return arg.template value_at_location_store_<MyArrayNum,MyScratchNum>(loc, 
 								     scratch);
       }
 
@@ -111,7 +113,7 @@ namespace adept {
       template <int MyArrayNum, int Rank, int NArrays>
       void set_location_(const ExpressionSize<Rank>& i, 
 			 ExpressionSize<NArrays>& index) const {
-	arg.set_location_<MyArrayNum>(i, index);
+	arg.template set_location_<MyArrayNum>(i, index);
       }
 
     }; // End struct NoAlias
