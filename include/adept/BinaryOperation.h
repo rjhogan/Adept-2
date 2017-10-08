@@ -418,7 +418,7 @@ namespace adept {
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return operation(left.template value, right.template value_at_location_<MyArrayNum>(loc));
+	return operation(left.value, right.template value_at_location_<MyArrayNum>(loc));
       }
       template <int MyArrayNum, int NArrays>
       Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
