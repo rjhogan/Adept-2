@@ -79,6 +79,12 @@
 // Do we check array bounds when indexing arrays?
 //#define ADEPT_BOUNDS_CHECKING 1
 
+// Do we disable dimension checking when assigning an array expression
+// to another array?
+//#define ADEPT_NO_DIMENSION_CHECKING
+
+// Do we disable automatic alias checking in array operations?
+//#define ADEPT_NO_ALIAS_CHECKING
 
 // The initial size of the stacks, which can be grown if required
 #ifndef ADEPT_INITIAL_STACK_LENGTH
@@ -148,9 +154,6 @@
 // Define the following if you wish to use OpenMP to accelerate array
 // expressions
 //#define ADEPT_OPENMP_ARRAY_OPERATIONS 1
-
-// Do we disable automatic alias checking in array operations?
-//#define ADEPT_NO_ALIAS_CHECKING
 
 // This cannot be changed without rewriting the Adept library
 #define ADEPT_MAX_ARRAY_DIMENSIONS 7

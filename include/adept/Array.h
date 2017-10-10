@@ -456,6 +456,7 @@ namespace adept {
 #ifdef ADEPT_VERBOSE_FUNCTIONS
       std::cout << "  running Array::operator=(const Expression&)\n";
 #endif
+#ifndef ADEPT_NO_DIMENSION_CHECKING
       ExpressionSize<Rank> dims;
       if (!rhs.get_dimensions(dims)) {
 	std::string str = "Array size mismatch in "
@@ -470,6 +471,17 @@ namespace adept {
 	str += dims.str() + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
+#else
+      if (empty()) {
+	ExpressionSize<Rank> dims;
+	if (!rhs.get_dimensions(dims)) {
+	  std::string str = "Array size mismatch in "
+	    + rhs.expression_string() + ".";
+	  throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
+	}	
+	resize(dims);
+      }
+#endif
       if (!empty()) {
 #ifndef ADEPT_NO_ALIAS_CHECKING
 	// Check for aliasing first
@@ -498,7 +510,6 @@ namespace adept {
 	}
 #endif
       }
-
       //      asm("# %%% ADEPT END OPERATOR=");
       return *this;
     }

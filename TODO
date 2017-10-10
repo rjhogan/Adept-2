@@ -32,6 +32,8 @@ Const link does not increment reference counter
 Cannot link non-const to const either by construction or explicit link
 Should reduce functions take dimensions as template arguments?
 reduce operations have a template version with the reduce dimension provided statically
+differentiate complex number operations
+matmul and solve on complex numbers
 
 CHECK
 Check Square matmul
