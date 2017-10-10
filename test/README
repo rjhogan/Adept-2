@@ -181,15 +181,16 @@ Microsoft Windows that cannot natively run the configure shell script.
 
 
 
-TEST 9a,b,c: ARRAY FUNCTIONALITY
+TEST 9a,b,c,d: ARRAY FUNCTIONALITY
 
 Executables: (a) test_arrays, (b) test_arrays_active, (c)
-test_arrays_active_pausable
+test_arrays_active_pausable, (d) test_complex_arrays
 
 Source files: test_arrays.cpp
 
 Demonstrates: array functionality for (a) passive arrays, (b) active
-arrays, and (c) active arrays but with stack recording "paused".
+arrays, (c) active arrays but with stack recording "paused", (d)
+complex arrays.
 
 
 

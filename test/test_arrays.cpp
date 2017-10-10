@@ -18,6 +18,7 @@
 */
 
 #include <iostream>
+#include <complex>
 
 #define ADEPT_BOUNDS_CHECKING 1
 
@@ -27,6 +28,7 @@
 // The following controls whether to use active variables or not
 //#define ALL_ACTIVE 1
 //#define MARVEL_STYLE 1
+//#define ALL_COMPLEX 1
 
 using namespace adept;
 
@@ -35,7 +37,10 @@ int
 main(int argc, const char** argv) {
   using namespace adept;
 #ifdef ALL_ACTIVE
+#define IsActive true
   Stack stack;
+#else
+#define IsActive false
 #endif
   
 #define HEADING(MESSAGE)						\
@@ -182,6 +187,7 @@ main(int argc, const char** argv) {
     }									\
   }
 
+#ifndef ALL_COMPLEX
 
 #ifdef ALL_ACTIVE
 #ifndef MARVEL_STYLE
@@ -229,6 +235,22 @@ main(int argc, const char** argv) {
   typedef SpecialMatrix<Real,BandEngine<COL_MAJOR,1,1>,false> myTridiagMatrix;
   typedef SpecialMatrix<Real,BandEngine<COL_MAJOR,2,1>,false> myOddBandMatrix;
   */
+
+#endif
+
+
+#else
+  typedef std::complex<Real> myReal;
+  typedef Array<1,std::complex<Real>,IsActive> myVector;
+  typedef Array<2,std::complex<Real>,IsActive> myMatrix;
+  typedef Array<3,std::complex<Real>,IsActive> myArray3D;
+  typedef SpecialMatrix<std::complex<Real>,SquareEngine<ROW_MAJOR>,IsActive> mySymmMatrix;
+  typedef SpecialMatrix<std::complex<Real>,BandEngine<ROW_MAJOR,0,0>,IsActive> myDiagMatrix;
+  typedef SpecialMatrix<std::complex<Real>,BandEngine<ROW_MAJOR,1,1>,IsActive> myTridiagMatrix;
+  typedef SpecialMatrix<std::complex<Real>,internal::LowerEngine<ROW_MAJOR>, IsActive> myLowerMatrix;
+  typedef SpecialMatrix<std::complex<Real>,internal::UpperEngine<ROW_MAJOR>, IsActive> myUpperMatrix;
+  typedef SpecialMatrix<std::complex<Real>,BandEngine<ROW_MAJOR,2,1>,IsActive> myOddBandMatrix;
+
 #endif
 
   struct Test {
@@ -263,7 +285,11 @@ main(int argc, const char** argv) {
 #define DIMLONG 20
 #endif
     Test() {
-
+#ifdef ALL_COMPLEX
+#define I std::complex<Real>(0.0,1.0)
+#else
+#define I 0.0
+#endif
       b = false;
       B.resize(DIM1); B = false;
       c = 0;
@@ -279,22 +305,22 @@ main(int argc, const char** argv) {
       O.resize(DIM1);
       Q.resize(DIM3);
       index.resize(DIM2);
-      v(0) = 2; v(1) = 3; v(2) = 5;
-      w(0) = 7; w(1) = 11; w(2) = 13;
-      M(0,0) = 2; M(0,1) = 3; M(0,2) = 5;
+      v(0) = 2.0 + 3.0*I; v(1) = 3; v(2) = 5;
+      w(0) = 7.0 + 4.0*I; w(1) = 11; w(2) = 13;
+      M(0,0) = 2.0 + 3.0*I; M(0,1) = 3; M(0,2) = 5;
       M(1,0) = 7; M(1,1) = 11; M(1,2) = 13;
       Mstrided = M;
-      N(0,0) = 17; N(0,1) = 19; N(0,2) = 23;
+      N(0,0) = 17.0+5.0*I; N(0,1) = 19; N(0,2) = 23;
       N(1,0) = 29; N(1,1) = 31; N(1,2) = 37;
-      S(0,0) = 2; S(0,1) = 3; S(0,2) = 5;
-      S(1,0) = 7; S(1,1) = 11; S(1,2) = 13;
+      S(0,0) = 2.0+3.0*I; S(0,1) = 3; S(0,2) = 5;
+      S(1,0) = 7.0+4.0*I; S(1,1) = 11; S(1,2) = 13;
       S(2,0) = 17; S(2,1) = 19; S(2,2) = 23;
 
-      O(0,0) = 7;
+      O(0,0) = 7.0+3.0*I;
       O(1,0) = 2; O(1,1) = 11;
       O(2,0) = 3; O(2,1) = 5; O(2,2) = 13;
 
-      P = 14-O;
+      P = 14.0 - O;
 
       Q.diag_vector(-2) = 1;
       Q.diag_vector(-1) = 2;
@@ -307,7 +333,7 @@ main(int argc, const char** argv) {
       U = S;
 
       A.resize(DIM2,DIM1,DIM2);
-      A << 2, 3, 5, 7, 11, 13,
+      A << 2.0+3.0*I, 3, 5, 7, 11, 13,
 	17, 19, 23, 29, 31,37;
 
       index << 1, 0;
@@ -331,6 +357,9 @@ main(int argc, const char** argv) {
   std::cout << "Testing ACTIVE arrays\n";
 #else
   std::cout << "Testing INACTIVE arrays\n";
+#endif
+#ifdef ALL_COMPLEX
+  std::cout << "Testing COMPLEX arrays\n";
 #endif
 
 
@@ -384,9 +413,11 @@ main(int argc, const char** argv) {
   EVAL("Matrix *= operator", myMatrix, M, true, M *= 0.5);
   EVAL2("Matrix = scalar", myMatrix, M, true, myReal, x, M = x);
   EVAL2("Matrix = scalar expression", myMatrix, M, true, myReal, x, M = (10.0*x));
+#ifndef ALL_COMPLEX
   HEADING("BASIC FUNCTIONS");
   EVAL2("max", myVector, v, true, myVector, w, v = max(v,w/3.0));
   EVAL2("min", myVector, v, true, myVector, w, v = min(v,w/3.0));
+#endif
 
   HEADING("ARRAY SLICING");
   EVAL2("Array indexing rvalue", myReal, x, true, myMatrix, M, x = M(1,end-1));
@@ -406,16 +437,18 @@ main(int argc, const char** argv) {
   EVAL("contiguous subarray lvalue using subset", myVector, v, true, v.subset(end-1,end) *= 10.0);
   EVAL2("regular subarray rvalue", myVector, v, false, myVector, w, v = w(stride(end,0,-1)));
   EVAL2("regular subarray lvalue", myMatrix, M, true, myVector, w, M(0,stride(0,end,2)) *= w(stride(end,0,-2)));
+#ifndef ALL_COMPLEX
   EVAL2("irregular subarray rvalue", myMatrix, M, false, myMatrix, N, M = N(stride(1,0,-1),find(N(0,__)>18)));
   EVAL("irregular subarray lvalue", myMatrix, M, true, M(stride(1,0,-1),find(M(0,__)>4)) = 0);
+#endif
   EVAL("slice leading dimension", myMatrix, M, true, M[end] = 0);
   EVAL("slice two dimensions", myMatrix, M, true, M[end][0] = 0);
   EVAL2("diag_vector member function as rvalue", myVector, v, false, myMatrix, S, v = diag_vector(S,1));
   EVAL2("diag_vector member function as lvalue", myMatrix, S, true, myVector, v, S.diag_vector() += v);
   EVAL2("diag_matrix member function", myMatrix, S, false, myVector, v, S = v.diag_matrix());
   EVAL2("diag_matrix external function", myMatrix, S, false, myVector, v, S = diag_matrix(v));
-  EVAL2("transpose as rvalue via T member function", myMatrix, N, false, myMatrix, M, N = 2 * M.T());
-  EVAL2("transpose as rvalue via permute member function", myMatrix, N, false, myMatrix, M, N = 2 * M.permute(1,0));
+  EVAL2("transpose as rvalue via T member function", myMatrix, N, false, myMatrix, M, N = 2.0 * M.T());
+  EVAL2("transpose as rvalue via permute member function", myMatrix, N, false, myMatrix, M, N = 2.0 * M.permute(1,0));
   EVAL3("2D arbitrary index as rvalue", myMatrix, M, false, myMatrix, N, intVector, index, M = const_cast<const myMatrix&>(N)(index,index));
   EVAL3("2D arbitrary index as lvalue assigned to scalar expression", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = 2.0*(myReal)(4.0));
   EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = N(__,range(1,2)));
@@ -431,10 +464,11 @@ main(int argc, const char** argv) {
   EVAL2("full reduction", myReal, x, true, myMatrix, M, x = sum(M));
   EVAL2("1-dimension reduction", myVector, v, false, myMatrix, M, v = 0.5 * mean(M,0));
   EVAL2("1-dimension reduction", myVector, v, false, myMatrix, M, v = norm2(M,1));
-  EVAL2("maxval", myVector, v, false, myMatrix, M, v = maxval(M,1));
-  EVAL2("minval", myVector, v, false, myMatrix, M, v = minval(M,1));
   EVAL2("dot product", myReal, x, true, myVector, w, x = dot_product(w,w(stride(end,0,-1))));
   EVAL2("dot product on expressions", myReal, x, true, myVector, w, x = dot_product(2.0*w,w(stride(end,0,-1))+1.0));
+#ifndef ALL_COMPLEX
+  EVAL2("maxval", myVector, v, false, myMatrix, M, v = maxval(M,1));
+  EVAL2("minval", myVector, v, false, myMatrix, M, v = minval(M,1));
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, Vector(value(w)/3.0)));
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, value(w)/3.0));
   EVAL2("all reduction", bool, b, false, myMatrix, M, b = all(M > 8.0));
@@ -451,7 +485,7 @@ main(int argc, const char** argv) {
   EVAL_NO_TRAP("find construct, scalar right-hand-side", myVector, v, true, v(find(v > 3.5)) = 0);
   EVAL("find construct, expression right-hand-side", myVector, v, true, v(find(v > 3.5)) = -v(range(end,end)));
   EVAL("find construct, multiply-assign right-hand-side", myVector, v, true, v(find(v != 5.0)) *= 10.0);
-
+#endif
   HEADING("SPECIAL SQUARE MATRICES");
   EVAL("SymmMatrix \"resize\" member function", mySymmMatrix, O, true, O.resize(5));
 
@@ -465,11 +499,11 @@ main(int argc, const char** argv) {
   EVAL2("TridiagMatrix assign from dense matrix", myTridiagMatrix, T, false, myMatrix, S, T = S);
   EVAL2("LowerMatrix assign from dense matrix", myLowerMatrix, L, false, myMatrix, S, L = S);
   EVAL2("UpperMatrix assign from dense matrix", myUpperMatrix, U, false, myMatrix, S, U = S);
-  EVAL("SymmMatrix += operator", mySymmMatrix, O, true, O += 3);
-  EVAL("DiagMatrix += operator", myDiagMatrix, D, true, D += 3);
-  EVAL("TridiagMatrix += operator", myTridiagMatrix, T, true, T += 3);
-  EVAL("LowerMatrix += operator", myLowerMatrix, L, true, L += 3);
-  EVAL("UpperMatrix += operator", myUpperMatrix, U, true, U += 3);
+  EVAL("SymmMatrix += operator", mySymmMatrix, O, true, O += 3.0);
+  EVAL("DiagMatrix += operator", myDiagMatrix, D, true, D += 3.0);
+  EVAL("TridiagMatrix += operator", myTridiagMatrix, T, true, T += 3.0);
+  EVAL("LowerMatrix += operator", myLowerMatrix, L, true, L += 3.0);
+  EVAL("UpperMatrix += operator", myUpperMatrix, U, true, U += 3.0);
   EVAL2("SymmMatrix as rvalue", myMatrix, M, false, mySymmMatrix, O, M = O);
   EVAL2("DiagMatrix as rvalue", myMatrix, M, false, myDiagMatrix, D, M = D);
   EVAL2("TridiagMatrix as rvalue", myMatrix, M, false, myTridiagMatrix, T, M = T);
@@ -480,30 +514,30 @@ main(int argc, const char** argv) {
 
 
   EVAL("SymmMatrix diag_vector member function as lvalue (upper)", mySymmMatrix, O, true, O.diag_vector(1) = 0);
-  EVAL("SymmMatrix diag_vector member function as lvalue (lower)", mySymmMatrix, O, true, O.diag_vector(-2) += 10);
-  EVAL("DiagMatrix diag_vector member function as lvalue", myDiagMatrix, D, true, D.diag_vector() = 0);
+  EVAL("SymmMatrix diag_vector member function as lvalue (lower)", mySymmMatrix, O, true, O.diag_vector(-2) += 10.0);
+  EVAL("DiagMatrix diag_vector member function as lvalue", myDiagMatrix, D, true, D.diag_vector() = 0.0);
 
   should_fail = true;
-  EVAL("DiagMatrix diag_vector member function incorrectly using offdiagonal", myDiagMatrix, D, true, D.diag_vector(1) = 0);
+  EVAL("DiagMatrix diag_vector member function incorrectly using offdiagonal", myDiagMatrix, D, true, D.diag_vector(1) = 0.0);
   should_fail = false;
 
-  EVAL("TridiagMatrix diag_vector member function as lvalue (upper)", myTridiagMatrix, T, true, T.diag_vector(1) += 10);
-  EVAL("TridiagMatrix diag_vector member function as lvalue (lower)", myTridiagMatrix, T, true, T.diag_vector(-1) = 0);
-  EVAL("LowerMatrix diag_vector member function as lvalue (lower)", myLowerMatrix, L, true, L.diag_vector(-1) = 0);
+  EVAL("TridiagMatrix diag_vector member function as lvalue (upper)", myTridiagMatrix, T, true, T.diag_vector(1) += 10.0);
+  EVAL("TridiagMatrix diag_vector member function as lvalue (lower)", myTridiagMatrix, T, true, T.diag_vector(-1) = 0.0);
+  EVAL("LowerMatrix diag_vector member function as lvalue (lower)", myLowerMatrix, L, true, L.diag_vector(-1) = 0.0);
 
   should_fail = true;
-  EVAL("LowerMatrix diag_vector member function as lvalue (upper)", myLowerMatrix, L, true, L.diag_vector(1) = 0);
-  EVAL("UpperMatrix diag_vector member function as lvalue (lower)", myUpperMatrix, U, true, U.diag_vector(-1) = 0);
+  EVAL("LowerMatrix diag_vector member function as lvalue (upper)", myLowerMatrix, L, true, L.diag_vector(1) = 0.0);
+  EVAL("UpperMatrix diag_vector member function as lvalue (lower)", myUpperMatrix, U, true, U.diag_vector(-1) = 0.0);
   should_fail = false;
 
-  EVAL("UpperMatrix diag_vector member function as lvalue (upper)", myUpperMatrix, U, true, U.diag_vector(1) = 0);
-  EVAL("Odd band matrix \"diag_vector\" member function", myOddBandMatrix, Q, true, Q.diag_vector(1) = -1);
-  EVAL("Odd band matrix \"diag_vector\" member function", myOddBandMatrix, Q, true, Q.diag_vector(0) = -1);
-  EVAL("Odd band matrix \"diag_vector\" member function", myOddBandMatrix, Q, true, Q.diag_vector(-1) = -1);
-  EVAL("Odd band matrix \"diag_vector\" member function", myOddBandMatrix, Q, true, Q.diag_vector(-2) = -1);
+  EVAL("UpperMatrix diag_vector member function as lvalue (upper)", myUpperMatrix, U, true, U.diag_vector(1) = 0.0);
+  EVAL("Odd band matrix \"diag_vector\" member function", myOddBandMatrix, Q, true, Q.diag_vector(1) = -1.0);
+  EVAL("Odd band matrix \"diag_vector\" member function", myOddBandMatrix, Q, true, Q.diag_vector(0) = -1.0);
+  EVAL("Odd band matrix \"diag_vector\" member function", myOddBandMatrix, Q, true, Q.diag_vector(-1) = -1.0);
+  EVAL("Odd band matrix \"diag_vector\" member function", myOddBandMatrix, Q, true, Q.diag_vector(-2) = -1.0);
 
   EVAL2("Array submatrix_on_diagonal member function", myMatrix, M, false, myMatrix, S, M = S.submatrix_on_diagonal(1,2));
-  EVAL("Array submatrix_on_diagonal member function as lvalue", myMatrix, S, true, S.submatrix_on_diagonal(0,1) = 0);
+  EVAL("Array submatrix_on_diagonal member function as lvalue", myMatrix, S, true, S.submatrix_on_diagonal(0,1) = 0.0);
 
   should_fail = true;
   EVAL2("Array submatrix_on_diagonal member function to non-square matrix", myMatrix, M, false, myMatrix, N, M = N.submatrix_on_diagonal(1,2));
@@ -532,6 +566,8 @@ main(int argc, const char** argv) {
   EVAL2("Matrix spread of dimension 0", myArray3D, A, false, myMatrix, M, A = spread<0>(M,2));
   EVAL2("Matrix spread of dimension 1", myArray3D, A, false, myMatrix, M, A = spread<1>(M,2));
   EVAL2("Matrix spread of dimension 2", myArray3D, A, false, myMatrix, M, A = spread<2>(M,2));
+
+#ifndef ALL_COMPLEX
 
 #ifndef MARVEL_STYLE
  HEADING("MATRIX MULTIPLICATION");
@@ -581,6 +617,8 @@ main(int argc, const char** argv) {
 #endif
 #else
   std::cout << "NO MATRIX TESTS PERFORMED BECAUSE USING MARVEL-STYLE ACTIVE ARRAYS\n";
+#endif
+
 #endif
 
   HEADING("FILLING ARRAYS");

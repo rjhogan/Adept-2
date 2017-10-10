@@ -25,7 +25,8 @@ OBJECTS = algorithm.o algorithm_noad.o test_checkpoint.o \
 	test_array_speed.o test_arrays_active_pausable.o \
 	test_fixed_arrays_active.o test_radiances_array.o \
 	test_fixed_arrays.o test_constructors.o test_derivatives.o \
-	test_array_derivatives.o test_thread_safe_arrays.o
+	test_array_derivatives.o test_thread_safe_arrays.o \
+	test_complex_arrays.o
 GSL_OBJECTS = test_gsl_interface.o state.o rosenbrock_banana_function.o
 
 GSL_LIBS = -lgsl
@@ -53,7 +54,7 @@ PROGRAMS = test_adept test_adept_with_and_without_ad test_radiances \
 	test_array_speed test_no_lib test_radiances_array test_constructors \
 	test_arrays test_arrays_active test_arrays_active_pausable \
 	test_fixed_arrays test_fixed_arrays_active test_derivatives \
-	test_array_derivatives test_thread_safe_arrays
+	test_array_derivatives test_thread_safe_arrays test_complex_arrays
 
 all:
 	@echo "********************************************************"
@@ -116,6 +117,10 @@ test_arrays_active: test_arrays_active.o $(LIBADEPT)
 test_arrays_active_pausable: test_arrays_active_pausable.o $(LIBADEPT)
 	$(CXXLINK) test_arrays_active_pausable.o $(MYLIBS)
 
+# Test program 9d
+test_complex_arrays: test_complex_arrays.o $(LIBADEPT)
+	$(CXXLINK) test_complex_arrays.o $(MYLIBS)
+
 # Test program 10
 test_array_speed: test_array_speed.o $(LIBADEPT)
 	$(CXXLINK) test_array_speed.o $(MYLIBS)
@@ -165,6 +170,9 @@ test_arrays_active.o: test_arrays.cpp  *.h ../include/*.h ../include/adept/*.h
 
 test_arrays_active_pausable.o: test_arrays.cpp  *.h ../include/*.h ../include/adept/*h
 	$(CXX) $(COMPILE_FLAGS) -DADEPT_RECORDING_PAUSABLE -DALL_ACTIVE $(INCLUDES) -c test_arrays.cpp -o test_arrays_active_pausable.o
+
+test_complex_arrays.o: test_arrays.cpp  *.h ../include/*.h ../include/adept/*.h
+	$(CXX) $(COMPILE_FLAGS) -DALL_COMPLEX $(INCLUDES) -c test_arrays.cpp -o test_complex_arrays.o
 
 test_fixed_arrays_active.o: test_fixed_arrays.cpp  *.h ../include/*.h ../include/adept/*.h
 	$(CXX) $(COMPILE_FLAGS) -DALL_ACTIVE $(INCLUDES) -c test_fixed_arrays.cpp -o test_fixed_arrays_active.o

@@ -253,6 +253,7 @@ namespace adept {
     // Return the underlying real type for a complex argument:
     // "underlying_real<S>::type returns T if S is of type
     // std::complex<T>, or returns S if it is not complex
+    /*
     template <typename T>
     struct underlying_real
     {
@@ -267,6 +268,16 @@ namespace adept {
       typedef typename _underlying_real<is_complex<T>::value,
 					T>::type type;
     };
+    */
+    template <typename T>
+    struct underlying_real {
+      typedef T type;
+    };
+    template <typename T>
+    struct underlying_real<std::complex<T> > {
+      typedef T type;
+    };
+	
     // ---------------------------------------------------------------------
     // 11. underlying_passive
     // ---------------------------------------------------------------------
