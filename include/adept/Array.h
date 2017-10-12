@@ -450,8 +450,9 @@ namespace adept {
 
     // Assignment to an array expression of the same rank
     template <typename EType, class E>
+    inline //__attribute__((always_inline))
     typename enable_if<E::rank == Rank, Array&>::type
-    operator=(const Expression<EType,E>& rhs) {
+    operator=(const Expression<EType,E>&  __restrict rhs) {
       //      asm("# %%% ADEPT OPERATOR=");
 #ifdef ADEPT_VERBOSE_FUNCTIONS
       std::cout << "  running Array::operator=(const Expression&)\n";
@@ -513,6 +514,7 @@ namespace adept {
       //      asm("# %%% ADEPT END OPERATOR=");
       return *this;
     }
+
 
     // Assignment to an array expression of the same rank in which the
     // activeness of the right-hand-side is ignored
@@ -2036,7 +2038,8 @@ namespace adept {
     }
 
     // Resize an array
-    void resize(const Index* dim) {
+    void
+    resize(const Index* dim) {
 
       ADEPT_STATIC_ASSERT(!(std::numeric_limits<Type>::is_integer
 	    && IsActive), CANNOT_CREATE_ACTIVE_ARRAY_OF_INTEGERS);
@@ -2871,6 +2874,7 @@ namespace adept {
     // advantage in specialist behaviour depending on the rank of the
     // array
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
+    inline
     typename enable_if<!LocalIsActive && (!E::is_vectorizable
 					  || !is_same<typename E::type,Type>::value),void>::type
     assign_expression_(const E& rhs) {
@@ -2911,6 +2915,7 @@ namespace adept {
 
     // Vectorized version for Rank-1 arrays
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
+    inline //__attribute__((always_inline))
     typename enable_if<!LocalIsActive && E::is_vectorizable && LocalRank == 1
 		       && is_same<typename E::type,Type>::value,void>::type
       // Removing the reference speeds things up because otherwise E
@@ -2975,6 +2980,7 @@ namespace adept {
 
     // Vectorized version
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
+    inline
     typename enable_if<!LocalIsActive && E::is_vectorizable && (LocalRank > 1)
                        && is_same<typename E::type,Type>::value,void>::type
     // Removing the reference speeds things up because otherwise E
@@ -3048,6 +3054,7 @@ namespace adept {
     }
 
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
+    inline
     typename enable_if<LocalIsActive && EIsActive,void>::type
   //    assign_expression_(const E& rhs) {
     assign_expression_(const E rhs) {
@@ -3099,6 +3106,7 @@ namespace adept {
     }
 
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
+    inline
     typename enable_if<LocalIsActive && !EIsActive,void>::type
     assign_expression_(const E& rhs) {
       // If recording has been paused then call the inactive version
