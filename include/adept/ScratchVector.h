@@ -1,6 +1,6 @@
 /* ScratchVector.h -- Class for holding temporary real data
 
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -8,16 +8,16 @@
 
 
    The ScratchVector class is used to store a temporary vector of real
-   numbers (the type "Real") for use in optimally evaluating an
-   expression and computing its derivative.  Certain parts of the
-   expression need to store their numerical value when first computed
-   since it will be needed again in the derivative computation.  In
-   Adept 1.x such data were stored in the expression objects
-   themselves, e.g. in adept::Multiply, but now that such an object
-   represents array operations that might be computed in parallel, the
-   storage for such scratch data must be held externally so that it
-   can be different for each thread, and then be passed by reference
-   to the evaluation member functions.
+   numbers (by default the type "Real", but could also be
+   Packet<Real>) for use in optimally evaluating an expression and
+   computing its derivative.  Certain parts of the expression need to
+   store their numerical value when first computed since it will be
+   needed again in the derivative computation.  In Adept 1.x such data
+   were stored in the expression objects themselves, e.g. in
+   adept::Multiply, but now that it is not clear at the level of an
+   individual operation whether vectorization will be possible
+   (requiring Packet<Real>), the storage for such scratch data must be
+   held externally.
 
 */
 
@@ -31,7 +31,7 @@ namespace adept {
   namespace internal {
 
     // Definition of ScratchVector class
-    template <int Size>
+    template <int Size, typename Type = Real>
     class ScratchVector {
     public:
       // Constructors
@@ -40,12 +40,12 @@ namespace adept {
       ScratchVector() { }
 
       // Set all dimensions to the same value
-      ScratchVector(Real x) {
+      ScratchVector(Type x) {
 	set_all(x);
       }
 
       // Specify the values of all elements
-      ScratchVector(Real x[Size]) {
+      ScratchVector(Type x[Size]) {
 	for (int i = 0; i < Size; ++i) {
 	  val[i] = x[i];
 	}
@@ -54,7 +54,7 @@ namespace adept {
       // Assume copy constructor will copy elements of val
     
       // Set all to specified value
-      void set_all(Real x) {
+      void set_all(Type x) {
 	for (int i = 0; i < Size; ++i) {
 	  val[i] = x;
 	}
@@ -67,7 +67,7 @@ namespace adept {
 	}
       }
       // ...or pointer to raw data
-      void copy(const Real* d) {
+      void copy(const Type* d) {
 	for (int i = 0; i < Size; ++i) {
 	  val[i] = d[i];
 	}
@@ -83,22 +83,23 @@ namespace adept {
       }
 
       // Const and non-const access to elements
-      Real& operator[](int i) { return val[i]; }
+      Type& operator[](int i) { return val[i]; }
 
-      const Real& operator[](int i) const { return val[i]; }
+      const Type& operator[](int i) const { return val[i]; }
 
       // Data
     private:
-      Real val[Size];
+      Type val[Size];
     };
   
     // Specialization for scalars (zero-rank arrays) known at compile
     // time
     template <>
-    class ScratchVector<0> {
+      class ScratchVector<0> {
     public:
       ScratchVector() { }
-      ScratchVector(Real x) { }
+      template <typename T>
+      ScratchVector(T x) { }
       std::ostream& write(std::ostream& os) const {
 	return os << "{}\n";
       }
