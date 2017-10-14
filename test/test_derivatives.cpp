@@ -98,13 +98,15 @@ main(int argc, const char** argv) {
 
   Stack stack;
 
-  static const int N             = 3;
+  static const int N             = 12;
   static const Real MAX_FRAC_ERR = 1.0e-5;
 
   Vector x_save(N);
+  x_save = 0.2;
   x_save << 0.01, 0.4, 0.99;
 
   Vector y_save(N);
+  y_save = 0.7;
   y_save << 0.9, 0.6, 0.1;
 
   Real dx = 1.0e-8;
@@ -124,6 +126,8 @@ main(int argc, const char** argv) {
   std::cout << "and numerically by perturbing x by " << dx << " is less than " << MAX_FRAC_ERR << ".\n";    
 
   
+  TEST_UNARY_FUNC(-); // Unary minus
+  TEST_UNARY_FUNC(+); // Unary plus
   TEST_UNARY_FUNC(log);
   TEST_UNARY_FUNC(log10);
   TEST_UNARY_FUNC(sin);

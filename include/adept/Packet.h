@@ -22,10 +22,12 @@
 
 // Headers needed for x86 vector intrinsics
 #ifdef __SSE2__
-#include <emmintrin.h>
+#include <xmmintrin.h> // SSE
+#include <emmintrin.h> // SSE2
 #endif
 #ifdef __AVX__
-#include <immintrin.h>
+#include <tmmintrin.h> // SSE3
+#include <immintrin.h> // AVX
 #endif
 
 // Headers needed for allocation of aligned memory
@@ -113,16 +115,18 @@ namespace adept {
 
 #define ADEPT_DEF_PACKET_TYPE(TYPE, INT_TYPE, SET0,	        \
 			      LOAD, LOADU, SET1, STORE, STOREU,	\
-			      ADD, SUB, MUL, DIV, SQRT)		\
+			      ADD, SUB, MUL, DIV, SQRT,		\
+			      MIN, MAX, HSUM)			\
     template <> struct Packet<TYPE> {				\
       typedef INT_TYPE intrinsic_type;				\
       static const int size = sizeof(INT_TYPE) / sizeof(TYPE);	\
       static const int intrinsic_size				\
         = sizeof(INT_TYPE) / sizeof(TYPE);			\
-      static const std::size_t alignment_bytes = sizeof(INT_TYPE);	\
+      static const std::size_t					\
+	alignment_bytes = sizeof(INT_TYPE);			\
       static const bool is_vectorized = true;			\
       Packet()              : data(SET0())  { }			\
-      Packet(const TYPE* d) : data(LOAD(d)) { }		\
+      Packet(const TYPE* d) : data(LOAD(d)) { }			\
       Packet(const TYPE* d, int) : data(LOADU(d)) { }		\
       Packet(TYPE d)        : data(SET1(d)) { }			\
       Packet(INT_TYPE d)    : data(d) { }			\
@@ -149,7 +153,7 @@ namespace adept {
     std::ostream& operator<<(std::ostream& os,			\
 			     const Packet<TYPE>& x) {		\
       TYPE d[Packet<TYPE>::size];				\
-      STOREU(d, x.data);						\
+      STOREU(d, x.data);					\
       os << "(";						\
       for (int i = 0; i < Packet<TYPE>::size; ++i) {		\
 	os << " " << d[i];					\
@@ -173,14 +177,72 @@ namespace adept {
     Packet<TYPE> operator/(const Packet<TYPE>& __restrict x,	\
 			   const Packet<TYPE>& __restrict y)	\
     { return DIV(x.data,y.data); }				\
+    inline							\
+    Packet<TYPE> fmin(const Packet<TYPE>& __restrict x,		\
+		     const Packet<TYPE>& __restrict y)		\
+    { return MIN(x.data,y.data); }				\
+    inline							\
+    Packet<TYPE> fmax(const Packet<TYPE>& __restrict x,		\
+		     const Packet<TYPE>& __restrict y)		\
+    { return MAX(x.data,y.data); }				\
+    inline							\
+    Packet<TYPE> sqrt(const Packet<TYPE>& __restrict x)		\
+    { return SQRT(x.data); }			\
+    inline							\
+    TYPE hsum(const Packet<TYPE>& __restrict x)			\
+    { return HSUM(x.data); }					\
+    inline							\
+    Packet<TYPE> operator-(const Packet<TYPE>& __restrict x)	\
+    { return Packet<TYPE>() - x; }				\
+    inline							\
+    Packet<TYPE> operator+(const Packet<TYPE>& __restrict x)	\
+    { return x; }
 
-  /*
-  inline						\
-  INT_TYPE sqrt(const Packet<TYPE>& x)			\
-  { return SQRT(x.data); }
-  */
 
-    //#ifdef ADEPT_BLEEDING_EDGE
+    // -------------------------------------------------------------------
+    // Define horizontal sum functions (found on Stack Overflow and
+    // Intel Forum...)
+    // -------------------------------------------------------------------
+#ifdef __SSE2__
+    inline
+    float mm_hsum_ps(__m128 v) {
+      __m128 shuf   = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 3, 0, 1));
+      __m128 sums   = _mm_add_ps(v, shuf);
+      shuf          = _mm_movehl_ps(shuf, sums);
+      sums          = _mm_add_ss(sums, shuf);
+      return    _mm_cvtss_f32(sums);    
+    }
+
+    inline
+    double mm_hsum_pd(__m128d vd) {
+      __m128 undef  = _mm_undefined_ps();
+      __m128 shuftmp= _mm_movehl_ps(undef, _mm_castpd_ps(vd));
+      __m128d shuf  = _mm_castps_pd(shuftmp);
+      return  _mm_cvtsd_f64(_mm_add_sd(vd, shuf));
+    }
+#endif
+
+#ifdef __AVX__
+    inline
+    float mm256_hsum_ps(__m256 v) {
+      __m128 vlow  = _mm256_castps256_ps128(v);
+      __m128 vhigh = _mm256_extractf128_ps(v, 1);
+      vlow  = _mm_add_ps(vlow, vhigh);
+      __m128 shuf = _mm_movehdup_ps(vlow);
+      __m128 sums = _mm_add_ps(vlow, shuf);
+      shuf        = _mm_movehl_ps(shuf, sums);
+      sums        = _mm_add_ss(sums, shuf);
+      return        _mm_cvtss_f32(sums);
+    }
+
+    inline
+    double mm256_hsum_pd(__m256d vd) {
+      __m256d hsum = _mm256_add_pd(vd, _mm256_permute2f128_pd(vd, vd, 0x1));
+      return _mm_cvtsd_f64(_mm_hadd_pd(_mm256_castpd256_pd128(hsum),
+				       _mm256_castpd256_pd128(hsum) ) );
+    }
+
+#endif
 
     // -------------------------------------------------------------------
     // Define single-precision Packet
@@ -193,14 +255,18 @@ namespace adept {
 			  _mm_load_ps, _mm_loadu_ps, _mm_set1_ps,
 			  _mm_store_ps, _mm_storeu_ps,
 			  _mm_add_ps, _mm_sub_ps,
-			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps); 
+			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps,
+			  _mm_min_ps, _mm_max_ps,
+			  mm_hsum_ps); 
 #elif ADEPT_FLOAT_PACKET_SIZE == 8
     // Use AVX
     ADEPT_DEF_PACKET_TYPE(float, __m256, _mm256_setzero_ps,
 			  _mm256_load_ps, _mm256_loadu_ps, _mm256_set1_ps,
 			  _mm256_store_ps, _mm256_storeu_ps,
 			  _mm256_add_ps, _mm256_sub_ps,
-			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps);
+			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps,
+			  _mm256_min_ps, _mm256_max_ps,
+			  mm256_hsum_ps);
 #elif ADEPT_FLOAT_PACKET_SIZE != 1
 #error With AVX, ADEPT_FLOAT_PACKET_SIZE must be 1, 4 or 8
 #endif
@@ -212,7 +278,9 @@ namespace adept {
 			  _mm_load_ps, _mm_loadu_ps, _mm_set1_ps,
 			  _mm_store_ps, _mm_storeu_ps,
 			  _mm_add_ps, _mm_sub_ps,
-			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps); 
+			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps,
+			  _mm_min_ps, _mm_max_ps,
+			  mm_hsum_ps); 
 #elif ADEPT_FLOAT_PACKET_SIZE != 1
 #error With SSE2, ADEPT_FLOAT_PACKET_SIZE must be 1 or 4
 #endif
@@ -234,13 +302,17 @@ namespace adept {
 			  _mm_load_pd, _mm_loadu_pd, _mm_set1_pd,
 			  _mm_store_pd, _mm_storeu_pd,
 			  _mm_add_pd, _mm_sub_pd,
-			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd);
+			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd,
+			  _mm_min_pd, _mm_max_pd,
+			  mm_hsum_pd);
 #elif ADEPT_DOUBLE_PACKET_SIZE == 4
     ADEPT_DEF_PACKET_TYPE(double, __m256d, _mm256_setzero_pd, 
 			  _mm256_load_pd, _mm256_loadu_pd, _mm256_set1_pd,
 			  _mm256_store_pd, _mm256_storeu_pd,
 			  _mm256_add_pd, _mm256_sub_pd,
-			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd);
+			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd,
+			  _mm256_min_pd, _mm256_max_pd,
+			  mm256_hsum_pd);
 #elif ADEPT_DOUBLE_PACKET_SIZE != 1
 #error With AVX, ADEPT_DOUBLE_PACKET_SIZE must be 1, 2 or 4
 #endif
@@ -252,7 +324,9 @@ namespace adept {
 			  _mm_load_pd, _mm_loadu_pd, _mm_set1_pd,
 			  _mm_store_pd, _mm_storeu_pd,
 			  _mm_add_pd, _mm_sub_pd,
-			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd);
+			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd,
+			  _mm_min_pd, _mm_max_pd,
+			  mm_hsum_pd);
 #elif ADEPT_DOUBLE_PACKET_SIZE != 1
 #error With SSE2, ADEPT_DOUBLE_PACKET_SIZE must be 1 or 2
 #endif
@@ -320,6 +394,20 @@ namespace adept {
 #endif
       }
     }
+
+
+    // -------------------------------------------------------------------
+    // Check if templated object is a packet: is_packet
+    // -------------------------------------------------------------------
+    template <typename T>
+    struct is_packet {
+      static const bool value = false;
+    };
+    template <typename T>
+    struct is_packet<Packet<T> > {
+      static const bool value = true;
+    };
+
 
   } // End namespace internal
 

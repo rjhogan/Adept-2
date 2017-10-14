@@ -2,6 +2,11 @@ version 2.0.1 (October 2017)
 	- Basic passive complex arrays work, tested with
 	test/test_complex_arrays
 	- Added ADEPT_NO_DIMENSION_CHECKING option
+	- Vectorized sqrt, unary-, unary+, max and min
+	- Removed the option to vectorize with Packet representing a
+	*pair* of SSE2/AVX packed vector; now a Packet can only represent
+	a single packed vector. This simplifies maintenance of Packet.h,
+	and the pair option offered no performance advantage anyway.
 
 version 2.0 (September 2017)
 	- Finalized version for release

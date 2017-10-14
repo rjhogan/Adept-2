@@ -49,8 +49,7 @@ namespace adept {
       static const int  n_arrays_ = L::n_arrays + R::n_arrays;
       static const bool is_vectorizable_
 	= L::is_vectorizable && R::is_vectorizable && Op::is_vectorized
-	&& is_same<typename L::type,typename R::type>::value
-	&& Op::is_operator;
+	&& is_same<typename L::type,typename R::type>::value;
 
       using Op::is_operator;
       using Op::operation;
@@ -179,18 +178,9 @@ namespace adept {
       }
       template <int MyArrayNum, int NArrays>
       Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
-	/*
-	std::cout << left .packet_at_location_<MyArrayNum>(loc)
-		  << operation_string()
-		  << right.packet_at_location_<MyArrayNum+L::n_arrays>(loc)
-		  << "=" << operation(left .packet_at_location_<MyArrayNum>(loc),
-				      right.packet_at_location_<MyArrayNum+L::n_arrays>(loc))
-		  << "\n";
-	*/
 	return operation(left.template packet_at_location_<MyArrayNum>(loc),
 			 right.template packet_at_location_<MyArrayNum+L::n_arrays>(loc));
       }
-
 
       // Adept-1.x did not store for addition and subtraction!
       // Moreover, we should ideally not ask inactive arguments to
@@ -1057,25 +1047,34 @@ namespace adept {
     struct Max {
       static const bool is_operator  = false; // Operator or function for expression_string()
       static const int  store_result = 0;    // Do we need any scratch space? (this can be 0 or 1)
-      static const bool is_vectorized = false;
+      static const bool is_vectorized = true;
 
       const char* operation_string() const { return "max"; } // For expression_string()
       
-      // Implement the basic operation
+      // Implement the basic operation - first the version for packets
+      template <class LType, class RType>
+      typename enable_if<is_packet<LType>::value,LType>::type
+      operation(const LType& left, const RType& right) const
+      { return adept::internal::fmax(left,right); }
+
 #ifndef ADEPT_CXX11_FEATURES
       // For C++98, use simple ternary operation
       template <class LType, class RType>
-      typename promote<LType, RType>::type
+      typename enable_if<!is_packet<LType>::value,typename promote<LType, RType>::type>::type
       operation(const LType& left, const RType& right) const { return left < right ? right : left; }
 #else
       // For C++11 use the (hopefully faster) fmax function for floating-point functions
       template <class LType, class RType>
-      typename enable_if<!std::is_floating_point<LType>::value || !std::is_floating_point<RType>::value,
+      typename enable_if<!is_packet<LType>::value &&
+                         (!std::is_floating_point<LType>::value
+			  || !std::is_floating_point<RType>::value),
 			 typename promote<LType, RType>::type>::type
       operation(const LType& left, const RType& right) const { return left < right ? right : left; }
 
       template <class LType, class RType>
-      typename enable_if<std::is_floating_point<LType>::value && std::is_floating_point<RType>::value,
+      typename enable_if<!is_packet<LType>::value &&
+                         (std::is_floating_point<LType>::value
+			  && std::is_floating_point<RType>::value),
 			 typename promote<LType, RType>::type>::type
       operation(const LType& left, const RType& right) const { return std::fmax(left,right); }
 #endif
@@ -1129,25 +1128,33 @@ namespace adept {
     struct Min {
       static const bool is_operator  = false; // Operator or function for expression_string()
       static const int  store_result = 0;    // Do we need any scratch space? (this can be 0 or 1)
-      static const bool is_vectorized = false;
+      static const bool is_vectorized = true;
 
       const char* operation_string() const { return "min"; } // For expression_string()
       
       // Implement the basic operation
+      template <class LType, class RType>
+      typename enable_if<is_packet<LType>::value,LType>::type
+      operation(const LType& left, const RType& right) const
+      { return adept::internal::fmin(left,right); }
 #ifndef ADEPT_CXX11_FEATURES
       // For C++98, use simple ternary operation
       template <class LType, class RType>
-      typename promote<LType, RType>::type
+      typename enable_if<!is_packet<LType>::value,typename promote<LType, RType>::type>::type
       operation(const LType& left, const RType& right) const { return left < right ? left : right; }
 #else
       // For C++11 use the (hopefully faster) fmin function for floating-point functions
       template <class LType, class RType>
-      typename enable_if<!std::is_floating_point<LType>::value || !std::is_floating_point<RType>::value,
+      typename enable_if<!is_packet<LType>::value &&
+                         (!std::is_floating_point<LType>::value
+			  || !std::is_floating_point<RType>::value),
 			 typename promote<LType, RType>::type>::type
       operation(const LType& left, const RType& right) const { return left < right ? left : right; }
 
       template <class LType, class RType>
-      typename enable_if<std::is_floating_point<LType>::value && std::is_floating_point<RType>::value,
+      typename enable_if<!is_packet<LType>::value &&
+                         (std::is_floating_point<LType>::value
+			  && std::is_floating_point<RType>::value),
 			 typename promote<LType, RType>::type>::type
       operation(const LType& left, const RType& right) const { return std::fmin(left,right); }
 #endif

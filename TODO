@@ -9,7 +9,6 @@ Communicate band diagonals statically to optimize Array = band expression (e.g. 
 Implement active scalar precomputation
 Optimize reciprocal to use 1.0 or 1.0f; vectorize
 Optimize storage of data range
-sqrt, min and max are vectorized
 SquareMatrix::is_vectorizable = true
 
 FEATURES
