@@ -84,26 +84,6 @@ namespace adept {
     // Default packet types containing only one value
     // -------------------------------------------------------------------
 
-    // We separate ScalarPacket from Packet: ScalarPacket is used when
-    // all elements of a vector contain the same value. It is needed
-    // because some Packet types containing two or more SSE2/AVX
-    // intrinsic data object, as a way of loop unrolling. In this case
-    // the equivalent ScalarPacket type still needs only one intrinsic
-    // data object.
-    template <typename T>
-    struct ScalarPacket {
-      typedef T intrinsic_type;
-      static const int size = 1;
-      static const std::size_t alignment_bytes = sizeof(T);
-      static const bool is_vectorized = false;
-      explicit ScalarPacket()    : data(0) { }
-      explicit ScalarPacket(T d) : data(d) { }
-      void operator=(T d)        { data=d; }
-      union {
-	T data;
-	T value;
-      };
-    };
     template <typename T>
     struct Packet {
       typedef T intrinsic_type;
@@ -127,26 +107,13 @@ namespace adept {
 
     // -------------------------------------------------------------------
     // Define a specialization, and the basic mathematical operators
-    // supported in hardware, for ScalarPacket and Packet in the case
-    // that each contains a single SSE2/AVX intrinsic data object.
+    // supported in hardware, for Packet in the case that each
+    // contains a single SSE2/AVX intrinsic data object.
     // -------------------------------------------------------------------
 
 #define ADEPT_DEF_PACKET_TYPE(TYPE, INT_TYPE, SET0,	        \
 			      LOAD, LOADU, SET1, STORE, STOREU,	\
 			      ADD, SUB, MUL, DIV, SQRT)		\
-    template <> struct ScalarPacket<TYPE> {			\
-      typedef INT_TYPE intrinsic_type;				\
-      static const int size = sizeof(INT_TYPE) / sizeof(TYPE);	\
-      static const std::size_t alignment_bytes = sizeof(INT_TYPE);	\
-      static const bool is_vectorized = true;			\
-      ScalarPacket()              : data(SET0())  { }		\
-      ScalarPacket(TYPE d)        : data(SET1(d)) { }		\
-      void operator=(TYPE d) { data=SET1(d);}			\
-      union {							\
-	INT_TYPE data;						\
-	TYPE value;						\
-      };							\
-    };								\
     template <> struct Packet<TYPE> {				\
       typedef INT_TYPE intrinsic_type;				\
       static const int size = sizeof(INT_TYPE) / sizeof(TYPE);	\
@@ -172,16 +139,6 @@ namespace adept {
       void operator*=(const Packet<TYPE>& __restrict d)		\
       { data = MUL(data, d.data); }				\
       void operator/=(const Packet<TYPE>& __restrict d)		\
-      { data = DIV(data, d.data); }				\
-      void operator=(const ScalarPacket<TYPE>& __restrict d)	\
-      { data=d.data; }						\
-      void operator+=(const ScalarPacket<TYPE>& __restrict d)	\
-      { data = ADD(data, d.data); }				\
-      void operator-=(const ScalarPacket<TYPE>& __restrict d)	\
-      { data = SUB(data, d.data); }				\
-      void operator*=(const ScalarPacket<TYPE>& __restrict d)	\
-      { data = MUL(data, d.data); }				\
-      void operator/=(const ScalarPacket<TYPE>& __restrict d)	\
       { data = DIV(data, d.data); }				\
       union {							\
 	INT_TYPE data;						\
@@ -216,187 +173,6 @@ namespace adept {
     Packet<TYPE> operator/(const Packet<TYPE>& __restrict x,	\
 			   const Packet<TYPE>& __restrict y)	\
     { return DIV(x.data,y.data); }				\
-    inline								\
-    Packet<TYPE> operator+(const ScalarPacket<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return ADD(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> operator-(const ScalarPacket<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return SUB(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> operator*(const ScalarPacket<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return MUL(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> operator/(const ScalarPacket<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return DIV(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> operator+(const Packet<TYPE>& __restrict x,	\
-			   const ScalarPacket<TYPE>& __restrict y)	\
-    { return ADD(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> operator-(const Packet<TYPE>& __restrict x,	\
-			   const ScalarPacket<TYPE>& __restrict y)	\
-    { return SUB(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> operator*(const Packet<TYPE>& __restrict x,	\
-			   const ScalarPacket<TYPE>& __restrict y)	\
-    { return MUL(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> operator/(const Packet<TYPE>& __restrict x,	\
-			   const ScalarPacket<TYPE>& __restrict y)	\
-    { return DIV(x.data,y.data); }
-
-    // -------------------------------------------------------------------
-    // Define a specialization, and the basic mathematical operators
-    // supported in hardware, for ScalarPacket and Packet in the case
-    // that Packet contains two SSE2/AVX intrinsic data objects.
-    // -------------------------------------------------------------------
-#define ADEPT_DEF_PACKET2_TYPE(TYPE, INT_TYPE, SET0,		\
-                              LOAD, LOADU, SET1, STORE, STOREU,	\
-			       ADD, SUB, MUL, DIV, SQRT)	\
-    template <> struct ScalarPacket<TYPE> {			\
-      typedef INT_TYPE intrinsic_type;				\
-      static const int size = sizeof(INT_TYPE) / sizeof(TYPE);	\
-      static const std::size_t alignment_bytes = sizeof(INT_TYPE);	\
-      static const bool is_vectorized = true;			\
-      ScalarPacket()              : data(SET0())  { }		\
-      ScalarPacket(TYPE d)        : data(SET1(d)) { }		\
-      void operator=(TYPE d) { data=SET1(d);}			\
-      union {							\
-	INT_TYPE data;						\
-	TYPE value;						\
-      };							\
-    };								\
-    template <> struct Packet<TYPE> {				\
-      typedef INT_TYPE intrinsic_type;				\
-      static const int size =2*sizeof(INT_TYPE) / sizeof(TYPE);	\
-      static const int intrinsic_size				\
-        = sizeof(INT_TYPE) / sizeof(TYPE);			\
-      static const std::size_t alignment_bytes = sizeof(INT_TYPE);	\
-      static const bool is_vectorized = true;			\
-      Packet() : data0(SET0()), data1(SET0()) { }		\
-      Packet(const TYPE* d) : data0(LOAD(d)),			\
-			      data1(LOAD(d+intrinsic_size)) {}	\
-      Packet(const TYPE* d, int) : data0(LOADU(d)),		\
-			      data1(LOADU(d+intrinsic_size)) {}	\
-      Packet(TYPE d)        : data0(SET1(d)), data1(SET1(d)) {}	\
-      Packet(INT_TYPE d0,INT_TYPE d1) : data0(d0), data1(d1) {}	\
-      void put(TYPE* __restrict d) const			\
-      { STORE(d, data0); STORE(d+intrinsic_size,data1); }	\
-      void put_unaligned(TYPE* __restrict d) const		\
-      { STOREU(d, data0); STOREU(d+intrinsic_size,data1); }	\
-      void operator=(INT_TYPE d) { data0=d; data1=d; }		\
-      void operator=(const Packet<TYPE>& __restrict d)		\
-      { data0=d.data0; data1=d.data1; }				\
-      void zero() { data0 = SET0(); data1 = SET0(); }		\
-      void operator+=(const Packet<TYPE>& __restrict d)		\
-      { data0 = ADD(data0, d.data0);				\
-	data1 = ADD(data1, d.data1); }				\
-      void operator-=(const Packet<TYPE>& __restrict d)		\
-      { data0 = SUB(data0, d.data0);				\
-	data1 = SUB(data1, d.data1); }				\
-      void operator*=(const Packet<TYPE>& __restrict d)		\
-      { data0 = MUL(data0, d.data0);				\
-	data1 = MUL(data1, d.data1); }				\
-      void operator/=(const Packet<TYPE>& __restrict d)		\
-      { data0 = DIV(data0, d.data0);				\
-	data1 = DIV(data1, d.data1); }				\
-      void operator=(const ScalarPacket<TYPE>& __restrict d)	\
-      { data0=d.data; data1=d.data; }				\
-      void operator+=(const ScalarPacket<TYPE>& __restrict d)	\
-      { data0 = ADD(data0, d.data);				\
-	data1 = ADD(data1, d.data); }				\
-      void operator-=(const ScalarPacket<TYPE>& __restrict d)	\
-      { data0 = SUB(data0, d.data);				\
-	data1 = SUB(data1, d.data); }				\
-      void operator*=(const ScalarPacket<TYPE>& __restrict d)	\
-      { data0 = MUL(data0, d.data);				\
-	data1 = MUL(data1, d.data); }				\
-      void operator/=(const ScalarPacket<TYPE>& __restrict d)	\
-      { data0 = DIV(data0, d.data);				\
-	data1 = DIV(data1, d.data); }				\
-      union {							\
-	INT_TYPE data0;						\
-	TYPE value;						\
-      };							\
-      INT_TYPE data1;						\
-    };								\
-    inline							\
-    std::ostream& operator<<(std::ostream& os,			\
-			     const Packet<TYPE>& x) {		\
-      TYPE d[Packet<TYPE>::size];				\
-      STOREU(d, x.data0);					\
-      STOREU(d+Packet<TYPE>::intrinsic_size, x.data0);		\
-      os << "(";						\
-      for (int i = 0; i < Packet<TYPE>::size; ++i) {		\
-	os << " " << d[i];					\
-      }								\
-      os << ")";						\
-      return os;						\
-    }								\
-    inline							\
-    Packet<TYPE> operator+(const Packet<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(ADD(x.data0,y.data0),			\
-			  ADD(x.data1,y.data1)); }		\
-    inline							\
-    Packet<TYPE> operator-(const Packet<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(SUB(x.data0,y.data0),			\
-			  SUB(x.data1,y.data1)); }		\
-    inline							\
-    Packet<TYPE> operator*(const Packet<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(MUL(x.data0,y.data0),			\
-			  MUL(x.data1,y.data1)); }		\
-    inline							\
-    Packet<TYPE> operator/(const Packet<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(DIV(x.data0,y.data0),			\
-			  DIV(x.data1,y.data1)); }		\
-    inline							\
-    Packet<TYPE> operator+(const ScalarPacket<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(ADD(x.data,y.data0),			\
-			  ADD(x.data,y.data1)); }		\
-    inline							\
-    Packet<TYPE> operator-(const ScalarPacket<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(SUB(x.data,y.data0),			\
-			  SUB(x.data,y.data1)); }		\
-    inline							\
-    Packet<TYPE> operator*(const ScalarPacket<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(MUL(x.data,y.data0),			\
-			  MUL(x.data,y.data1)); }		\
-    inline							\
-    Packet<TYPE> operator/(const ScalarPacket<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(DIV(x.data,y.data0),			\
-			  DIV(x.data,y.data1)); }		\
-    inline							\
-    Packet<TYPE> operator+(const Packet<TYPE>& __restrict x,	\
-			   const ScalarPacket<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(ADD(x.data0,y.data),			\
-			  ADD(x.data1,y.data)); }		\
-    inline							\
-    Packet<TYPE> operator-(const Packet<TYPE>& __restrict x,	\
-			   const ScalarPacket<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(SUB(x.data0,y.data),			\
-			  SUB(x.data1,y.data)); }		\
-    inline							\
-    Packet<TYPE> operator*(const Packet<TYPE>& __restrict x,	\
-			   const ScalarPacket<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(MUL(x.data0,y.data),			\
-			  MUL(x.data1,y.data)); }		\
-    inline							\
-    Packet<TYPE> operator/(const Packet<TYPE>& __restrict x,	\
-			   const ScalarPacket<TYPE>& __restrict y)	\
-    { return Packet<TYPE>(DIV(x.data0,y.data),			\
-			  DIV(x.data1,y.data)); }		\
 
   /*
   inline						\
@@ -407,7 +183,7 @@ namespace adept {
     //#ifdef ADEPT_BLEEDING_EDGE
 
     // -------------------------------------------------------------------
-    // Define single-precision ScalarPacket and Packet
+    // Define single-precision Packet
     // -------------------------------------------------------------------
 #ifdef __AVX__
 
@@ -425,14 +201,8 @@ namespace adept {
 			  _mm256_store_ps, _mm256_storeu_ps,
 			  _mm256_add_ps, _mm256_sub_ps,
 			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps);
-#elif ADEPT_FLOAT_PACKET_SIZE == 16
-    ADEPT_DEF_PACKET2_TYPE(float, __m256, _mm256_setzero_ps,
-			  _mm256_load_ps, _mm256_loadu_ps, _mm256_set1_ps,
-			  _mm256_store_ps, _mm256_storeu_ps,
-			  _mm256_add_ps, _mm256_sub_ps,
-			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps);
 #elif ADEPT_FLOAT_PACKET_SIZE != 1
-#error With AVX, ADEPT_FLOAT_PACKET_SIZE must be 1, 4, 8 or 16
+#error With AVX, ADEPT_FLOAT_PACKET_SIZE must be 1, 4 or 8
 #endif
 
 #elif __SSE2__
@@ -443,14 +213,8 @@ namespace adept {
 			  _mm_store_ps, _mm_storeu_ps,
 			  _mm_add_ps, _mm_sub_ps,
 			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps); 
-#elif ADEPT_FLOAT_PACKET_SIZE == 8
-    ADEPT_DEF_PACKET2_TYPE(float, __m128, _mm_setzero_ps, 
-			  _mm_load_ps, _mm_loadu_ps, _mm_set1_ps,
-			  _mm_store_ps, _mm_storeu_ps,
-			  _mm_add_ps, _mm_sub_ps,
-			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps); 
 #elif ADEPT_FLOAT_PACKET_SIZE != 1
-#error With SSE2, ADEPT_FLOAT_PACKET_SIZE must be 1, 4 or 8
+#error With SSE2, ADEPT_FLOAT_PACKET_SIZE must be 1 or 4
 #endif
 
 #elif ADEPT_FLOAT_PACKET_SIZE > 1
@@ -460,7 +224,7 @@ namespace adept {
 #endif
 
     // -------------------------------------------------------------------
-    // Define double-precision ScalarPacket and Packet
+    // Define double-precision Packet
     // -------------------------------------------------------------------
 #ifdef __AVX__
 
@@ -477,14 +241,8 @@ namespace adept {
 			  _mm256_store_pd, _mm256_storeu_pd,
 			  _mm256_add_pd, _mm256_sub_pd,
 			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd);
-#elif ADEPT_DOUBLE_PACKET_SIZE == 8
-    ADEPT_DEF_PACKET2_TYPE(double, __m256d, _mm256_setzero_pd, 
-			  _mm256_load_pd, _mm256_loadu_pd, _mm256_set1_pd,
-			  _mm256_store_pd, _mm256_storeu_pd,
-			  _mm256_add_pd, _mm256_sub_pd,
-			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd);
 #elif ADEPT_DOUBLE_PACKET_SIZE != 1
-#error With AVX, ADEPT_DOUBLE_PACKET_SIZE must be 1, 2, 4 or 8
+#error With AVX, ADEPT_DOUBLE_PACKET_SIZE must be 1, 2 or 4
 #endif
 
 #elif defined(__SSE2__)
@@ -495,14 +253,8 @@ namespace adept {
 			  _mm_store_pd, _mm_storeu_pd,
 			  _mm_add_pd, _mm_sub_pd,
 			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd);
-#elif ADEPT_DOUBLE_PACKET_SIZE == 4
-    ADEPT_DEF_PACKET2_TYPE(double, __m128d, _mm_setzero_pd, 
-			  _mm_load_pd, _mm_loadu_pd, _mm_set1_pd,
-			  _mm_store_pd, _mm_storeu_pd,
-			  _mm_add_pd, _mm_sub_pd,
-			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd);
 #elif ADEPT_DOUBLE_PACKET_SIZE != 1
-#error With SSE2, ADEPT_DOUBLE_PACKET_SIZE must be 1, 2 or 4
+#error With SSE2, ADEPT_DOUBLE_PACKET_SIZE must be 1 or 2
 #endif
 
 #elif ADEPT_DOUBLE_PACKET_SIZE > 1
@@ -512,7 +264,6 @@ namespace adept {
 #endif
     
 #undef ADEPT_DEF_PACKET_TYPE
-#undef ADEPT_DEF_PACKET2_TYPE
 
 
     // -------------------------------------------------------------------

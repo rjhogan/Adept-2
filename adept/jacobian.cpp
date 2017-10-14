@@ -98,7 +98,7 @@ namespace adept {
       for (uIndex iop = statement_[ist-1].end_plus_one;
 	   iop < statement.end_plus_one; iop++) {
 	Packet<Real> g(gradient_multipass_b+index_[iop]*MULTIPASS_SIZE);
-	ScalarPacket<Real> m(multiplier_[iop]);
+	Packet<Real> m(multiplier_[iop]);
 	a += m * g;
       }
       // Copy the results
