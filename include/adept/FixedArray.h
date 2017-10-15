@@ -265,7 +265,9 @@ namespace adept {
     // Assignment to an array expression of the same rank
     template <typename EType, class E>
     typename enable_if<E::rank == rank_, FixedArray&>::type
+    inline
     operator=(const Expression<EType,E>& rhs) {
+#ifndef ADEPT_NO_DIMENSION_CHECKING
       ExpressionSize<rank_> dims;
       if (!rhs.get_dimensions(dims)) {
 	std::string str = "FixedArray size mismatch in "
@@ -277,7 +279,7 @@ namespace adept {
 	str += dims.str() + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
-
+#endif
       // Select active/passive version by delegating to a protected
       // function
       assign_expression_<rank_, IsActive, E::is_active>(rhs);
@@ -441,6 +443,7 @@ namespace adept {
     template <class B>
     typename enable_if<B::rank == rank_, Where<FixedArray,B> >::type
     where(const Expression<bool,B>& bool_expr) {
+#ifndef ADEPT_NO_DIMENSION_CHECKING
       ExpressionSize<rank_> dims;
       if (!bool_expr.get_dimensions(dims)) {
 	std::string str = "FixedArray size mismatch in "
@@ -451,6 +454,7 @@ namespace adept {
 	throw size_mismatch("Boolean expression of different size"
 			    ADEPT_EXCEPTION_LOCATION);
       }
+#endif
       return Where<FixedArray,B>(*this, bool_expr.cast());
     }
     
@@ -470,6 +474,7 @@ namespace adept {
     template <class B, typename T, class C>
     void assign_conditional(const Expression<bool,B>& bool_expr,
 			    const Expression<T,C>& rhs) {
+#ifndef ADEPT_NO_DIMENSION_CHECKING
       // Assume size of bool_expr already checked
       ExpressionSize<rank_> dims;
       if (!rhs.get_dimensions(dims)) {
@@ -481,7 +486,7 @@ namespace adept {
 	throw size_mismatch("Right-hand-side of \"where\" construct of incompatible size"
 			    ADEPT_EXCEPTION_LOCATION);
       }
-
+#endif
       // Select active/passive version by delegating to a
       // protected function
       assign_conditional_<IsActive>(bool_expr.cast(), rhs.cast());

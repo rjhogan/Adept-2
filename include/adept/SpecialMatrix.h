@@ -1086,6 +1086,7 @@ namespace adept {
     template <typename EType, class E>
     typename enable_if<E::rank == 2, SpecialMatrix&>::type
     operator=(const Expression<EType,E>& rhs) {
+#ifndef ADEPT_NO_DIMENSION_CHECKING
       ExpressionSize<2> dims;
       if (!rhs.get_dimensions(dims)) {
 	std::string str = "Array size mismatch in "
@@ -1100,7 +1101,17 @@ namespace adept {
 	str += dims.str() + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
-
+#else
+      if (empty()) {
+	ExpressionSize<2> dims;
+	if (!rhs.get_dimensions(dims)) {
+	  std::string str = "Array size mismatch in "
+	    + rhs.expression_string() + ".";
+	  throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
+	}
+	resize(dims[0], dims[1]);
+      }
+#endif
       if (!empty()) {
 #ifndef ADEPT_NO_ALIAS_CHECKING
 	// Check for aliasing first

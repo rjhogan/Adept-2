@@ -33,6 +33,7 @@ Should reduce functions take dimensions as template arguments?
 reduce operations have a template version with the reduce dimension provided statically
 differentiate complex number operations
 matmul and solve on complex numbers
+complex functions arg, abs, real, imag etc
 
 CHECK
 Check Square matmul
@@ -42,6 +43,9 @@ Reduce RMS difference in Toon case
 
 CLEAN
 References to OpenMP for array operations - remove?
+
+DOCUMENTATION
+Document diag_vector non-member function (in reduce.h) and test in test_arrays
 
 OLDER IDEAS
 Clarify vector orientation when in matrix multiplication

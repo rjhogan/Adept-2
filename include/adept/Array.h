@@ -694,6 +694,7 @@ namespace adept {
     template <class B>
     typename enable_if<B::rank == Rank, Where<Array,B> >::type
     where(const Expression<bool,B>& bool_expr) {
+#ifndef ADEPT_NO_DIMENSION_CHECKING
       ExpressionSize<Rank> dims;
       if (!bool_expr.get_dimensions(dims)) {
 	std::string str = "Array size mismatch in "
@@ -704,6 +705,7 @@ namespace adept {
 	throw size_mismatch("Boolean expression of different size"
 			    ADEPT_EXCEPTION_LOCATION);
       }
+#endif
       return Where<Array,B>(*this, bool_expr.cast());
     }
     
@@ -724,6 +726,7 @@ namespace adept {
     void assign_conditional(const Expression<bool,B>& bool_expr,
 			    const Expression<T,C>& rhs) {
       // Assume size of bool_expr already checked
+#ifndef ADEPT_NO_DIMENSION_CHECKING
       ExpressionSize<Rank> dims;
       if (!rhs.get_dimensions(dims)) {
 	std::string str = "Array size mismatch in "
@@ -734,7 +737,7 @@ namespace adept {
 	throw size_mismatch("Right-hand-side of \"where\" construct of incompatible size"
 			    ADEPT_EXCEPTION_LOCATION);
       }
-
+#endif
       // Check for aliasing first
       Type const * ptr_begin;
       Type const * ptr_end;
