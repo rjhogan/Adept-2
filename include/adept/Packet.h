@@ -116,7 +116,7 @@ namespace adept {
 #define ADEPT_DEF_PACKET_TYPE(TYPE, INT_TYPE, SET0,	        \
 			      LOAD, LOADU, SET1, STORE, STOREU,	\
 			      ADD, SUB, MUL, DIV, SQRT,		\
-			      MIN, MAX, HSUM)			\
+			      MIN, MAX, HSUM, HMIN, HMAX)	\
     template <> struct Packet<TYPE> {				\
       typedef INT_TYPE intrinsic_type;				\
       static const int size = sizeof(INT_TYPE) / sizeof(TYPE);	\
@@ -192,6 +192,12 @@ namespace adept {
     TYPE hsum(const Packet<TYPE>& __restrict x)			\
     { return HSUM(x.data); }					\
     inline							\
+    TYPE hmin(const Packet<TYPE>& __restrict x)			\
+    { return HMIN(x.data); }					\
+    inline							\
+    TYPE hmax(const Packet<TYPE>& __restrict x)			\
+    { return HMAX(x.data); }					\
+    inline							\
     Packet<TYPE> operator-(const Packet<TYPE>& __restrict x)	\
     { return Packet<TYPE>() - x; }				\
     inline							\
@@ -200,46 +206,90 @@ namespace adept {
 
 
     // -------------------------------------------------------------------
-    // Define horizontal sum functions (found on Stack Overflow and
-    // Intel Forum...)
+    // Define horizontal sum, min and max functions (found on Stack
+    // Overflow and Intel Forum...)
     // -------------------------------------------------------------------
 #ifdef __SSE2__
-    inline
-    float mm_hsum_ps(__m128 v) {
+    inline float mm_hsum_ps(__m128 v) {
       __m128 shuf   = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 3, 0, 1));
       __m128 sums   = _mm_add_ps(v, shuf);
       shuf          = _mm_movehl_ps(shuf, sums);
-      sums          = _mm_add_ss(sums, shuf);
-      return    _mm_cvtss_f32(sums);    
+      return    _mm_cvtss_f32(_mm_add_ss(sums, shuf));    
+    }
+    inline float mm_hmin_ps(__m128 v) {
+      __m128 shuf   = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 3, 0, 1));
+      __m128 sums   = _mm_min_ps(v, shuf);
+      shuf          = _mm_movehl_ps(shuf, sums);
+      return    _mm_cvtss_f32(_mm_min_ss(sums, shuf));    
+    }
+    inline float mm_hmax_ps(__m128 v) {
+      __m128 shuf   = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 3, 0, 1));
+      __m128 sums   = _mm_max_ps(v, shuf);
+      shuf          = _mm_movehl_ps(shuf, sums);
+      return    _mm_cvtss_f32(_mm_max_ss(sums, shuf));    
     }
 
-    inline
-    double mm_hsum_pd(__m128d vd) {
-      __m128 undef  = _mm_undefined_ps();
-      __m128 shuftmp= _mm_movehl_ps(undef, _mm_castpd_ps(vd));
+    inline double mm_hsum_pd(__m128d vd) {
+      __m128 shuftmp= _mm_movehl_ps(_mm_undefined_ps(),
+				    _mm_castpd_ps(vd));
       __m128d shuf  = _mm_castps_pd(shuftmp);
       return  _mm_cvtsd_f64(_mm_add_sd(vd, shuf));
+    }
+    inline double mm_hmin_pd(__m128d vd) {
+      __m128 shuftmp= _mm_movehl_ps(_mm_undefined_ps(),
+				    _mm_castpd_ps(vd));
+      __m128d shuf  = _mm_castps_pd(shuftmp);
+      return  _mm_cvtsd_f64(_mm_min_sd(vd, shuf));
+    }
+    inline double mm_hmax_pd(__m128d vd) {
+      __m128 shuftmp= _mm_movehl_ps(_mm_undefined_ps(),
+				    _mm_castpd_ps(vd));
+      __m128d shuf  = _mm_castps_pd(shuftmp);
+      return  _mm_cvtsd_f64(_mm_max_sd(vd, shuf));
     }
 #endif
 
 #ifdef __AVX__
-    inline
-    float mm256_hsum_ps(__m256 v) {
+    inline float mm256_hsum_ps(__m256 v) {
       __m128 vlow  = _mm256_castps256_ps128(v);
       __m128 vhigh = _mm256_extractf128_ps(v, 1);
       vlow  = _mm_add_ps(vlow, vhigh);
       __m128 shuf = _mm_movehdup_ps(vlow);
       __m128 sums = _mm_add_ps(vlow, shuf);
       shuf        = _mm_movehl_ps(shuf, sums);
-      sums        = _mm_add_ss(sums, shuf);
-      return        _mm_cvtss_f32(sums);
+      return        _mm_cvtss_f32(_mm_add_ss(sums, shuf));
+    }
+    inline float mm256_hmin_ps(__m256 v) {
+      __m128 vlow  = _mm256_castps256_ps128(v);
+      __m128 vhigh = _mm256_extractf128_ps(v, 1);
+      vlow  = _mm_min_ps(vlow, vhigh);
+      __m128 shuf = _mm_movehdup_ps(vlow);
+      __m128 sums = _mm_min_ps(vlow, shuf);
+      shuf        = _mm_movehl_ps(shuf, sums);
+      return        _mm_cvtss_f32(_mm_min_ss(sums, shuf));
+    }
+    inline float mm256_hmax_ps(__m256 v) {
+      __m128 vlow  = _mm256_castps256_ps128(v);
+      __m128 vhigh = _mm256_extractf128_ps(v, 1);
+      vlow  = _mm_max_ps(vlow, vhigh);
+      __m128 shuf = _mm_movehdup_ps(vlow);
+      __m128 sums = _mm_max_ps(vlow, shuf);
+      shuf        = _mm_movehl_ps(shuf, sums);
+      return        _mm_cvtss_f32(_mm_max_ss(sums, shuf));
     }
 
-    inline
-    double mm256_hsum_pd(__m256d vd) {
-      __m256d hsum = _mm256_add_pd(vd, _mm256_permute2f128_pd(vd, vd, 0x1));
-      return _mm_cvtsd_f64(_mm_hadd_pd(_mm256_castpd256_pd128(hsum),
-				       _mm256_castpd256_pd128(hsum) ) );
+    inline double mm256_hsum_pd(__m256d vd) {
+      __m256d h = _mm256_add_pd(vd, _mm256_permute2f128_pd(vd, vd, 0x1));
+      return _mm_cvtsd_f64(_mm_hadd_pd(_mm256_castpd256_pd128(h),
+				       _mm256_castpd256_pd128(h) ) );
+    }
+    inline double mm256_hmin_pd(__m256d vd) {
+      __m256d h = _mm256_min_pd(vd, _mm256_permute2f128_pd(vd, vd, 0x1));
+      return mm_hmin_pd(_mm256_castpd256_pd128(h));
+    }
+    inline double mm256_hmax_pd(__m256d vd) {
+      __m256d h = _mm256_max_pd(vd, _mm256_permute2f128_pd(vd, vd, 0x1));
+      return mm_hmax_pd(_mm256_castpd256_pd128(h));
     }
 
 #endif
@@ -257,7 +307,7 @@ namespace adept {
 			  _mm_add_ps, _mm_sub_ps,
 			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps,
 			  _mm_min_ps, _mm_max_ps,
-			  mm_hsum_ps); 
+			  mm_hsum_ps, mm_hmin_ps, mm_hmax_ps); 
 #elif ADEPT_FLOAT_PACKET_SIZE == 8
     // Use AVX
     ADEPT_DEF_PACKET_TYPE(float, __m256, _mm256_setzero_ps,
@@ -266,7 +316,7 @@ namespace adept {
 			  _mm256_add_ps, _mm256_sub_ps,
 			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps,
 			  _mm256_min_ps, _mm256_max_ps,
-			  mm256_hsum_ps);
+			  mm256_hsum_ps, mm256_hmin_ps, mm256_hmax_ps);
 #elif ADEPT_FLOAT_PACKET_SIZE != 1
 #error With AVX, ADEPT_FLOAT_PACKET_SIZE must be 1, 4 or 8
 #endif
@@ -280,7 +330,7 @@ namespace adept {
 			  _mm_add_ps, _mm_sub_ps,
 			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps,
 			  _mm_min_ps, _mm_max_ps,
-			  mm_hsum_ps); 
+			  mm_hsum_ps, mm_hmin_ps, mm_hmax_ps); 
 #elif ADEPT_FLOAT_PACKET_SIZE != 1
 #error With SSE2, ADEPT_FLOAT_PACKET_SIZE must be 1 or 4
 #endif
@@ -304,7 +354,7 @@ namespace adept {
 			  _mm_add_pd, _mm_sub_pd,
 			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd,
 			  _mm_min_pd, _mm_max_pd,
-			  mm_hsum_pd);
+			  mm_hsum_pd, mm_hmin_pd, mm_hmax_pd);
 #elif ADEPT_DOUBLE_PACKET_SIZE == 4
     ADEPT_DEF_PACKET_TYPE(double, __m256d, _mm256_setzero_pd, 
 			  _mm256_load_pd, _mm256_loadu_pd, _mm256_set1_pd,
@@ -312,7 +362,7 @@ namespace adept {
 			  _mm256_add_pd, _mm256_sub_pd,
 			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd,
 			  _mm256_min_pd, _mm256_max_pd,
-			  mm256_hsum_pd);
+			  mm256_hsum_pd, mm256_hmin_pd, mm256_hmax_pd);
 #elif ADEPT_DOUBLE_PACKET_SIZE != 1
 #error With AVX, ADEPT_DOUBLE_PACKET_SIZE must be 1, 2 or 4
 #endif
@@ -326,7 +376,7 @@ namespace adept {
 			  _mm_add_pd, _mm_sub_pd,
 			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd,
 			  _mm_min_pd, _mm_max_pd,
-			  mm_hsum_pd);
+			  mm_hsum_pd, mm_hmin_pd, mm_hmax_pd);
 #elif ADEPT_DOUBLE_PACKET_SIZE != 1
 #error With SSE2, ADEPT_DOUBLE_PACKET_SIZE must be 1 or 2
 #endif
