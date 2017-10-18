@@ -430,7 +430,7 @@ namespace adept {
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return a_.value_at_location_<MyArrayNum+2>(loc);
+	return a_.template value_at_location_<MyArrayNum+2>(loc);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
@@ -439,7 +439,7 @@ namespace adept {
 	ADEPT_STATIC_ASSERT(ArrayType::n_scratch == 0,
 			    ASSUMING_ARRAY_N_SCRATCH_IS_ZERO);
 	return (scratch[MyScratchNum] 
-		= a_.value_at_location_<MyArrayNum+2>(loc));
+		= a_.template value_at_location_<MyArrayNum+2>(loc));
       }
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
       Type value_stored_(const ExpressionSize<NArrays>& loc,

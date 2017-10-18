@@ -418,8 +418,8 @@ namespace adept {
 		 iop < statement.end_plus_one; iop++) {
 	      // Try to minimize pointer dereferencing by making local
 	      // copies
-	      register Real multiplier = multiplier_[iop];
-	      register Real* __restrict gradient_multipass 
+	      Real multiplier = multiplier_[iop];
+	      Real* __restrict gradient_multipass 
 		= &(gradient_multipass_b[index_[iop]][0]);
 #if MULTIPASS_SIZE > MULTIPASS_SIZE_ZERO_CHECK
 	      // For large blocks, loop over only the indices
@@ -530,8 +530,8 @@ namespace adept {
 	       iop < statement.end_plus_one; iop++) {
 	    // Try to minimize pointer dereferencing by making local
 	    // copies
-	    register Real multiplier = multiplier_[iop];
-	    register Real* __restrict gradient_multipass 
+	    Real multiplier = multiplier_[iop];
+	    Real* __restrict gradient_multipass 
 	      = &(gradient_multipass_b[index_[iop]][0]);
 #if MULTIPASS_SIZE > MULTIPASS_SIZE_ZERO_CHECK
 	    // For large blocks, loop over only the indices
@@ -589,8 +589,8 @@ namespace adept {
 	if (n_non_zero) {
 	  for (uIndex iop = statement_[ist-1].end_plus_one;
 	       iop < statement.end_plus_one; iop++) {
-	    register Real multiplier = multiplier_[iop];
-	    register Real* __restrict gradient_multipass 
+	    Real multiplier = multiplier_[iop];
+	    Real* __restrict gradient_multipass 
 	      = &(gradient_multipass_b[index_[iop]][0]);
 	    //	    if (index_[iop] > max_gradient_-1
 	    //		|| index_[iop] < 0) {

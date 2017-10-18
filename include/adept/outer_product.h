@@ -84,13 +84,13 @@ namespace adept {
       // Advance the row only, so the left vector is not advanced
       template <int MyArrayNum, int NArrays>
       void advance_location_(ExpressionSize<NArrays>& loc) const {
-	right.advance_location_<MyArrayNum+LArray::n_arrays>(loc);
+	right.template advance_location_<MyArrayNum+LArray::n_arrays>(loc);
       }
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return left .value_at_location_<MyArrayNum>(loc)
-	  * right.value_at_location_<MyArrayNum+LArray::n_arrays>(loc);
+	return left.template value_at_location_<MyArrayNum>(loc)
+  	    * right.template value_at_location_<MyArrayNum+LArray::n_arrays>(loc);
       }
 
       // This does not work because the array index is always
@@ -102,16 +102,16 @@ namespace adept {
 	// The LHS of the following multiplication returns a packet
 	// containing repeated values of the left vector at one
 	// location
-	return Packet<Type>(left.value_at_location_<MyArrayNum>(loc)) // <- fix!
-	  * right.packet_at_location_<MyArrayNum+LArray::n_arrays>(loc);
+	return Packet<Type>(left.template value_at_location_<MyArrayNum>(loc)) // <- fix!
+	  * right.template packet_at_location_<MyArrayNum+LArray::n_arrays>(loc);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
       Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				    ScratchVector<NScratch>& scratch) const {
 	return scratch[MyScratchNum] = 
-	  left.value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch)
-	  * right.value_at_location_store_<MyArrayNum+LArray::n_arrays,
+	  left.template value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch)
+	  * right.template value_at_location_store_<MyArrayNum+LArray::n_arrays,
 					   MyScratchNum+LArray::n_scratch+n_local_scratch>(loc, scratch);
       }
 
@@ -124,8 +124,8 @@ namespace adept {
       template <int MyArrayNum, int NArrays>
       void set_location_(const ExpressionSize<2>& i, 
 			 ExpressionSize<NArrays>& index) const {
-	left. set_location_<MyArrayNum>(ExpressionSize<1>(i[0]), index);
-	right.set_location_<MyArrayNum+LArray::n_arrays>(ExpressionSize<1>(i[1]), index);
+	left.template  set_location_<MyArrayNum>(ExpressionSize<1>(i[0]), index);
+	right.template set_location_<MyArrayNum+LArray::n_arrays>(ExpressionSize<1>(i[1]), index);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>

@@ -44,35 +44,35 @@ namespace adept {
   public:
     typedef Type type;
 
-    static const int  rank = A::rank_;
+    static const int  rank; // = A::rank_;
 
     // Number of active variables in the expression (where each array
     // counts as 1), used to work out how much space must be reserved
     // on the operation stack
-    static const int  n_active = A::n_active_;
+    static const int  n_active; // = A::n_active_;
 
     // Number of scratch floating-point variables needed in the
     // expression, for example to store the result of a calculation
     // when it is needed again to compult the equivalent differential
     // statement
-    static const int  n_scratch = A::n_scratch_;
+    static const int  n_scratch; // = A::n_scratch_;
 
     // Number of arrays in the expression, needed as each array uses a
     // scratch Index variable to store its current memory location,
     // otherwise when looping over all the elements in a
     // multidimensional expression this is expensive to recompute
-    static const int  n_arrays = A::n_arrays_;
-    static const bool is_array  = (rank > 0);
-    static const bool is_active = A::is_active_;
-    static const bool is_multidimensional = (rank > 1);
-    static const bool is_lvalue = A::is_lvalue_;
+    static const int  n_arrays; // = A::n_arrays_;
+    static const bool is_array; //  = (rank > 0);
+    static const bool is_active; // = A::is_active_;
+    static const bool is_multidimensional; // = (rank > 1);
+    static const bool is_lvalue; // = A::is_lvalue_;
 
     // An expression is currently vectorizable only if it is of
     // floating point type, all arrays have the same type, and if the
     // only mathematical operators and functions can be treated by
     // hardware vector operations (+-*/sqrt)
-    static const bool is_vectorizable
-      = A::is_vectorizable_ && Packet<Type>::is_vectorized;
+    static const bool is_vectorizable;
+    //      = A::is_vectorizable_ && Packet<Type>::is_vectorized;
 
     // Fall-back position is that an expression is not vectorizable:
     // only those that are need to define is_vectorizable_.
@@ -345,6 +345,32 @@ namespace adept {
     //    Expression(const Expression&) { }
 
   }; // End struct Expression
+
+  // Non-GNU compilers have problems with static members of Expression
+  // depending on its template argument when used in combination with
+  // the Curiously Recurring Template Pattern. This can be solved by
+  // putting the definition of each immediately after the Expression
+  // class definition.
+  template <typename Type, class A>
+  const int Expression<Type,A>::rank = A::rank_;
+  template <typename Type, class A>
+  const int Expression<Type,A>::n_active = A::n_active_;
+  template <typename Type, class A>
+  const int Expression<Type,A>::n_scratch = A::n_scratch_;
+  template <typename Type, class A>
+  const int Expression<Type,A>::n_arrays = A::n_arrays_;
+  template <typename Type, class A>
+  const bool Expression<Type,A>::is_array = (A::rank_ > 0);
+  template <typename Type, class A>
+  const bool Expression<Type,A>::is_multidimensional = (A::rank_ > 1);
+  template <typename Type, class A>
+  const bool Expression<Type,A>::is_active = A::is_active_;
+  template <typename Type, class A>
+  const bool Expression<Type,A>::is_lvalue = A::is_lvalue_;
+  template <typename Type, class A>
+  const bool Expression<Type,A>::is_vectorizable
+    = A::is_vectorizable_ && Packet<Type>::is_vectorized;
+
 
 
   // ---------------------------------------------------------------------

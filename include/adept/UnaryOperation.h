@@ -131,7 +131,7 @@ namespace adept {
 			  const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch) const {
 	arg.template calc_gradient_<MyArrayNum, MyScratchNum+1>(stack, loc, scratch,
-		derivative(arg.value_stored_<MyArrayNum,MyScratchNum+1>(loc, scratch),
+		derivative(arg.template value_stored_<MyArrayNum,MyScratchNum+1>(loc, scratch),
 			   scratch[MyScratchNum]));
       }
 
@@ -448,14 +448,14 @@ namespace adept {
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return operation(arg.value_at_location_<MyArrayNum>(loc));
+	return operation(arg.template value_at_location_<MyArrayNum>(loc));
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
       Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				    ScratchVector<NScratch>& scratch) const {
 	return scratch[MyScratchNum] 
-	  = operation(arg.value_at_location_store_<MyArrayNum,MyScratchNum+1>(loc, scratch));
+	  = operation(arg.template value_at_location_store_<MyArrayNum,MyScratchNum+1>(loc, scratch));
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>

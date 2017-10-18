@@ -100,7 +100,12 @@ namespace adept {
   // -------------------------------------------------------------------
 
   // The array_exception type
-  class array_exception : public adept::exception { };
+  class array_exception : public adept::exception { 
+  public:
+    array_exception(const std::string& message
+		    = "A misuse of arrays occurred")
+    { message_ = message; }
+  };
 
   class size_mismatch : public array_exception {
   public:

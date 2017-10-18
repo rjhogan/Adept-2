@@ -1,4 +1,4 @@
-version 2.0.1 (October 2017)
+version 2.0.1 (18 October 2017)
 	- Basic passive complex arrays work, tested with
 	test/test_complex_arrays
 	- Added ADEPT_NO_DIMENSION_CHECKING option
@@ -8,6 +8,7 @@ version 2.0.1 (October 2017)
 	a single packed vector. This simplifies maintenance of Packet.h,
 	and the pair option offered no performance advantage anyway.
 	- Vectorized reduce operations sum, product etc.
+	- Many fixes to enable compilation with clang++
 
 version 2.0 (September 2017)
 	- Finalized version for release

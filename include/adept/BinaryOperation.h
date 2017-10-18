@@ -443,7 +443,7 @@ namespace adept {
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
 	return scratch[MyScratchNum] = Op::operation_store(left.value(),
-	       right.value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch),
+	       right.template value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch),
 	       scratch[MyScratchNum+1]);
       }
 
@@ -460,14 +460,14 @@ namespace adept {
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
 	return operation(left.value(),
-	     right.value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch));
+	     right.template value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch));
       }
 
       template <int StoreResult, int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
       typename enable_if<StoreResult == 0, Type>::type
       my_value_stored_(const ExpressionSize<NArrays>& loc,
 		       const ScratchVector<NScratch>& scratch) const {
-	return operation(left.value(),right.value_at_location_<MyArrayNum>(loc));
+	return operation(left.value(),right.template value_at_location_<MyArrayNum>(loc));
       }
     
 
@@ -608,7 +608,7 @@ namespace adept {
 			 Packet<Type>(right))
 		  << "\n";
 	*/
-	return operation(left.packet_at_location_<MyArrayNum>(loc),
+	return operation(left.template packet_at_location_<MyArrayNum>(loc),
 			 right);
       }
 
@@ -646,7 +646,7 @@ namespace adept {
       typename enable_if<StoreResult == 0, Type>::type
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
-	return operation(left.value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch), 
+	return operation(left.template value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch), 
 			 right.value());
       }
 
@@ -654,7 +654,7 @@ namespace adept {
       typename enable_if<StoreResult == 0, Type>::type
       my_value_stored_(const ExpressionSize<NArrays>& loc,
 		       const ScratchVector<NScratch>& scratch) const {
-	return operation(left.value_at_location_<MyArrayNum>(loc), right.value());
+	return operation(left.template value_at_location_<MyArrayNum>(loc), right.value());
       }
     
 
