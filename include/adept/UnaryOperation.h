@@ -37,7 +37,8 @@ namespace adept {
       static const int  n_scratch_ = 1 + R::n_scratch;
       static const int  n_arrays_ = R::n_arrays;
       // Will need to modify this for sqrt:
-      static const bool is_vectorizable_ = Op<Type>::is_vectorized;
+      static const bool is_vectorizable_
+	= Op<Type>::is_vectorized && R::is_vectorizable;
 
       using Op<Type>::operation;
       using Op<Type>::operation_string;

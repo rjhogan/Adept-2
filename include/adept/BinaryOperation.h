@@ -378,11 +378,11 @@ namespace adept {
       std::string expression_string_() const {
 	std::stringstream s;
 	if (is_operator) {
-	  s << "(" << left.value << operation_string()
+	  s << "(" << left.value() << operation_string()
 	    << right.expression_string() << ")";
 	}
 	else {
-	  s << operation_string() << "(" << left.value << ","
+	  s << operation_string() << "(" << left.value() << ","
 	    << static_cast<const R*>(&right)->expression_string() << ")";
 	}
 	return s.str();
@@ -398,7 +398,7 @@ namespace adept {
       int alignment_offset_() const { return right.template alignment_offset_<n>(); }
 
       Type value_with_len_(const Index& j, const Index& len) const {
-	return operation(left.value, right.value_with_len(j,len));
+	return operation(left.value(), right.value_with_len(j,len));
       }
 
       template <int MyArrayNum, int NArrays>
@@ -408,7 +408,7 @@ namespace adept {
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return operation(left.value, right.template value_at_location_<MyArrayNum>(loc));
+	return operation(left.value(), right.template value_at_location_<MyArrayNum>(loc));
       }
       template <int MyArrayNum, int NArrays>
       Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
@@ -434,7 +434,7 @@ namespace adept {
       typename enable_if<StoreResult == 1, Type>::type
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
-	return scratch[MyScratchNum] = operation(left.value,
+	return scratch[MyScratchNum] = operation(left.value(),
 		      right.template value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch));
       }
       template <int StoreResult, int MyArrayNum, int MyScratchNum, 
@@ -442,7 +442,7 @@ namespace adept {
       typename enable_if<StoreResult == 2, Type>::type
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
-	return scratch[MyScratchNum] = Op::operation_store(left.value,
+	return scratch[MyScratchNum] = Op::operation_store(left.value(),
 	       right.value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch),
 	       scratch[MyScratchNum+1]);
       }
@@ -459,7 +459,7 @@ namespace adept {
       typename enable_if<StoreResult == 0, Type>::type
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
-	return operation(left.value,
+	return operation(left.value(),
 	     right.value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch));
       }
 
@@ -467,7 +467,7 @@ namespace adept {
       typename enable_if<StoreResult == 0, Type>::type
       my_value_stored_(const ExpressionSize<NArrays>& loc,
 		       const ScratchVector<NScratch>& scratch) const {
-	return operation(left.value,right.value_at_location_<MyArrayNum>(loc));
+	return operation(left.value(),right.value_at_location_<MyArrayNum>(loc));
       }
     
 
@@ -500,7 +500,7 @@ namespace adept {
       typename enable_if<RType::is_active,void>::type
       calc_right_(Stack& stack, const RType& right, const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch) const {
-	Op::template calc_right<MyArrayNum, MyScratchNum>(stack, Scalar<L>(left.value), right, loc, scratch);
+	Op::template calc_right<MyArrayNum, MyScratchNum>(stack, Scalar<L>(left.value()), right, loc, scratch);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class RType>
@@ -512,7 +512,7 @@ namespace adept {
       typename enable_if<RType::is_active,void>::type
       calc_right_(Stack& stack, const RType& right, const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch, MyType multiplier) const {
-	Op::template calc_right<MyArrayNum, MyScratchNum>(stack, Scalar<L>(left.value), right, loc, scratch, multiplier);
+	Op::template calc_right<MyArrayNum, MyScratchNum>(stack, Scalar<L>(left.value()), right, loc, scratch, multiplier);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class RType, typename MyType>
@@ -566,12 +566,12 @@ namespace adept {
 	std::stringstream s;
 	if (is_operator) {
 	  s << "(" << left.expression_string() << operation_string()
-	    << right.value << ")";
+	    << right.value() << ")";
 	}
 	else {
 	  s << operation_string() << "("
 	    << static_cast<const L*>(&left)->expression_string() << ","
-	    << right.value << ")";
+	    << right.value() << ")";
 	}
 	return s.str();
       }
@@ -586,7 +586,7 @@ namespace adept {
       int alignment_offset_() const { return left.template alignment_offset_<n>(); }
 
       Type value_with_len_(const Index& j, const Index& len) const {
-	return operation(left.value_with_len(j,len), right.value);
+	return operation(left.value_with_len(j,len), right.value());
       }
 
       template <int MyArrayNum, int NArrays>
@@ -596,7 +596,7 @@ namespace adept {
 
       template <int MyArrayNum, int NArrays>
       Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return operation(left.template value_at_location_<MyArrayNum>(loc), right.value);
+	return operation(left.template value_at_location_<MyArrayNum>(loc), right.value());
       }
       template <int MyArrayNum, int NArrays>
       Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
@@ -631,7 +631,7 @@ namespace adept {
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
 	return scratch[MyScratchNum] = operation(
-	   left.template value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch), right.value);
+	 left.template value_at_location_store_<MyArrayNum, MyScratchNum+n_local_scratch>(loc, scratch), right.value());
       }
 
       template <int StoreResult, int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
@@ -647,14 +647,14 @@ namespace adept {
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
 	return operation(left.value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch), 
-			 right.value);
+			 right.value());
       }
 
       template <int StoreResult, int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
       typename enable_if<StoreResult == 0, Type>::type
       my_value_stored_(const ExpressionSize<NArrays>& loc,
 		       const ScratchVector<NScratch>& scratch) const {
-	return operation(left.value_at_location_<MyArrayNum>(loc), right.value);
+	return operation(left.value_at_location_<MyArrayNum>(loc), right.value());
       }
     
 
@@ -687,7 +687,7 @@ namespace adept {
       typename enable_if<LType::is_active,void>::type
       calc_left_(Stack& stack, const LType& left, const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch) const {
-	Op::template calc_left<MyArrayNum, MyScratchNum>(stack, left, Scalar<R>(right.value), loc, scratch);
+	Op::template calc_left<MyArrayNum, MyScratchNum>(stack, left, Scalar<R>(right.value()), loc, scratch);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class LType>
@@ -699,7 +699,7 @@ namespace adept {
       typename enable_if<LType::is_active,void>::type
       calc_left_(Stack& stack, const LType& left, const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch, MyType multiplier) const {
-	Op::template calc_left<MyArrayNum, MyScratchNum>(stack, left, Scalar<R>(right.value), loc, scratch, multiplier);
+	Op::template calc_left<MyArrayNum, MyScratchNum>(stack, left, Scalar<R>(right.value()), loc, scratch, multiplier);
       }
 
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, class LType, typename MyType>

@@ -2181,6 +2181,7 @@ namespace adept {
     // "n" Types.
     template <int n>
     int alignment_offset_() const {
+      // This is rather slow!
       return (reinterpret_cast<unsigned long long int>(reinterpret_cast<void*>(data_))/sizeof(Type)) % n;
     }
 
@@ -2931,16 +2932,18 @@ namespace adept {
 
       if (dimensions_[0] >= Packet<Type>::size*2
 	  && offset_[0] == 1
-	  && rhs.all_arrays_contiguous()) {
+	  && rhs.all_arrays_contiguous()
+	  ) {
 	// Contiguous source and destination data
 	Index istartvec = 0;
 	Index iendvec = 0;
 
 	istartvec = rhs.alignment_offset();
+	
 	if (istartvec < 0 || istartvec != alignment_offset_<Packet<Type>::size>()) {
 	  istartvec = iendvec = 0;
 	}
-	else {
+	else  {
 	  iendvec = (dimensions_[0]-istartvec);
 	  iendvec -= (iendvec % Packet<Type>::size);
 	  iendvec += istartvec;
