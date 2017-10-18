@@ -7,6 +7,7 @@ version 2.0.1 (October 2017)
 	*pair* of SSE2/AVX packed vector; now a Packet can only represent
 	a single packed vector. This simplifies maintenance of Packet.h,
 	and the pair option offered no performance advantage anyway.
+	- Vectorized reduce operations sum, product etc.
 
 version 2.0 (September 2017)
 	- Finalized version for release

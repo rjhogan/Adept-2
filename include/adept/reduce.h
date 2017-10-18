@@ -1,6 +1,6 @@
 /* reduce.h -- "Reduce" functions such as find, all, sum etc.
 
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -117,8 +117,16 @@ namespace adept {
       // Start the accumulation with zero
       T first_value() { return 0; }
       // Accumulation consists of incrementing "total" by the value on
-      // the right hand side
-      void accumulate(T& total, const T& rhs) { total += rhs; }
+      // the right hand side; note that the arguments are either of
+      // type T or type Packet<T>
+      template <typename E>
+      void accumulate(E& total, const E& rhs) { total += rhs; }
+      // When the reduce operation is vectorized, packets of data are
+      // accumulated, requiring the ability to horizontally accumulate
+      // each element of the packet
+      T accumulate_packet(const Packet<T>& ptotal) {
+	return hsum(ptotal);
+      }
       // In the case of active arguments, the next_value_and_gradient
       // function pushes the right hand side onto the operation stack,
       // but does not push the "total" object onto the statement
@@ -149,7 +157,11 @@ namespace adept {
       static const bool active_finish_needed = true;
       const char* name() { return "mean"; }
       T first_value() { return 0; }
-      void accumulate(T& total, const T& rhs) { total += rhs; }
+      template <typename E>
+      void accumulate(E& total, const E& rhs) { total += rhs; }
+      T accumulate_packet(const Packet<T>& ptotal) {
+	return hsum(ptotal);
+      }
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
 			     ExpressionSize<NArrays>& loc) {
@@ -173,15 +185,19 @@ namespace adept {
       static const bool active_finish_needed = false;
       const char* name() { return "product"; }
       T first_value() { return 1; }
-      void accumulate(T& total, const T& rhs) { total *= rhs; }
+      template <typename E>
+      void accumulate(E& total, const E& rhs) { total *= rhs; }
+      T accumulate_packet(const Packet<T>& ptotal) {
+	return hprod(ptotal);
+      }
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
 			     ExpressionSize<NArrays>& loc) {
 	// Differentiate t = t*x -> dt = t*dx + x*dt.  First compute
 	// x, while passing t as the last argument so that t*dx is put
 	// on the operation stack.
-	T xval = rhs.next_value_and_gradient(*ADEPT_ACTIVE_STACK, loc,
-					     total.value());
+	T xval = rhs.next_value_and_gradient_special(*ADEPT_ACTIVE_STACK, loc,
+						     total.value());
 	// Now treat x as inactive and Active<T> will do the rest
 	total *= xval;	
       }
@@ -199,7 +215,15 @@ namespace adept {
       const char* name() { return "maxval"; }
       // Initiate the total with the minimum possible value
       T first_value() { return std::numeric_limits<T>::min(); }
+#ifdef ADEPT_CXX11_FEATURES
+      void accumulate(T& total, const T& rhs) { total = std::fmax(total,rhs); }
+#else
       void accumulate(T& total, const T& rhs) { total = std::max(total,rhs); }
+#endif
+      void accumulate(Packet<T>& total, const Packet<T>& rhs) { total = fmax(total,rhs); }
+      T accumulate_packet(const Packet<T>& ptotal) {
+	return hmax(ptotal);
+      }
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
 			     ExpressionSize<NArrays>& loc) {
@@ -227,7 +251,15 @@ namespace adept {
       static const bool active_finish_needed = false;
       const char* name() { return "minval"; }
       T first_value() { return std::numeric_limits<T>::max(); }
+#ifdef ADEPT_CXX11_FEATURES
+      void accumulate(T& total, const T& rhs) { total = std::fmin(total,rhs); }
+#else
       void accumulate(T& total, const T& rhs) { total = std::min(total,rhs); }
+#endif
+      void accumulate(Packet<T>& total, const Packet<T>& rhs) { total = fmin(total,rhs); }
+      T accumulate_packet(const Packet<T>& ptotal) {
+	return hmin(ptotal);
+      }
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
 			     ExpressionSize<NArrays>& loc) {
@@ -254,7 +286,11 @@ namespace adept {
       static const bool active_finish_needed = true;
       const char* name() { return "norm2"; }
       T first_value() { return 0; }
-      void accumulate(T& total, const T& rhs) { total += rhs*rhs; }
+      template <typename E>
+      void accumulate(E& total, const E& rhs) { total += rhs*rhs; }
+      T accumulate_packet(const Packet<T>& ptotal) {
+	return hsum(ptotal);
+      }
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
 			     ExpressionSize<NArrays>& loc) {
@@ -330,10 +366,14 @@ namespace adept {
     // Section 2. Various versions of the "reduce" function
     // -------------------------------------------------------------------
 
-    // Reduce an entire inactive array
+    // Reduce an entire inactive array, unvectorized
     template <class Func, typename Type, class E>
     inline
-    typename Func::total_type reduce(const Expression<Type, E>& rhs) {
+    typename enable_if<!(E::is_vectorizable
+			 &&Packet<Type>::is_vectorized
+			 &&is_same<Type,typename Func::total_type>::value),
+		       typename Func::total_type>::type
+    reduce_inactive(const Expression<Type, E>& rhs) {
       typename Func::total_type total;
       Func f;
       ExpressionSize<E::rank> dims;
@@ -377,11 +417,110 @@ namespace adept {
       return total;
     }
 
+    // Reduce an entire inactive array, vectorized
+    template <class Func, typename Type, class E>
+    inline
+    typename enable_if<E::is_vectorizable
+                       &&Packet<Type>::is_vectorized
+                       &&is_same<Type,typename Func::total_type>::value,
+		       typename Func::total_type>::type
+    reduce_inactive(const Expression<Type, E>& rhs) {
+      typename Func::total_type total;
+      Func f;
+      ExpressionSize<E::rank> dims;
+      // Check right hand side is a valid expression
+      if (!rhs.get_dimensions(dims)) {
+	std::string str = "Array size mismatch in "
+	  + rhs.expression_string() + ".";
+	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
+      }
+      else if (dims[0] == 0) {
+	// Return zero if any of these functions applied to an empty
+	// array
+	total = 0;
+      }
+      else if (dims[E::rank-1] > Packet<Type>::size*2
+	       && rhs.all_arrays_contiguous()) {
+	// Vectorization is possible
+	Packet<Type> ptotal(f.first_value());
+	Index n = dims.size();
+	ExpressionSize<E::rank> i(0);
+	ExpressionSize<E::n_arrays> loc(0);
+	int rank;
+	static const int last = E::rank-1;
+	int iendvec;
+	int istartvec = rhs.alignment_offset();
+	total = f.first_value();
+	if (istartvec < 0) {
+	  istartvec = iendvec = 0;
+	}
+	else {
+	  iendvec = (dims[last]-istartvec);
+	  iendvec -= (iendvec % Packet<Type>::size);
+	  iendvec += istartvec;
+	}
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, loc);
+	  // Innermost loop
+	  for ( ; i[last] < istartvec; ++i[last]) {
+	    f.accumulate(total, rhs.next_value_contiguous(loc));
+	  }
+	  for ( ; i[last] < iendvec; i[last] += Packet<Type>::size) {
+	    f.accumulate(ptotal, rhs.next_packet(loc));
+	  }
+	  for ( ; i[last] < dims[last]; ++i[last]) {
+	    f.accumulate(total, rhs.next_value_contiguous(loc));
+	  }
+	  rank = E::rank-1;
+	  while (--rank >= 0) {
+	    if (++i[rank] >= dims[rank]) {
+	      i[rank] = 0;
+	    }
+	    else {
+	      break;
+	    }
+	  }
+	} while (rank >= 0);
+	f.accumulate(total, f.accumulate_packet(ptotal));
+	f.finish(total, n);
+      }
+      else {
+	// Back to unvectorized version
+	total = f.first_value();
+	Index n = dims.size();
+	ExpressionSize<E::rank> i(0);
+	ExpressionSize<E::n_arrays> loc(0);
+	int rank;
+	static const int last = E::rank-1;
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, loc);
+	  // Innermost loop
+	  for ( ; i[last] < dims[last]; ++i[last]) {
+	    f.accumulate(total, rhs.next_value(loc));
+	  }
+	  rank = E::rank-1;
+	  while (--rank >= 0) {
+	    if (++i[rank] >= dims[rank]) {
+	      i[rank] = 0;
+	    }
+	    else {
+	      break;
+	    }
+	  }
+	} while (rank >= 0);
+	f.finish(total, n);
+      }
+      return total;
+    }
+
+
     // Reduce the specified dimension of an inactive array of rank > 1
     template <class Func, typename Type, class E>
     inline
-    void reduce(const Expression<Type, E>& rhs, int reduce_dim,
-		Array<E::rank-1,typename Func::total_type,false>& total) {
+    void reduce_dimension(const Expression<Type, E>& rhs, int reduce_dim,
+		    Array<E::rank-1,typename Func::total_type,false>& total) {
       Func f;
       ExpressionSize<E::rank> dims;
       if (!rhs.get_dimensions(dims)) {
@@ -481,10 +620,10 @@ namespace adept {
     // Reduce the entirety of an active array
     template <class Func, typename Type, class E>
     inline
-    void reduce(const Expression<Type, E>& rhs, Active<Type>& total) {
+    void reduce_active(const Expression<Type, E>& rhs, Active<Type>& total) {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (!ADEPT_ACTIVE_STACK->is_recording()) {
-	total.lvalue() = reduce<Func>(rhs);
+	total.lvalue() = reduce_inactive<Func>(rhs);
 	return;
       }
 #endif
@@ -535,7 +674,7 @@ namespace adept {
     // Reduce the specified dimension of an active array of rank > 1
     template <class Func, typename Type, class E>
     inline
-    void reduce(const Expression<Type, E>& rhs, int reduce_dim,
+    void reduce_dimension(const Expression<Type, E>& rhs, int reduce_dim,
 		Array<E::rank-1,Type,true>& result) {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (!ADEPT_ACTIVE_STACK->is_recording()) {
@@ -544,7 +683,7 @@ namespace adept {
 	// function to link an pre-constructed active Array to
 	// inactive data.
 	Array<E::rank-1,Type,false> result_inactive;
-	reduce<Func>(rhs, reduce_dim, result_inactive);
+	reduce_dimension<Func>(rhs, reduce_dim, result_inactive);
 	Array<E::rank-1,Type,true> result_active(result_inactive.data(),
 						 result_inactive.storage(),
 						 result_inactive.dimensions(),
@@ -662,7 +801,7 @@ namespace adept {
   typename enable_if<!E::is_active && E::rank != 0,	\
 		     Type>::type			\
   NAME(const Expression<Type, E>& rhs) {		\
-    return reduce<CLASSNAME<Type> >(rhs);		\
+    return reduce_inactive<CLASSNAME<Type> >(rhs);	\
   }							\
   							\
   /* function(active) */				\
@@ -672,7 +811,7 @@ namespace adept {
 		     Active<Type> >::type		\
   NAME(const Expression<Type, E>& rhs) {		\
     Active<Type> result;				\
-    reduce<CLASSNAME<Type> >(rhs, result);		\
+    reduce_active<CLASSNAME<Type> >(rhs, result);		\
     return result;					\
   }							\
 							\
@@ -686,7 +825,7 @@ namespace adept {
       throw invalid_dimension("Two-argument reduce function applied to vector must have zero as second argument" \
 			      ADEPT_EXCEPTION_LOCATION);		\
     }							\
-    return reduce<CLASSNAME<Type> >(rhs);		\
+    return reduce_inactive<CLASSNAME<Type> >(rhs);	\
   }							\
   							\
   /* function(active[rank=1], dim) */			\
@@ -700,7 +839,7 @@ namespace adept {
 			    ADEPT_EXCEPTION_LOCATION);			\
     }							\
     Active<Type> result;				\
-    reduce<CLASSNAME<Type> >(rhs, result);		\
+    reduce_active<CLASSNAME<Type> >(rhs, result);		\
     return result;					\
   }							\
 							\
@@ -712,7 +851,7 @@ namespace adept {
 	     Array<E::rank-1,Type,E::is_active> >::type	\
   NAME(const Expression<Type, E>& rhs, int dim) {	\
     Array<E::rank-1,Type,E::is_active> result;		\
-    reduce<CLASSNAME<Type> >(rhs, dim, result);		\
+    reduce_dimension<CLASSNAME<Type> >(rhs, dim, result);		\
     return result;					\
   }
 
@@ -732,14 +871,14 @@ namespace adept {
 #define DEFINE_BOOL_REDUCE_FUNCTION(NAME, CLASSNAME)	 \
   template <class E>					 \
   inline bool NAME(const Expression<bool, E>& rhs)	 \
-  { return reduce<CLASSNAME>(rhs); }			 \
+  { return reduce_inactive<CLASSNAME>(rhs); }		 \
   							 \
   template <class E>					 \
   inline						 \
   Array<E::rank-1,bool,false>				 \
   NAME(const Expression<bool, E>& rhs, int dim) {	 \
     Array<E::rank-1,bool,false> result;			 \
-    reduce<CLASSNAME>(rhs, dim, result);		 \
+    reduce_dimension<CLASSNAME>(rhs, dim, result);		 \
     return result;					 \
   }
 
@@ -751,13 +890,13 @@ namespace adept {
   // Index
   template <class E>
   inline Index count(const Expression<bool, E>& rhs)
-  { return reduce<Count>(rhs); }
+  { return reduce_inactive<Count>(rhs); }
 
   template <class E>
   inline Array<E::rank-1,Index,false>
   count(const Expression<bool, E>& rhs, int dim) {
     Array<E::rank-1,Index,false> result;
-    reduce<Count>(rhs, dim, result);
+    reduce_dimension<Count>(rhs, dim, result);
     return result;
   }
 

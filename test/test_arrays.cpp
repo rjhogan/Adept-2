@@ -461,14 +461,20 @@ main(int argc, const char** argv) {
   should_fail=false;
 
   HEADING("REDUCTION OPERATIONS"); 
-  EVAL2("full reduction", myReal, x, true, myMatrix, M, x = sum(M));
-  EVAL2("1-dimension reduction", myVector, v, false, myMatrix, M, v = 0.5 * mean(M,0));
-  EVAL2("1-dimension reduction", myVector, v, false, myMatrix, M, v = norm2(M,1));
+  EVAL2("full sum", myReal, x, true, myMatrix, M, x = sum(M));
+  EVAL2("full product", myReal, x, true, myMatrix, M, x = product(M));
+#ifndef ALL_COMPLEX
+  EVAL2("full maxval", myReal, x, true, myMatrix, M, x = maxval(M));
+  EVAL2("full minval", myReal, x, true, myMatrix, M, x = minval(M));
+#endif
+  EVAL2("full norm2", myReal, x, true, myMatrix, M, x = norm2(M));
+  EVAL2("1-dimension mean", myVector, v, false, myMatrix, M, v = 0.5 * mean(M,0));
+  EVAL2("1-dimension norm2", myVector, v, false, myMatrix, M, v = norm2(M,1));
   EVAL2("dot product", myReal, x, true, myVector, w, x = dot_product(w,w(stride(end,0,-1))));
   EVAL2("dot product on expressions", myReal, x, true, myVector, w, x = dot_product(2.0*w,w(stride(end,0,-1))+1.0));
 #ifndef ALL_COMPLEX
-  EVAL2("maxval", myVector, v, false, myMatrix, M, v = maxval(M,1));
-  EVAL2("minval", myVector, v, false, myMatrix, M, v = minval(M,1));
+  EVAL2("1-dimension maxval", myVector, v, false, myMatrix, M, v = maxval(M,1));
+  EVAL2("1-dimension minval", myVector, v, false, myMatrix, M, v = minval(M,1));
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, Vector(value(w)/3.0)));
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, value(w)/3.0));
   EVAL2("all reduction", bool, b, false, myMatrix, M, b = all(M > 8.0));
