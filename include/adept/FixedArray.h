@@ -76,7 +76,7 @@ namespace adept {
 
     // The Expression base class needs access to some protected member
     // functions in section 5
-    friend class Expression<Type,FixedArray<Type,IsActive,J0,J1,J2,J3,J4,J5,J6> >;
+    friend struct Expression<Type,FixedArray<Type,IsActive,J0,J1,J2,J3,J4,J5,J6> >;
 
     // Static definitions to enable the properties of this type of
     // expression to be discerned at compile time
@@ -1285,14 +1285,11 @@ namespace adept {
       int index = get_index_with_len(i,J0)*offset_<0>::value;
       ExpressionSize<rank_-1> new_dim;
       ExpressionSize<rank_-1> new_offset;
-      ExpressionSize<rank_> dims;
-      dims = dimensions();
+      ExpressionSize<rank_> dims = dimensions();
+      ExpressionSize<rank_> offs = offset();
       for (int j = 1; j < rank_; ++j) {
 	new_dim[j-1] = dims[j];
-      }
-      new_offset[rank_-1] = 1;
-      for (int j = rank_-2; j >= 0; --j) {
-	new_offset[j] = new_offset[j+1]*new_dim[j];
+	new_offset[j-1] = offs[j];
       }
       return Array<rank_-1,Type,IsActive>(data_, index, new_dim, new_offset,
 					  GradientIndex<IsActive>::get());

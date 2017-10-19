@@ -168,7 +168,7 @@ namespace adept {
 
     // The Expression base class needs access to some protected member
     // functions in section 5
-    friend class Expression<Type,Array<Rank,Type,IsActive> >;
+    friend struct Expression<Type,Array<Rank,Type,IsActive> >;
 
     // Static definitions to enable the properties of this type of
     // expression to be discerned at compile time
