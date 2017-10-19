@@ -14,7 +14,6 @@ int main()
   Timer timer;
   timer.print_on_exit();
   int n = 128;
-  bool do_jacobian = false;
 
   static const int rep = 10000;
   //  static const int rep = 10;

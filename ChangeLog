@@ -9,6 +9,7 @@ version 2.0.1 (18 October 2017)
 	and the pair option offered no performance advantage anyway.
 	- Vectorized reduce operations sum, product etc.
 	- Many fixes to enable compilation with clang++
+	- Fixed FixedArray::operator[] for rank>1
 
 version 2.0 (September 2017)
 	- Finalized version for release

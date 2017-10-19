@@ -353,6 +353,8 @@ main(int argc, const char** argv) {
   bool should_fail=false;
   int anomalous_results=0;
 
+  std::cout << adept::configuration();
+
 #ifdef ALL_ACTIVE
   std::cout << "Testing ACTIVE arrays\n";
 #else
@@ -477,8 +479,8 @@ main(int argc, const char** argv) {
   EVAL2("1-dimension minval", myVector, v, false, myMatrix, M, v = minval(M,1));
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, Vector(value(w)/3.0)));
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, value(w)/3.0));
-  EVAL2("all reduction", bool, b, false, myMatrix, M, b = all(M > 8.0));
-  EVAL2("any reduction", bool, b, false, myMatrix, M, b = any(M > 8.0));
+  EVAL2("all reduction", bool, b, true, myMatrix, M, b = all(M > 8.0));
+  EVAL2("any reduction", bool, b, true, myMatrix, M, b = any(M > 8.0));
   EVAL2("count reduction", int, c, true, myMatrix, M, c = count(M > 8.0));
   EVAL2("1-dimension all reduction", boolVector, B, false, myMatrix, M, B = all(M > 8.0, 1));
   EVAL2("1-dimension any reduction", boolVector, B, false, myMatrix, M, B = any(M > 8.0, 1));
