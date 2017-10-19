@@ -20,6 +20,8 @@
 #include <adept/ScratchVector.h>
 #include <adept/Packet.h>
 
+#define ADEPT_GNU_COMPILER (defined(__GNUC__) && !defined(__clang__))
+
 namespace adept {
 
   using internal::Packet;
@@ -44,35 +46,64 @@ namespace adept {
   public:
     typedef Type type;
 
-    static const int  rank; // = A::rank_;
+    // Expression is used as the base class for the curiously
+    // recurring template pattern (CRTP), and it needs to be able to
+    // access the static members of any derived classes. Unfortunately
+    // this has to be done in different ways on different compilers
+    // :-(
+#if ADEPT_GNU_COMPILER
+    // In the case of g++, we must define the static constants
+    // immediately; if they are defined outside the class, they are
+    // not treated as static constants and so cannot be used in
+    // compile time expressions.
+
+    // Rank of the array
+    static const int  rank = A::rank_;
 
     // Number of active variables in the expression (where each array
     // counts as 1), used to work out how much space must be reserved
     // on the operation stack
-    static const int  n_active; // = A::n_active_;
+    static const int  n_active = A::n_active_;
 
     // Number of scratch floating-point variables needed in the
     // expression, for example to store the result of a calculation
     // when it is needed again to compult the equivalent differential
     // statement
-    static const int  n_scratch; // = A::n_scratch_;
+    static const int  n_scratch = A::n_scratch_;
 
     // Number of arrays in the expression, needed as each array uses a
     // scratch Index variable to store its current memory location,
     // otherwise when looping over all the elements in a
     // multidimensional expression this is expensive to recompute
-    static const int  n_arrays; // = A::n_arrays_;
-    static const bool is_array; //  = (rank > 0);
-    static const bool is_active; // = A::is_active_;
-    static const bool is_multidimensional; // = (rank > 1);
-    static const bool is_lvalue; // = A::is_lvalue_;
+    static const int  n_arrays = A::n_arrays_;
+    static const bool is_array = (rank > 0);
+    static const bool is_active = A::is_active_;
+    static const bool is_multidimensional = (rank > 1);
+    static const bool is_lvalue = A::is_lvalue_;
 
     // An expression is currently vectorizable only if it is of
     // floating point type, all arrays have the same type, and if the
     // only mathematical operators and functions can be treated by
     // hardware vector operations (+-*/sqrt)
+    static const bool is_vectorizable
+      = A::is_vectorizable_ && Packet<Type>::is_vectorized;
+#else
+    // ...but for other compilers, defining the static constants
+    // in-class means that derived classes using CRTP fail to compile,
+    // so the definitions need to be provided after the class
+    // definition.
+
+    static const int  rank; // = A::rank_;
+    static const int  n_active; // = A::n_active_;
+    static const int  n_scratch; // = A::n_scratch_;
+    static const int  n_arrays; // = A::n_arrays_;
+    static const bool is_array; //  = (rank > 0);
+    static const bool is_active; // = A::is_active_;
+    static const bool is_multidimensional; // = (rank > 1);
+    static const bool is_lvalue; // = A::is_lvalue_;
     static const bool is_vectorizable;
     //      = A::is_vectorizable_ && Packet<Type>::is_vectorized;
+#endif
 
     // Fall-back position is that an expression is not vectorizable:
     // only those that are need to define is_vectorizable_.
@@ -346,6 +377,7 @@ namespace adept {
 
   }; // End struct Expression
 
+#if !ADEPT_GNU_COMPILER
   // Non-GNU compilers have problems with static members of Expression
   // depending on its template argument when used in combination with
   // the Curiously Recurring Template Pattern. This can be solved by
@@ -370,8 +402,8 @@ namespace adept {
   template <typename Type, class A>
   const bool Expression<Type,A>::is_vectorizable
     = A::is_vectorizable_ && Packet<Type>::is_vectorized;
-
-
+#endif
+#undef ADEPT_GNU_COMPILER
 
   // ---------------------------------------------------------------------
   // SECTION 2: Definition of Scalar type
