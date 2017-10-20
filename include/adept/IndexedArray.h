@@ -289,7 +289,7 @@ namespace adept {
       // Section 5.1. IndexedArray: Static definitions
       // ---------------------------------------------------------------------
       static const int  rank_      = Rank;
-      static const int  n_scratch_ = 1;
+      static const int  n_scratch  = 1;
       static const int  n_active   = IsActive;
 
       // We require three indices to be stored to optimize the

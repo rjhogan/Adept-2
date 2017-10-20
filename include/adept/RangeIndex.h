@@ -59,7 +59,7 @@ namespace adept {
       // Static definitions
       static const int  rank_      = 0;
       static const bool is_active  = false;
-      static const int  n_scratch_ = 0;
+      static const int  n_scratch  = 0;
       static const int  n_arrays   = 0;
       static const int  n_active   = 0;
       
@@ -174,7 +174,7 @@ namespace adept {
     public:
       static const int  rank_      = 1;
       static const bool is_active  = false;
-      static const int  n_scratch_ = 0;
+      static const int  n_scratch  = 0;
       static const int  n_arrays   = 1;
       static const int  n_active   = 0;
       

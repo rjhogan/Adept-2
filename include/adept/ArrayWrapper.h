@@ -27,7 +27,7 @@ namespace adept {
       static const bool is_lvalue  = true;
       static const int  rank_      = Rank;
       static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
-      static const int  n_scratch_ = 0;
+      static const int  n_scratch  = 0;
       static const int  n_arrays   = 1;
       static const bool is_vectorizable = MyArray::is_vectorizable;
       

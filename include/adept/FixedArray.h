@@ -85,7 +85,7 @@ namespace adept {
     static const int  rank_      = fixed_array<J0,J1,J2,J3,J4,J5,J6>::rank;
     static const int  length_    = fixed_array<J0,J1,J2,J3,J4,J5,J6>::length;
     static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
-    static const int  n_scratch_ = 0;
+    static const int  n_scratch  = 0;
     static const int  n_arrays   = 1;
     static const bool is_vectorizable = Packet<Type>::is_vectorized;
 

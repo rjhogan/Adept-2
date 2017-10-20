@@ -60,11 +60,6 @@ namespace adept {
     // Rank of the array
     static const int  rank = A::rank_;
 
-    // Number of scratch floating-point variables needed in the
-    // expression, for example to store the result of a calculation
-    // when it is needed again to compult the equivalent differential
-    // statement
-    static const int  n_scratch = A::n_scratch_;
 
 #else
     // ...but for other compilers, defining the static constants
@@ -73,7 +68,6 @@ namespace adept {
     // definition.
 
     static const int  rank; // = A::rank_;
-    static const int  n_scratch; // = A::n_scratch_;
 #endif
 
     // Fall-back position is that an expression is not vectorizable:
@@ -83,7 +77,7 @@ namespace adept {
     // Classes derived from this one that do not define how many
     // scratch variables, active variables or arrays they contain are
     // assumed to need zero
-    static const int  n_scratch_ = 0;
+    static const int  n_scratch = 0;
 
     // Number of active variables in the expression (where each array
     // counts as 1), used to work out how much space must be reserved
@@ -233,7 +227,7 @@ namespace adept {
   
     Type 
     scalar_value_and_gradient(Stack& stack) const {
-      internal::ScratchVector<n_scratch> scratch;
+      internal::ScratchVector<A::n_scratch> scratch;
       //      Type val = cast().scalar_value_store_<0>(scratch);
       //      cast().calc_scalar_gradient_(*ADEPT_ACTIVE_STACK, scratch);
       ExpressionSize<0> dummy_index;
@@ -303,7 +297,7 @@ namespace adept {
     template <int NArrays>
     Type next_value_and_gradient(Stack& stack,
 				 ExpressionSize<NArrays>& index) const {
-      internal::ScratchVector<n_scratch> scratch;
+      internal::ScratchVector<A::n_scratch> scratch;
       Type val = cast().template value_at_location_store_<0,0>(index, scratch);
       cast().template calc_gradient_<0,0>(stack, index, scratch);
       cast().template advance_location_<0>(index);
@@ -313,7 +307,7 @@ namespace adept {
     template <int NArrays>
     Type next_value_and_gradient_contiguous(Stack& stack,
 				 ExpressionSize<NArrays>& index) const {
-      internal::ScratchVector<n_scratch> scratch;
+      internal::ScratchVector<A::n_scratch> scratch;
       Type val = cast().template value_at_location_store_<0,0>(index, scratch);
       cast().template calc_gradient_<0,0>(stack, index, scratch);
       //cast().template advance_location_<0>(index);
@@ -326,7 +320,7 @@ namespace adept {
     Type next_value_and_gradient(Stack& stack,
 				 ExpressionSize<NArrays>& index,
 				 const MyType& multiplier) const {
-      internal::ScratchVector<n_scratch> scratch;
+      internal::ScratchVector<A::n_scratch> scratch;
       Type val = cast().template value_at_location_store_<0,0>(index, scratch);
       cast().template calc_gradient_<0,0>(stack, index, scratch, multiplier);
       cast().template advance_location_<0>(index);
@@ -339,7 +333,7 @@ namespace adept {
     Type next_value_and_gradient_special(Stack& stack,
 				 ExpressionSize<NArrays>& index,
 				 const MyType& multiplier) const {
-      internal::ScratchVector<n_scratch> scratch;
+      internal::ScratchVector<A::n_scratch> scratch;
       Type val = cast().template value_at_location_store_<0,0>(index, scratch);
       cast().template calc_gradient_<0,0>(stack, index, scratch, multiplier*val);
       cast().template advance_location_<0>(index);
@@ -360,8 +354,7 @@ namespace adept {
   // class definition.
   template <typename Type, class A>
   const int Expression<Type,A>::rank = A::rank_;
-  template <typename Type, class A>
-  const int Expression<Type,A>::n_scratch = A::n_scratch_;
+
 #endif
 #undef ADEPT_GNU_COMPILER
 
@@ -377,7 +370,7 @@ namespace adept {
     template <typename Type>
     struct Scalar : public Expression<Type, Scalar<Type> > {
       static const int  rank_      = 0;
-      static const int  n_scratch_ = 0;
+      static const int  n_scratch  = 0;
       static const int  n_active   = 0;
       static const int  n_arrays   = 0;
       static const bool is_active  = false;

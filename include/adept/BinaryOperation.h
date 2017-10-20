@@ -44,7 +44,7 @@ namespace adept {
       // binary expression
       static const int  n_local_scratch = store_result; 
       //	+ Op::n_scratch<L::is_active,R::is_active>::value
-      static const int  n_scratch_ 
+      static const int  n_scratch 
         = n_local_scratch + L::n_scratch + R::n_scratch;
       static const int  n_arrays  = L::n_arrays + R::n_arrays;
       static const bool is_vectorizable
@@ -352,7 +352,7 @@ namespace adept {
       // binary expression
       static const int  n_local_scratch = store_result; 
       //	+ Op::n_scratch<L::is_active,R::is_active>::value
-      static const int  n_scratch_ 
+      static const int  n_scratch
         = n_local_scratch + R::n_scratch;
       static const int  n_arrays  = R::n_arrays;
       static const bool is_vectorizable = R::is_vectorizable && Op::is_vectorized
@@ -539,7 +539,7 @@ namespace adept {
       // binary expression
       static const int  n_local_scratch = store_result; 
       //	+ Op::n_scratch<L::is_active,R::is_active>::value
-      static const int  n_scratch_ 
+      static const int  n_scratch
         = n_local_scratch + L::n_scratch;
       static const int  n_arrays  = L::n_arrays;
       static const bool is_vectorizable = L::is_vectorizable && Op::is_vectorized

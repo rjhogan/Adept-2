@@ -32,7 +32,7 @@ namespace adept {
       static const int  store_result = is_active;
       static const int  n_active  = LArray::n_active + RArray::n_active;
       static const int  n_local_scratch = store_result; 
-      static const int  n_scratch_ 
+      static const int  n_scratch 
         = n_local_scratch + LArray::n_scratch + RArray::n_scratch;
       static const int  n_arrays  = LArray::n_arrays + RArray::n_arrays;
       // Currently not vectorizable because the current design always

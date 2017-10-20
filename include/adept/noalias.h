@@ -24,7 +24,7 @@ namespace adept {
       static const int  rank_      = R::rank;
       static const bool is_active  = R::is_active;
       static const int  n_active   = R::n_active;
-      static const int  n_scratch_ = R::n_scratch;
+      static const int  n_scratch  = R::n_scratch;
       static const int  n_arrays   = R::n_arrays;
       static const bool is_vectorizable = R::is_vectorizable;
 

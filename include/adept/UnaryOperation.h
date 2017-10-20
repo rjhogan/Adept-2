@@ -34,7 +34,7 @@ namespace adept {
       static const bool is_active  = R::is_active && !is_same<Type,bool>::value;
       static const int  n_active   = R::n_active;
       // FIX! Only store if active and if needed
-      static const int  n_scratch_ = 1 + R::n_scratch;
+      static const int  n_scratch  = 1 + R::n_scratch;
       static const int  n_arrays   = R::n_arrays;
       // Will need to modify this for sqrt:
       static const bool is_vectorizable
@@ -400,7 +400,7 @@ namespace adept {
       static const int  rank_      = R::rank;
       static const bool is_active  = false;
       static const int  n_active   = 0;
-      static const int  n_scratch_ = 0;
+      static const int  n_scratch  = 0;
       static const int  n_arrays   = R::n_arrays;
       
       using Op<Type>::operation;
