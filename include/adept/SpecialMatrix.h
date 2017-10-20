@@ -970,7 +970,7 @@ namespace adept {
     // Static definitions to enable the properties of this type of
     // expression to be discerned at compile time
     static const bool is_active_ = IsActive;
-    static const bool is_lvalue_ = true;
+    static const bool is_lvalue  = true;
     static const int  rank_      = 2;
     static const int  n_active_  = IsActive * (1 + is_complex<Type>::value);
     static const int  n_scratch_ = 0;

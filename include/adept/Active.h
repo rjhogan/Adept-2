@@ -53,7 +53,7 @@ namespace adept {
     // Static definitions to enable the properties of this type of
     // expression to be discerned at compile time
     static const bool is_active_ = true;
-    static const bool is_lvalue_ = true;
+    static const bool is_lvalue = true;
     static const int  rank_     = 0;
     static const int  n_active_ = 1 + is_complex<Type>::value;
     static const int  n_arrays_ = 0;
@@ -139,7 +139,7 @@ namespace adept {
     template<typename AType, class E>
     //          explicit
     Active(const Expression<AType, E>& rhs,
-	   typename enable_if<!E::is_array
+	   typename enable_if<!(E::rank>0)
 			      && E::is_active>::type* dummy = 0)
       : gradient_index_(ADEPT_ACTIVE_STACK->register_gradient())
     {
@@ -252,7 +252,7 @@ namespace adept {
     // Assignment operator with an expression on the rhs: very similar
     // to construction with an expression (defined above)
     template <typename AType, class E>
-    typename enable_if<E::is_active && !E::is_array, Active&>::type
+    typename enable_if<E::is_active && !(E::rank>0), Active&>::type
     operator=(const Expression<AType, E>& rhs) {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (ADEPT_ACTIVE_STACK->is_recording()) {
@@ -274,22 +274,22 @@ namespace adept {
     // All the compound assignment operators are unpacked, i.e. a+=b
     // becomes a=a+b; first for an Expression on the rhs
     template<typename AType, class E>
-    typename enable_if<!E::is_array, Active&>::type
+    typename enable_if<!(E::rank>0), Active&>::type
     operator+=(const Expression<AType,E>& rhs) {
       return *this = (*this + rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!E::is_array, Active&>::type
+    typename enable_if<!(E::rank>0), Active&>::type
     operator-=(const Expression<AType,E>& rhs) {
       return *this = (*this - rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!E::is_array, Active&>::type
+    typename enable_if<!(E::rank>0), Active&>::type
     operator*=(const Expression<AType,E>& rhs) {
       return *this = (*this * rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!E::is_array, Active&>::type
+    typename enable_if<!(E::rank>0), Active&>::type
     operator/=(const Expression<AType,E>& rhs) {
       return *this = (*this / rhs);
     }
@@ -571,11 +571,11 @@ namespace adept {
     // Mechanism to check that we are not initializing an active
     // scalar with an array expression on the right hand side
     template <typename AType, class E>
-    typename enable_if<!E::is_array>::type
+    typename enable_if<!(E::rank>0)>::type
     check_not_array(const Expression<Active<AType>,E>&) { }
 
     template <typename AType, class E> 
-    typename enable_if<E::is_array>::type
+    typename enable_if<(E::rank>0)>::type
     check_not_array(const Expression<Active<AType>,E>& e) {
       // Hopefully the error message produced if this function is
       // instantiated is understandable

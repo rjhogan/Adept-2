@@ -171,6 +171,7 @@ namespace adept {
     // 7. is_array
     // ---------------------------------------------------------------------
     
+    /*
     // "is_array<E>::value" is "true" if E is an array expression and
     // "false" otherwise.  The default case for non-expressions
     // returns false
@@ -183,7 +184,7 @@ namespace adept {
     template <typename T>
     struct is_array<T, typename enable_if<!is_not_expression<T>::value>::type>
     { static const bool value = T::is_array; };
-    
+    */
 
     // ---------------------------------------------------------------------
     // 8. is_scalar_int

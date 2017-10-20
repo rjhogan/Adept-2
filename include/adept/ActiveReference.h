@@ -155,7 +155,7 @@ namespace adept {
     
     // Assignment operator with an expression on the rhs
     template <typename AType, class E>
-    typename enable_if<E::is_active && !E::is_array, ActiveReference&>::type
+    typename enable_if<E::is_active && !(E::rank>0), ActiveReference&>::type
     operator=(const Expression<AType, E>& rhs) {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (ADEPT_ACTIVE_STACK->is_recording()) {
@@ -177,22 +177,22 @@ namespace adept {
     // All the compound assignment operators are unpacked, i.e. a+=b
     // becomes a=a+b; first for an Expression on the rhs
     template<typename AType, class E>
-    typename enable_if<!E::is_array, ActiveReference&>::type
+    typename enable_if<!(E::rank>0), ActiveReference&>::type
     operator+=(const Expression<AType,E>& rhs) {
       return *this = (*this + rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!E::is_array, ActiveReference&>::type
+    typename enable_if<!(E::rank>0), ActiveReference&>::type
     operator-=(const Expression<AType,E>& rhs) {
       return *this = (*this - rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!E::is_array, ActiveReference&>::type
+    typename enable_if<!(E::rank>0), ActiveReference&>::type
     operator*=(const Expression<AType,E>& rhs) {
       return *this = (*this * rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!E::is_array, ActiveReference&>::type
+    typename enable_if<!(E::rank>0), ActiveReference&>::type
     operator/=(const Expression<AType,E>& rhs) {
       return *this = (*this / rhs);
     }
@@ -477,11 +477,11 @@ namespace adept {
     // Mechanism to check that we are not initializing an active
     // scalar with an array expression on the right hand side
     template <typename AType, class E>
-    typename enable_if<!E::is_array>::type
+    typename enable_if<!(E::rank>0)>::type
     check_not_array(const Expression<ActiveReference<AType>,E>&) { }
 
     template <typename AType, class E> 
-    typename enable_if<E::is_array>::type
+    typename enable_if<(E::rank>0)>::type
     check_not_array(const Expression<ActiveReference<AType>,E>& e) {
       // Hopefully the error message produced if this function is
       // instantiated is understandable

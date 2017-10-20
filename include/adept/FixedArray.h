@@ -81,7 +81,7 @@ namespace adept {
     // Static definitions to enable the properties of this type of
     // expression to be discerned at compile time
     static const bool is_active_ = IsActive;
-    static const bool is_lvalue_ = true;
+    static const bool is_lvalue  = true;
     static const int  rank_      = fixed_array<J0,J1,J2,J3,J4,J5,J6>::rank;
     static const int  length_    = fixed_array<J0,J1,J2,J3,J4,J5,J6>::length;
     static const int  n_active_  = IsActive * (1 + is_complex<Type>::value);

@@ -20,7 +20,7 @@
 #include <adept/ScratchVector.h>
 #include <adept/Packet.h>
 
-#define ADEPT_GNU_COMPILER (defined(__GNUC__) && !defined(__clang__))
+#define ADEPT_GNU_COMPILER (defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER))
 
 namespace adept {
 
@@ -76,10 +76,7 @@ namespace adept {
     // otherwise when looping over all the elements in a
     // multidimensional expression this is expensive to recompute
     static const int  n_arrays = A::n_arrays_;
-    static const bool is_array = (rank > 0);
     static const bool is_active = A::is_active_;
-    static const bool is_multidimensional = (rank > 1);
-    static const bool is_lvalue = A::is_lvalue_;
 
     // An expression is currently vectorizable only if it is of
     // floating point type, all arrays have the same type, and if the
@@ -97,10 +94,7 @@ namespace adept {
     static const int  n_active; // = A::n_active_;
     static const int  n_scratch; // = A::n_scratch_;
     static const int  n_arrays; // = A::n_arrays_;
-    static const bool is_array; //  = (rank > 0);
     static const bool is_active; // = A::is_active_;
-    static const bool is_multidimensional; // = (rank > 1);
-    static const bool is_lvalue; // = A::is_lvalue_;
     static const bool is_vectorizable;
     //      = A::is_vectorizable_ && Packet<Type>::is_vectorized;
 #endif
@@ -119,7 +113,7 @@ namespace adept {
 
     // Expressions cannot be lvalues by default, but override this
     // bool if they are
-    static const bool is_lvalue_ = false;
+    static const bool is_lvalue = false;
 
     // The presence of _adept_expression_flag is used to define the
     // adept::is_not_expression trait
@@ -175,7 +169,7 @@ namespace adept {
     */
     //    template <int reqRank>
     Type value_with_len(Index j, Index len) const {
-      ADEPT_STATIC_ASSERT(!is_multidimensional,
+      ADEPT_STATIC_ASSERT(A::rank<=1,
 		  VALUE_WITH_LEN_ONLY_APPLICABLE_TO_ARRAYS_OF_RANK_0_OR_1);
       return cast().value_with_len_(j, len);
     }
@@ -392,13 +386,7 @@ namespace adept {
   template <typename Type, class A>
   const int Expression<Type,A>::n_arrays = A::n_arrays_;
   template <typename Type, class A>
-  const bool Expression<Type,A>::is_array = (A::rank_ > 0);
-  template <typename Type, class A>
-  const bool Expression<Type,A>::is_multidimensional = (A::rank_ > 1);
-  template <typename Type, class A>
   const bool Expression<Type,A>::is_active = A::is_active_;
-  template <typename Type, class A>
-  const bool Expression<Type,A>::is_lvalue = A::is_lvalue_;
   template <typename Type, class A>
   const bool Expression<Type,A>::is_vectorizable
     = A::is_vectorizable_ && Packet<Type>::is_vectorized;
