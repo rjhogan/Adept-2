@@ -60,11 +60,6 @@ namespace adept {
     // Rank of the array
     static const int  rank = A::rank_;
 
-    // Number of active variables in the expression (where each array
-    // counts as 1), used to work out how much space must be reserved
-    // on the operation stack
-    static const int  n_active = A::n_active_;
-
     // Number of scratch floating-point variables needed in the
     // expression, for example to store the result of a calculation
     // when it is needed again to compult the equivalent differential
@@ -91,7 +86,6 @@ namespace adept {
     // definition.
 
     static const int  rank; // = A::rank_;
-    static const int  n_active; // = A::n_active_;
     static const int  n_scratch; // = A::n_scratch_;
     static const int  n_arrays; // = A::n_arrays_;
     static const bool is_active; // = A::is_active_;
@@ -107,8 +101,12 @@ namespace adept {
     // scratch variables, active variables or arrays they contain are
     // assumed to need zero
     static const int  n_scratch_ = 0;
-    static const int  n_active_ = 0;
-    //static const int  n_arrays_ = 0;
+
+    // Number of active variables in the expression (where each array
+    // counts as 1), used to work out how much space must be reserved
+    // on the operation stack
+    static const int  n_active = 0;
+
     static const bool is_active_ = false;
 
     // Expressions cannot be lvalues by default, but override this
@@ -380,8 +378,6 @@ namespace adept {
   template <typename Type, class A>
   const int Expression<Type,A>::rank = A::rank_;
   template <typename Type, class A>
-  const int Expression<Type,A>::n_active = A::n_active_;
-  template <typename Type, class A>
   const int Expression<Type,A>::n_scratch = A::n_scratch_;
   template <typename Type, class A>
   const int Expression<Type,A>::n_arrays = A::n_arrays_;
@@ -406,7 +402,7 @@ namespace adept {
     struct Scalar : public Expression<Type, Scalar<Type> > {
       static const int  rank_      = 0;
       static const int  n_scratch_ = 0;
-      static const int  n_active_ = 0;
+      static const int  n_active   = 0;
       static const int  n_arrays_ = 0;
       static const bool is_active_ = false;
       static const bool is_vectorizable_ = true;
@@ -468,6 +464,40 @@ namespace adept {
       Type val_;
       
     };
+
+
+
+    // ---------------------------------------------------------------------
+    // SECTION 3. "cast" helper 
+    // ---------------------------------------------------------------------
+
+    template <class E>
+    struct cast {
+      static const int  rank = E::rank;
+      static const int  n_scratch = E::n_scratch;
+      static const int  n_arrays = E::n_arrays;
+      static const int  n_active = E::n_active;
+      static const bool is_array = (E::rank > 0);
+      static const bool is_multidimensional = (E::rank > 1);
+      static const bool is_active = E::is_active;
+      static const bool is_lvalue = E::is_lvalue;
+      static const bool is_vectorizable = E::is_vectorizable;  
+    };
+
+    template <typename T, class E>
+    struct cast<Expression<T,E> > {
+      static const int  rank = E::rank;
+      static const int  n_scratch = E::n_scratch;
+      static const int  n_arrays = E::n_arrays;
+      static const int  n_active = E::n_active;
+      static const bool is_array = (E::rank > 0);
+      static const bool is_multidimensional = (E::rank > 1);
+      static const bool is_active = E::is_active;
+      static const bool is_lvalue = E::is_lvalue;
+      static const bool is_vectorizable = E::is_vectorizable;
+    };
+
+
   }
 }
 

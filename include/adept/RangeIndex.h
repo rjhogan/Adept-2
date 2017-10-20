@@ -61,7 +61,7 @@ namespace adept {
       static const bool is_active_ = false;
       static const int  n_scratch_ = 0;
       static const int  n_arrays_  = 0;
-      static const int  n_active_  = 0;
+      static const int  n_active   = 0;
       
       // Functions to implement Expression behaviour
 
@@ -176,7 +176,7 @@ namespace adept {
       static const bool is_active_ = false;
       static const int  n_scratch_ = 0;
       static const int  n_arrays_  = 1;
-      static const int  n_active_  = 0;
+      static const int  n_active   = 0;
       
       // Construct with a specified stride
       RangeIndex(const BeginType& begin, const EndType& end, 
@@ -272,9 +272,9 @@ namespace adept {
     class AllIndex : public Expression<Index, AllIndex>
     {
     public:
-      static const int  rank_ = 1;
-      static const bool is_active_ = false;
-      static const int  n_active_ = 0;
+      static const int  rank_     = 1;
+      static const bool is_active_= false;
+      static const int  n_active  = 0;
       static const int  n_static_ = 0;
       static const int  n_arrays_ = 0;
 

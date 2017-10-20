@@ -84,7 +84,7 @@ namespace adept {
     static const bool is_lvalue  = true;
     static const int  rank_      = fixed_array<J0,J1,J2,J3,J4,J5,J6>::rank;
     static const int  length_    = fixed_array<J0,J1,J2,J3,J4,J5,J6>::length;
-    static const int  n_active_  = IsActive * (1 + is_complex<Type>::value);
+    static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
     static const int  n_scratch_ = 0;
     static const int  n_arrays_  = 1;
     static const bool is_vectorizable_ = true;
@@ -2197,7 +2197,7 @@ namespace adept {
       int rank;
       static const int last = LocalRank-1;
 
-      ADEPT_ACTIVE_STACK->check_space(E::n_active * size());
+      ADEPT_ACTIVE_STACK->check_space(cast<E>::n_active * size());
       do {
 	i[last] = 0;
 	rhs.set_location(i, ind);
@@ -2349,7 +2349,7 @@ namespace adept {
       static const int last = rank_-1;
       bool is_gap = false;
 
-      ADEPT_ACTIVE_STACK->check_space(C::n_active * size());
+      ADEPT_ACTIVE_STACK->check_space(cast<C>::n_active * size());
       do {
 	i[last] = 0;
 	rhs.set_location(i, rhs_ind);

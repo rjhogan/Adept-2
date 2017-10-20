@@ -26,7 +26,7 @@ namespace adept {
       // Static data
       static const int rank_ = E::rank+1;
       static const bool is_active_ = E::is_active;
-      static const int  n_active_ = ArrayType::n_active;
+      static const int  n_active   = E::n_active;
       static const int  n_scratch_ = 0;
       static const int  n_arrays_ = ArrayType::n_arrays;
       // Currently not vectorizable if the final dimension is the

@@ -55,7 +55,7 @@ namespace adept {
     static const bool is_active_ = true;
     static const bool is_lvalue = true;
     static const int  rank_     = 0;
-    static const int  n_active_ = 1 + is_complex<Type>::value;
+    static const int  n_active  = 1 + is_complex<Type>::value;
     static const int  n_arrays_ = 0;
     static const int  n_scratch_ = 0;
 

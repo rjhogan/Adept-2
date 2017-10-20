@@ -32,7 +32,7 @@ namespace adept {
       
       static const int  rank_      = R::rank;
       static const bool is_active_ = R::is_active && !is_same<Type,bool>::value;
-      static const int  n_active_ = R::n_active;
+      static const int  n_active   = R::n_active;
       // FIX! Only store if active and if needed
       static const int  n_scratch_ = 1 + R::n_scratch;
       static const int  n_arrays_ = R::n_arrays;
@@ -399,9 +399,9 @@ namespace adept {
       
       static const int  rank_      = R::rank;
       static const bool is_active_ = false;
-      static const int  n_active_ = 0;
+      static const int  n_active   = 0;
       static const int  n_scratch_ = 0;
-      static const int  n_arrays_ = R::n_arrays;
+      static const int  n_arrays_  = R::n_arrays;
       
       using Op<Type>::operation;
       using Op<Type>::operation_string;

@@ -30,7 +30,7 @@ namespace adept {
       static const int rank_ = 2;
       static const bool is_active_ = L::is_active || R::is_active;
       static const int  store_result = is_active_;
-      static const int  n_active_ = LArray::n_active + RArray::n_active;
+      static const int  n_active  = LArray::n_active + RArray::n_active;
       static const int  n_local_scratch = store_result; 
       static const int  n_scratch_ 
         = n_local_scratch + LArray::n_scratch + RArray::n_scratch;

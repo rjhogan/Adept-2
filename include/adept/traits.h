@@ -426,7 +426,7 @@ namespace adept {
     struct matrix_op_defined<double>  { static const bool value = true; };
  
     // ---------------------------------------------------------------------
-    // 17. is_floating_point
+    // 18. is_floating_point
     // ---------------------------------------------------------------------
 
     template <typename T>

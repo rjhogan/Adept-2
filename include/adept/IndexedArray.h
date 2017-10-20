@@ -290,7 +290,7 @@ namespace adept {
       // ---------------------------------------------------------------------
       static const int  rank_      = Rank;
       static const int  n_scratch_ = 1;
-      static const int  n_active_  = IsActive;
+      static const int  n_active   = IsActive;
 
       // We require three indices to be stored to optimize the
       // calculation of the location: first the location of the start
@@ -812,7 +812,7 @@ namespace adept {
 	int dim;
 	static const int last = Rank-1;
 
-	ADEPT_ACTIVE_STACK->check_space(E::n_active * dimensions_[0]);
+	ADEPT_ACTIVE_STACK->check_space(cast<E>::n_active * dimensions_[0]);
 	do {
 	  coords[last] = 0;
 	  rhs.set_location(coords, loc);

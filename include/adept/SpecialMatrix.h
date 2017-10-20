@@ -972,7 +972,7 @@ namespace adept {
     static const bool is_active_ = IsActive;
     static const bool is_lvalue  = true;
     static const int  rank_      = 2;
-    static const int  n_active_  = IsActive * (1 + is_complex<Type>::value);
+    static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
     static const int  n_scratch_ = 0;
     static const int  n_arrays_  = Engine::my_n_arrays;
 
@@ -1903,7 +1903,7 @@ namespace adept {
 #endif
       ExpressionSize<2> i(0);
       ExpressionSize<E::n_arrays> ind(0);
-      ADEPT_ACTIVE_STACK->check_space(E::n_active * size());
+      ADEPT_ACTIVE_STACK->check_space(cast<E>::n_active * size());
       Index j_start, j_end_plus_1, index, index_stride;
       for ( ; i[0] < dimension_; ++i[0]) {
 	Engine::get_row_range(i[0], dimension_, offset_, 
