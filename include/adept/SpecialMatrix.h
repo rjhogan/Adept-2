@@ -974,7 +974,7 @@ namespace adept {
     static const int  rank_      = 2;
     static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
     static const int  n_scratch_ = 0;
-    static const int  n_arrays_  = Engine::my_n_arrays;
+    static const int  n_arrays   = Engine::my_n_arrays;
 
     // -------------------------------------------------------------------
     // SpecialMatrix: 2. Constructors
@@ -1877,7 +1877,7 @@ namespace adept {
     assign_expression_(const E& rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<2> i(0);
-      ExpressionSize<E::n_arrays> ind(0);
+      ExpressionSize<cast<E>::n_arrays> ind(0);
       Index j_start, j_end_plus_1, index, index_stride;
       for ( ; i[0] < dimension_; ++i[0]) {
 	Engine::get_row_range(i[0], dimension_, offset_, 
@@ -1902,7 +1902,7 @@ namespace adept {
       }
 #endif
       ExpressionSize<2> i(0);
-      ExpressionSize<E::n_arrays> ind(0);
+      ExpressionSize<cast<E>::n_arrays> ind(0);
       ADEPT_ACTIVE_STACK->check_space(cast<E>::n_active * size());
       Index j_start, j_end_plus_1, index, index_stride;
       for ( ; i[0] < dimension_; ++i[0]) {

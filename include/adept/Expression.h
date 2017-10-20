@@ -66,11 +66,7 @@ namespace adept {
     // statement
     static const int  n_scratch = A::n_scratch_;
 
-    // Number of arrays in the expression, needed as each array uses a
-    // scratch Index variable to store its current memory location,
-    // otherwise when looping over all the elements in a
-    // multidimensional expression this is expensive to recompute
-    static const int  n_arrays = A::n_arrays_;
+
     static const bool is_active = A::is_active_;
 
     // An expression is currently vectorizable only if it is of
@@ -87,7 +83,6 @@ namespace adept {
 
     static const int  rank; // = A::rank_;
     static const int  n_scratch; // = A::n_scratch_;
-    static const int  n_arrays; // = A::n_arrays_;
     static const bool is_active; // = A::is_active_;
     static const bool is_vectorizable;
     //      = A::is_vectorizable_ && Packet<Type>::is_vectorized;
@@ -380,8 +375,6 @@ namespace adept {
   template <typename Type, class A>
   const int Expression<Type,A>::n_scratch = A::n_scratch_;
   template <typename Type, class A>
-  const int Expression<Type,A>::n_arrays = A::n_arrays_;
-  template <typename Type, class A>
   const bool Expression<Type,A>::is_active = A::is_active_;
   template <typename Type, class A>
   const bool Expression<Type,A>::is_vectorizable
@@ -403,7 +396,7 @@ namespace adept {
       static const int  rank_      = 0;
       static const int  n_scratch_ = 0;
       static const int  n_active   = 0;
-      static const int  n_arrays_ = 0;
+      static const int  n_arrays   = 0;
       static const bool is_active_ = false;
       static const bool is_vectorizable_ = true;
 
@@ -473,14 +466,30 @@ namespace adept {
 
     template <class E>
     struct cast {
+      // Rank of the array
       static const int  rank = E::rank;
+      // Number of scratch floating-point variables needed in the
+      // expression, for example to store the result of a calculation
+      // when it is needed again to compult the equivalent differential
+      // statement
       static const int  n_scratch = E::n_scratch;
+      // Number of arrays within the expression; more specifically,
+      // the number of indices required to store the location of an
+      // element of the array
       static const int  n_arrays = E::n_arrays;
+      // Number of active terms in the expression
       static const int  n_active = E::n_active;
+      // Is this an array expression?
       static const bool is_array = (E::rank > 0);
+      // Is this an array expression with dimension of 2 or more?
       static const bool is_multidimensional = (E::rank > 1);
+      // Is this an active expression?
       static const bool is_active = E::is_active;
+      // Is this expression actually an lvalue such as Array or
+      // FixedArray?
       static const bool is_lvalue = E::is_lvalue;
+      // Is this expression vectorizable (conditional on a few extra
+      // run-time checks)?
       static const bool is_vectorizable = E::is_vectorizable;  
     };
 

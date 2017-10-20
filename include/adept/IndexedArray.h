@@ -296,7 +296,7 @@ namespace adept {
       // calculation of the location: first the location of the start
       // of the row, second the index to i[Rank-1] (0, 1, 2...), and 
       // third the location passed to the Array
-      static const int  n_arrays_  = 3;
+      static const int  n_arrays   = 3;
       static const bool is_active_ = IsActive;
 
       // The rank of the array being indexed may be higher than the
@@ -738,7 +738,7 @@ namespace adept {
 		    CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_INDEXED_ARRAY);
 	ExpressionSize<Rank> coords(0);
 	ExpressionSize<a_rank> a_coords(0);
-	ExpressionSize<E::n_arrays> loc(0);
+	ExpressionSize<cast<E>::n_arrays> loc(0);
 	ExpressionSize<1> a_loc(0);
 	int dim;
 	static const int last = Rank-1;
@@ -772,7 +772,7 @@ namespace adept {
 #endif
 	ExpressionSize<Rank> coords(0);
 	ExpressionSize<a_rank> a_coords(0);
-	ExpressionSize<E::n_arrays> loc(0);
+	ExpressionSize<cast<E>::n_arrays> loc(0);
 	ExpressionSize<1> a_loc(0);
 	int dim;
 	static const int last = Rank-1;
@@ -807,7 +807,7 @@ namespace adept {
 #endif
 	ExpressionSize<Rank> coords(0);
 	ExpressionSize<a_rank> a_coords(0);
-	ExpressionSize<E::n_arrays> loc(0);
+	ExpressionSize<cast<E>::n_arrays> loc(0);
 	ExpressionSize<1> a_loc(0);
 	int dim;
 	static const int last = Rank-1;

@@ -60,7 +60,7 @@ namespace adept {
       static const int  rank_      = 0;
       static const bool is_active_ = false;
       static const int  n_scratch_ = 0;
-      static const int  n_arrays_  = 0;
+      static const int  n_arrays   = 0;
       static const int  n_active   = 0;
       
       // Functions to implement Expression behaviour
@@ -175,7 +175,7 @@ namespace adept {
       static const int  rank_      = 1;
       static const bool is_active_ = false;
       static const int  n_scratch_ = 0;
-      static const int  n_arrays_  = 1;
+      static const int  n_arrays   = 1;
       static const int  n_active   = 0;
       
       // Construct with a specified stride
@@ -276,7 +276,7 @@ namespace adept {
       static const bool is_active_= false;
       static const int  n_active  = 0;
       static const int  n_static_ = 0;
-      static const int  n_arrays_ = 0;
+      static const int  n_arrays  = 0;
 
       // Unknown!
       //      bool get_dimensions_(ExpressionSize<1>& dim) const { return true; }      
