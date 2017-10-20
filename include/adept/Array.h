@@ -172,13 +172,13 @@ namespace adept {
 
     // Static definitions to enable the properties of this type of
     // expression to be discerned at compile time
-    static const bool is_active_ = IsActive;
-    static const bool is_lvalue = true;
+    static const bool is_active  = IsActive;
+    static const bool is_lvalue  = true;
     static const int  rank_      = Rank;
     static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
     static const int  n_scratch_ = 0;
     static const int  n_arrays   = 1;
-    static const bool is_vectorizable_ = true;
+    static const bool is_vectorizable = Packet<Type>::is_vectorized;
 
     // -------------------------------------------------------------------
     // Array: 2. Constructors
@@ -558,8 +558,8 @@ namespace adept {
     // Assignment to a single value copies to every element
     template <typename RType>
     typename enable_if<is_not_expression<RType>::value
-		       // FIX
-		       || is_active<Type>::value
+                       // FIX
+                       || internal::is_active<Type>::value
 		       , Array&>::type
     operator=(RType rhs) {
       if (!empty()) {
@@ -582,7 +582,7 @@ namespace adept {
     // Assign an active scalar to an active array
     template <typename PType>
     // FIX
-    typename enable_if<!is_active<PType>::value && IsActive, Array&>::type
+    typename enable_if<!internal::is_active<PType>::value && IsActive, Array&>::type
     //    Array& 
     operator=(const Active<PType>& rhs) {
       ADEPT_STATIC_ASSERT(IsActive, ATTEMPT_TO_ASSIGN_ACTIVE_SCALAR_TO_INACTIVE_ARRAY);
@@ -2879,7 +2879,7 @@ namespace adept {
     // array
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
     inline
-    typename enable_if<!LocalIsActive && (!E::is_vectorizable
+    typename enable_if<!LocalIsActive && (!cast<E>::is_vectorizable
 					  || !is_same<typename E::type,Type>::value),void>::type
     assign_expression_(const E& rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
@@ -2920,7 +2920,7 @@ namespace adept {
     // Vectorized version for Rank-1 arrays
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
     inline //__attribute__((always_inline))
-    typename enable_if<!LocalIsActive && E::is_vectorizable && LocalRank == 1
+    typename enable_if<!LocalIsActive && cast<E>::is_vectorizable && LocalRank == 1
 		       && is_same<typename E::type,Type>::value,void>::type
       // Removing the reference speeds things up because otherwise E
       // is dereferenced each loop
@@ -2987,7 +2987,7 @@ namespace adept {
     // Vectorized version
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
     inline
-    typename enable_if<!LocalIsActive && E::is_vectorizable && (LocalRank > 1)
+    typename enable_if<!LocalIsActive && cast<E>::is_vectorizable && (LocalRank > 1)
                        && is_same<typename E::type,Type>::value,void>::type
     // Removing the reference speeds things up because otherwise E
     // is dereferenced each loop
@@ -3079,7 +3079,7 @@ namespace adept {
 
       ADEPT_ACTIVE_STACK->check_space(cast<E>::n_active * size());
 
-      if (E::is_vectorizable && rhs.all_arrays_contiguous()) {
+      if (cast<E>::is_vectorizable && rhs.all_arrays_contiguous()) {
 	// Contiguous source and destination data
 	Type* const __restrict t = data_; // Avoids an unnecessary load for some reason
 	do {

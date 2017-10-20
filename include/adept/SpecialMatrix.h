@@ -969,12 +969,13 @@ namespace adept {
 
     // Static definitions to enable the properties of this type of
     // expression to be discerned at compile time
-    static const bool is_active_ = IsActive;
+    static const bool is_active  = IsActive;
     static const bool is_lvalue  = true;
     static const int  rank_      = 2;
     static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
     static const int  n_scratch_ = 0;
     static const int  n_arrays   = Engine::my_n_arrays;
+    static const bool is_vectorizable = false;
 
     // -------------------------------------------------------------------
     // SpecialMatrix: 2. Constructors
@@ -1203,7 +1204,7 @@ namespace adept {
   
     // An active array being assigned to an active scalar
     template <typename PType>
-    typename enable_if<!is_active<PType>::value && IsActive, SpecialMatrix&>::type
+    typename enable_if<!internal::is_active<PType>::value && IsActive, SpecialMatrix&>::type
     operator=(const Active<PType>& rhs) {
       // If not recording we call the inactive version instead
 #ifdef ADEPT_RECORDING_PAUSABLE

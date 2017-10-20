@@ -36,9 +36,9 @@ namespace adept {
 
       // Static data
       static const int  rank_ = (L::rank > R::rank ? L::rank : R::rank);
-      static const bool is_active_ = (L::is_active || R::is_active) 
+      static const bool is_active = (L::is_active || R::is_active) 
 	&& !is_same<Type, bool>::value;
-      static const int  store_result = is_active_ * Op::store_result;
+      static const int  store_result = is_active * Op::store_result;
       static const int  n_active = cast<L>::n_active + cast<R>::n_active;
       // Assume the only local scratch variable is the result of the
       // binary expression
@@ -47,7 +47,7 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + L::n_scratch + R::n_scratch;
       static const int  n_arrays  = L::n_arrays + R::n_arrays;
-      static const bool is_vectorizable_
+      static const bool is_vectorizable
 	= L::is_vectorizable && R::is_vectorizable && Op::is_vectorized
 	&& is_same<typename L::type,typename R::type>::value;
 
@@ -345,8 +345,8 @@ namespace adept {
 
       // Static data
       static const int rank_ = R::rank;
-      static const bool is_active_ = R::is_active && !is_same<Type, bool>::value;
-      static const int  store_result = is_active_ * Op::store_result;
+      static const bool is_active = R::is_active && !is_same<Type, bool>::value;
+      static const int  store_result = is_active * Op::store_result;
       static const int n_active = cast<R>::n_active;
       // Assume the only local scratch variable is the result of the
       // binary expression
@@ -355,7 +355,7 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + R::n_scratch;
       static const int  n_arrays  = R::n_arrays;
-      static const bool is_vectorizable_ = R::is_vectorizable && Op::is_vectorized
+      static const bool is_vectorizable = R::is_vectorizable && Op::is_vectorized
 	&& is_same<L,typename R::type>::value;
 
       using Op::is_operator;
@@ -532,8 +532,8 @@ namespace adept {
 
       // Static data
       static const int rank_ = L::rank;
-      static const bool is_active_ = L::is_active && !is_same<Type,bool>::value;
-      static const int  store_result = is_active_ * Op::store_result;
+      static const bool is_active = L::is_active && !is_same<Type,bool>::value;
+      static const int  store_result = is_active * Op::store_result;
       static const int n_active  = cast<L>::n_active;
       // Assume the only local scratch variable is the result of the
       // binary expression
@@ -542,7 +542,7 @@ namespace adept {
       static const int  n_scratch_ 
         = n_local_scratch + L::n_scratch;
       static const int  n_arrays  = L::n_arrays;
-      static const bool is_vectorizable_ = L::is_vectorizable && Op::is_vectorized
+      static const bool is_vectorizable = L::is_vectorizable && Op::is_vectorized
 	&& is_same<typename L::type,R>::value;
 
       using Op::is_operator;

@@ -66,15 +66,6 @@ namespace adept {
     // statement
     static const int  n_scratch = A::n_scratch_;
 
-
-    static const bool is_active = A::is_active_;
-
-    // An expression is currently vectorizable only if it is of
-    // floating point type, all arrays have the same type, and if the
-    // only mathematical operators and functions can be treated by
-    // hardware vector operations (+-*/sqrt)
-    static const bool is_vectorizable
-      = A::is_vectorizable_ && Packet<Type>::is_vectorized;
 #else
     // ...but for other compilers, defining the static constants
     // in-class means that derived classes using CRTP fail to compile,
@@ -83,14 +74,11 @@ namespace adept {
 
     static const int  rank; // = A::rank_;
     static const int  n_scratch; // = A::n_scratch_;
-    static const bool is_active; // = A::is_active_;
-    static const bool is_vectorizable;
-    //      = A::is_vectorizable_ && Packet<Type>::is_vectorized;
 #endif
 
     // Fall-back position is that an expression is not vectorizable:
     // only those that are need to define is_vectorizable_.
-    static const bool is_vectorizable_ = false;
+    static const bool is_vectorizable = false;
 
     // Classes derived from this one that do not define how many
     // scratch variables, active variables or arrays they contain are
@@ -102,7 +90,7 @@ namespace adept {
     // on the operation stack
     static const int  n_active = 0;
 
-    static const bool is_active_ = false;
+    static const bool is_active = false;
 
     // Expressions cannot be lvalues by default, but override this
     // bool if they are
@@ -374,11 +362,6 @@ namespace adept {
   const int Expression<Type,A>::rank = A::rank_;
   template <typename Type, class A>
   const int Expression<Type,A>::n_scratch = A::n_scratch_;
-  template <typename Type, class A>
-  const bool Expression<Type,A>::is_active = A::is_active_;
-  template <typename Type, class A>
-  const bool Expression<Type,A>::is_vectorizable
-    = A::is_vectorizable_ && Packet<Type>::is_vectorized;
 #endif
 #undef ADEPT_GNU_COMPILER
 
@@ -397,8 +380,8 @@ namespace adept {
       static const int  n_scratch_ = 0;
       static const int  n_active   = 0;
       static const int  n_arrays   = 0;
-      static const bool is_active_ = false;
-      static const bool is_vectorizable_ = true;
+      static const bool is_active  = false;
+      static const bool is_vectorizable = true;
 
       Scalar(const Type& value) : val_(value) { }
 

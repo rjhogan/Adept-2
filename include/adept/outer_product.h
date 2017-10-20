@@ -28,8 +28,8 @@ namespace adept {
     public:
       // Static data
       static const int rank_ = 2;
-      static const bool is_active_ = L::is_active || R::is_active;
-      static const int  store_result = is_active_;
+      static const bool is_active  = L::is_active || R::is_active;
+      static const int  store_result = is_active;
       static const int  n_active  = LArray::n_active + RArray::n_active;
       static const int  n_local_scratch = store_result; 
       static const int  n_scratch_ 
@@ -37,8 +37,8 @@ namespace adept {
       static const int  n_arrays  = LArray::n_arrays + RArray::n_arrays;
       // Currently not vectorizable because the current design always
       // has the array index increasing
-      //      static const bool is_vectorizable_ = is_same<LType,RType>::value;
-      static const bool is_vectorizable_ = false;//is_same<LType,RType>::value;
+      //      static const bool is_vectorizable = is_same<LType,RType>::value;
+      static const bool is_vectorizable = false;//is_same<LType,RType>::value;
 
     protected:
 
@@ -95,7 +95,7 @@ namespace adept {
 
       // This does not work because the array index is always
       // increased which it shouldn't be for the left vector. For this
-      // reason, vectorization is turned off (see is_vectorizable_
+      // reason, vectorization is turned off (see is_vectorizable
       // above)
       template <int MyArrayNum, int NArrays>
       Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {

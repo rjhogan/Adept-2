@@ -297,7 +297,7 @@ namespace adept {
       // of the row, second the index to i[Rank-1] (0, 1, 2...), and 
       // third the location passed to the Array
       static const int  n_arrays   = 3;
-      static const bool is_active_ = IsActive;
+      static const bool is_active  = IsActive;
 
       // The rank of the array being indexed may be higher than the
       // result of the index due to singleton indices
@@ -550,7 +550,7 @@ namespace adept {
 
       // Assign an active scalar to an active array
       template <typename PType>
-      typename enable_if<!is_active<PType>::value && IsActive, IndexedArray&>::type
+      typename enable_if<!internal::is_active<PType>::value && IsActive, IndexedArray&>::type
       operator=(const Active<PType>& rhs) {
 	ADEPT_STATIC_ASSERT(IsActive, ATTEMPT_TO_ASSIGN_ACTIVE_SCALAR_TO_INACTIVE_INDEXED_ARRAY);
 	if (!empty()) {

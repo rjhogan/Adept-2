@@ -23,13 +23,13 @@ namespace adept {
 
       // Static definitions to enable the properties of this type of
       // expression to be discerned at compile time
-      static const bool is_active_ = IsActive;
+      static const bool is_active  = IsActive;
       static const bool is_lvalue  = true;
       static const int  rank_      = Rank;
       static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
       static const int  n_scratch_ = 0;
       static const int  n_arrays   = 1;
-      static const bool is_vectorizable_ = true;
+      static const bool is_vectorizable = MyArray::is_vectorizable;
       
       ArrayWrapper(const MyArray& a) : data(a.const_data()), array(a) { }
       

@@ -22,11 +22,11 @@ namespace adept {
       : public Expression<Type, NoAlias<Type, R> > 
     {
       static const int  rank_      = R::rank;
-      static const bool is_active_ = R::is_active;
+      static const bool is_active  = R::is_active;
       static const int  n_active   = R::n_active;
       static const int  n_scratch_ = R::n_scratch;
       static const int  n_arrays   = R::n_arrays;
-      static const bool is_vectorizable_ = R::is_vectorizable;
+      static const bool is_vectorizable = R::is_vectorizable;
 
       const R& arg;
 

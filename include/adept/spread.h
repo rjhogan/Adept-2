@@ -25,14 +25,14 @@ namespace adept {
     public:
       // Static data
       static const int rank_ = E::rank+1;
-      static const bool is_active_ = E::is_active;
+      static const bool is_active  = E::is_active;
       static const int  n_active   = ArrayType::n_active;
       static const int  n_scratch_ = 0;
       static const int  n_arrays   = ArrayType::n_arrays;
       // Currently not vectorizable if the final dimension is the
       // spread dimension because the current design always has the
       // array index increasing
-      static const bool is_vectorizable_ = (SpreadDim != E::rank);
+      static const bool is_vectorizable = (SpreadDim != E::rank);
 
     protected:
       const ArrayType array;

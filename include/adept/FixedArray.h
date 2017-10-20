@@ -80,14 +80,14 @@ namespace adept {
 
     // Static definitions to enable the properties of this type of
     // expression to be discerned at compile time
-    static const bool is_active_ = IsActive;
+    static const bool is_active  = IsActive;
     static const bool is_lvalue  = true;
     static const int  rank_      = fixed_array<J0,J1,J2,J3,J4,J5,J6>::rank;
     static const int  length_    = fixed_array<J0,J1,J2,J3,J4,J5,J6>::length;
     static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
     static const int  n_scratch_ = 0;
     static const int  n_arrays   = 1;
-    static const bool is_vectorizable_ = true;
+    static const bool is_vectorizable = Packet<Type>::is_vectorized;
 
   protected:
     /*
