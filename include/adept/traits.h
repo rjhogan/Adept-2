@@ -210,7 +210,7 @@ namespace adept {
     {
       static const bool value
       = std::numeric_limits<typename T::type>::is_integer
-	&& T::rank == 0; 
+	&& cast<T>::rank == 0; 
       static const int  count = value;
     };
 

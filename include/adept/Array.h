@@ -174,7 +174,7 @@ namespace adept {
     // expression to be discerned at compile time
     static const bool is_active  = IsActive;
     static const bool is_lvalue  = true;
-    static const int  rank_      = Rank;
+    static const int  rank       = Rank;
     static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
     static const int  n_scratch  = 0;
     static const int  n_arrays   = 1;
@@ -595,7 +595,7 @@ namespace adept {
 #endif
 	ExpressionSize<Rank> i(0);
 	Index index = 0;
-	int rank;
+	int my_rank;
 	static const int last = Rank-1;
 	// In case PType != Type we make a local copy to minimize type
 	// conversions
@@ -611,8 +611,8 @@ namespace adept {
 	    ADEPT_ACTIVE_STACK->push_rhs(1.0, rhs.gradient_index());
 	    ADEPT_ACTIVE_STACK->push_lhs(gradient_index()+index);
 	  }
-	  advance_index(index, rank, i);
-	} while (rank >= 0);
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
       }
       return *this;
     }
@@ -2276,22 +2276,22 @@ namespace adept {
       }
       else if (adept::internal::array_print_curly_brackets) {
 	adept::ExpressionSize<Rank> i(0);
-	int rank = -1;
+	int my_rank = -1;
 	if (Rank > 1) {
 	  os << "\n";
 	}
 	do {
-	  for (int r = 0; r < rank+1; r++)
+	  for (int r = 0; r < my_rank+1; r++)
 	    { os << " "; }
-	  for (int r = rank+1; r < Rank; r++)
+	  for (int r = my_rank+1; r < Rank; r++)
 	    { os << "{"; }
 	  for (i[Rank-1] = 0; i[Rank-1] < dimensions_[Rank-1]-1; ++i[Rank-1])
 	    { os << data_[index_(i)] << ", "; }
 	  os << data_[index_(i)];
-	  rank = Rank-1;
-	  while (--rank >= 0) {
-	    if (++i[rank] >= dimensions_[rank]) {
-	      i[rank] = 0;
+	  my_rank = Rank-1;
+	  while (--my_rank >= 0) {
+	    if (++i[my_rank] >= dimensions_[my_rank]) {
+	      i[my_rank] = 0;
 	      os << "}";
 	    }
 	    else {
@@ -2299,7 +2299,7 @@ namespace adept {
 	      break;
 	    }
 	  }
-	} while (rank >= 0);
+	} while (my_rank >= 0);
 	if (Rank > 1) {
 	  os << "}"; // "}/n"
 	}
@@ -2309,22 +2309,22 @@ namespace adept {
       }
       else {
 	adept::ExpressionSize<Rank> i(0);
-	int rank;
+	int my_rank;
 	do {
 	  for (i[Rank-1] = 0; i[Rank-1] < dimensions_[Rank-1]; ++i[Rank-1]) {
 	    os << " " << data_[index_(i)];
 	  }
-	  rank = Rank-1;
-	  while (--rank >= 0) {
-	    if (++i[rank] >= dimensions_[rank]) {
-	      i[rank] = 0;
+	  my_rank = Rank-1;
+	  while (--my_rank >= 0) {
+	    if (++i[my_rank] >= dimensions_[my_rank]) {
+	      i[my_rank] = 0;
 	    }
 	    else {
 	      break;
 	    }
 	  }
 	  os << "\n";
-	} while (rank >= 0);
+	} while (my_rank >= 0);
       }
       return os;
     }
@@ -2355,7 +2355,7 @@ namespace adept {
       ExpressionSize<Rank> i(0);
       Index gradient_ind = gradient_index();
       Index index = 0;
-      int rank;
+      int my_rank;
       vec.reserve(vec.size() + size());
       do {
 	// Innermost loop - note that the counter is index, not max_index
@@ -2366,8 +2366,8 @@ namespace adept {
 	}
 	// Increment counters appropriately depending on which
 	// dimensions have been finished
-	advance_index(index, rank, i);
-      } while (rank >= 0);
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
     }
 
     // Return inactive array linked to original data
@@ -2555,7 +2555,7 @@ namespace adept {
       ExpressionSize<Rank> target_offset = gradient.offset();
       ExpressionSize<Rank> i(0);
       Index index = 0;
-      int rank;
+      int my_rank;
       Index index_target = 0;
       Index last_dim_stretch = dimensions_[last]*offset_[last];
       MyType* target = gradient.data();
@@ -2569,8 +2569,8 @@ namespace adept {
 				  gradient_index()+index+last_dim_stretch,
 				  target+index_target, offset_[last], target_offset[last]);
 	index += last_dim_stretch;
-	advance_index(index, rank, i);
-      } while (rank >= 0);
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
     }
 
     // Return an inactive array of the same type and rank as the
@@ -2773,7 +2773,7 @@ namespace adept {
     assign_inactive_scalar_(X x) {
       ExpressionSize<LocalRank> i(0);
       Index index = 0;
-      int rank;
+      int my_rank;
       do {
 	// Innermost loop - note that the counter is index, not max_index
 	for (Index max_index = index + dimensions_[LocalRank-1]*offset_[LocalRank-1];
@@ -2783,8 +2783,8 @@ namespace adept {
 	}
 	// Increment counters appropriately depending on which
 	// dimensions have been finished
-	advance_index(index, rank, i);
-      } while (rank >= 0);
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
     }
 
     // An active array being assigned the value of an inactive scalar
@@ -2802,7 +2802,7 @@ namespace adept {
       ExpressionSize<LocalRank> i(0);
       Index gradient_ind = gradient_index();
       Index index = 0;
-      int rank;
+      int my_rank;
       do {
 	// Innermost loop
 	ADEPT_ACTIVE_STACK->push_lhs_range(gradient_ind+index, dimensions_[LocalRank-1],
@@ -2814,8 +2814,8 @@ namespace adept {
 
 	// Increment counters appropriately depending on which
 	// dimensions have been finished
-	advance_index(index, rank, i);
-      } while (rank >= 0);
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
     }
 
 
@@ -2886,7 +2886,7 @@ namespace adept {
       ExpressionSize<LocalRank> i(0);
       ExpressionSize<cast<E>::n_arrays> ind(0);
       Index index = 0;
-      int rank;
+      int my_rank;
       static const int last = LocalRank-1;
       // FIX!!!
       if (false) { //rhs.all_arrays_contiguous()) {
@@ -2900,8 +2900,8 @@ namespace adept {
 	    // need to be incremented by 1
 	    data_[index] = rhs.next_value_contiguous(ind);
 	  }
-	  advance_index(index, rank, i);
-	} while (rank >= 0);
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
       }
       else {
 	do {
@@ -2912,8 +2912,8 @@ namespace adept {
 		  index += offset_[last]) {
 	    data_[index] = rhs.next_value(ind);
 	  }
-	  advance_index(index, rank, i);
-	} while (rank >= 0);
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
       }
     }
 
@@ -2997,7 +2997,7 @@ namespace adept {
       ExpressionSize<LocalRank> i(0);
       ExpressionSize<cast<E>::n_arrays> ind(0);
       Index index = 0;
-      int rank;
+      int my_rank;
       static const int last = LocalRank-1;
       
       if (dimensions_[last] >= Packet<Type>::size*2
@@ -3041,8 +3041,8 @@ namespace adept {
 	    // Scalar version
 	    data_[index] = rhs.next_value_contiguous(ind);
 	  }
-	  advance_index(index, rank, i);
-	} while (rank >= 0);
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
       }
       else {
 	// Non-contiguous source or destination data
@@ -3054,8 +3054,8 @@ namespace adept {
 		  index += offset_[last]) {
 	    data_[index] = rhs.next_value(ind);
 	  }
-	  advance_index(index, rank, i);
-	} while (rank >= 0);
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
       }
     }
 
@@ -3074,7 +3074,7 @@ namespace adept {
       ExpressionSize<LocalRank> i(0);
       ExpressionSize<cast<E>::n_arrays> ind(0);
       Index index = 0;
-      int rank;
+      int my_rank;
       static const int last = LocalRank-1;
 
       ADEPT_ACTIVE_STACK->check_space(cast<E>::n_active * size());
@@ -3091,8 +3091,8 @@ namespace adept {
 	    t[index] = rhs.next_value_and_gradient_contiguous(*ADEPT_ACTIVE_STACK, ind);
 	    ADEPT_ACTIVE_STACK->push_lhs(gradient_index()+index); // What if RHS not active?
 	  }
-	  advance_index(index, rank, i);
-	} while (rank >= 0);
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
       }
       else {
 	// Non-contiguous source or destination data
@@ -3106,8 +3106,8 @@ namespace adept {
 	    t[index] = rhs.next_value_and_gradient(*ADEPT_ACTIVE_STACK, ind);
 	    ADEPT_ACTIVE_STACK->push_lhs(gradient_index()+index); // What if RHS not active?
 	  }
-	  advance_index(index, rank, i);
-	} while (rank >= 0);
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
       }
     }
 
@@ -3125,7 +3125,7 @@ namespace adept {
       ExpressionSize<LocalRank> i(0);
       ExpressionSize<cast<E>::n_arrays> ind(0);
       Index index = 0;
-      int rank;
+      int my_rank;
       Index gradient_ind = gradient_index();
       static const int last = LocalRank-1;
       do {
@@ -3138,8 +3138,8 @@ namespace adept {
 	       index += offset_[last]) {
 	  data_[index] = rhs.next_value(ind);
 	}
-	advance_index(index, rank, i);
-      } while (rank >= 0);
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
     }
 
 
@@ -3150,7 +3150,7 @@ namespace adept {
       ExpressionSize<Rank> i(0);
       ExpressionSize<cast<B>::n_arrays> bool_ind(0);
       Index index = 0;
-      int rank;
+      int my_rank;
       static const int last = Rank-1;
 
       do {
@@ -3163,8 +3163,8 @@ namespace adept {
 	    data_[index] = rhs;
 	  }
 	}
-	advance_index(index, rank, i);
-      } while (rank >= 0);
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
     }
 
     template<bool LocalIsActive, class B, typename C>
@@ -3180,7 +3180,7 @@ namespace adept {
       ExpressionSize<Rank> i(0);
       ExpressionSize<cast<B>::n_arrays> bool_ind(0);
       Index index = 0;
-      int rank;
+      int my_rank;
       static const int last = Rank-1;
 
       do {
@@ -3194,8 +3194,8 @@ namespace adept {
 	    ADEPT_ACTIVE_STACK->push_lhs(gradient_index()+index);
 	  }
 	}
-	advance_index(index, rank, i);
-      } while (rank >= 0);
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
     }
 
     template<bool LocalIsActive, class B, class C>
@@ -3205,7 +3205,7 @@ namespace adept {
       ExpressionSize<cast<B>::n_arrays> bool_ind(0);
       ExpressionSize<cast<C>::n_arrays> rhs_ind(0);
       Index index = 0;
-      int rank;
+      int my_rank;
       static const int last = Rank-1;
       bool is_gap = false;
 
@@ -3227,8 +3227,8 @@ namespace adept {
 	    is_gap = true;
 	  }
 	}
-	advance_index(index, rank, i);
-      } while (rank >= 0);
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
     }
 
 
@@ -3246,7 +3246,7 @@ namespace adept {
       ExpressionSize<cast<B>::n_arrays> bool_ind(0);
       ExpressionSize<cast<C>::n_arrays> rhs_ind(0);
       Index index = 0;
-      int rank;
+      int my_rank;
       static const int last = Rank-1;
       bool is_gap = false;
 
@@ -3270,8 +3270,8 @@ namespace adept {
 	    is_gap = true;
 	  }
 	}
-	advance_index(index, rank, i);
-      } while (rank >= 0);
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
     }
 
 

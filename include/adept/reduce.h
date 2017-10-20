@@ -393,7 +393,7 @@ namespace adept {
 	Index n = dims.size();
 	ExpressionSize<E::rank> i(0);
 	ExpressionSize<E::n_arrays> loc(0);
-	int rank;
+	int my_rank;
 	static const int last = E::rank-1;
 	do {
 	  i[last] = 0;
@@ -402,16 +402,16 @@ namespace adept {
 	  for ( ; i[last] < dims[last]; ++i[last]) {
 	    f.accumulate(total, rhs.next_value(loc));
 	  }
-	  rank = E::rank-1;
-	  while (--rank >= 0) {
-	    if (++i[rank] >= dims[rank]) {
-	      i[rank] = 0;
+	  my_rank = E::rank-1;
+	  while (--my_rank >= 0) {
+	    if (++i[my_rank] >= dims[my_rank]) {
+	      i[my_rank] = 0;
 	    }
 	    else {
 	      break;
 	    }
 	  }
-	} while (rank >= 0);
+	} while (my_rank >= 0);
 	f.finish(total, n);
       }
       return total;
@@ -446,7 +446,7 @@ namespace adept {
 	Index n = dims.size();
 	ExpressionSize<E::rank> i(0);
 	ExpressionSize<E::n_arrays> loc(0);
-	int rank;
+	int my_rank;
 	static const int last = E::rank-1;
 	int iendvec;
 	int istartvec = rhs.alignment_offset();
@@ -472,16 +472,16 @@ namespace adept {
 	  for ( ; i[last] < dims[last]; ++i[last]) {
 	    f.accumulate(total, rhs.next_value_contiguous(loc));
 	  }
-	  rank = E::rank-1;
-	  while (--rank >= 0) {
-	    if (++i[rank] >= dims[rank]) {
-	      i[rank] = 0;
+	  my_rank = E::rank-1;
+	  while (--my_rank >= 0) {
+	    if (++i[my_rank] >= dims[my_rank]) {
+	      i[my_rank] = 0;
 	    }
 	    else {
 	      break;
 	    }
 	  }
-	} while (rank >= 0);
+	} while (my_rank >= 0);
 	f.accumulate(total, f.accumulate_packet(ptotal));
 	f.finish(total, n);
       }
@@ -491,7 +491,7 @@ namespace adept {
 	Index n = dims.size();
 	ExpressionSize<E::rank> i(0);
 	ExpressionSize<E::n_arrays> loc(0);
-	int rank;
+	int my_rank;
 	static const int last = E::rank-1;
 	do {
 	  i[last] = 0;
@@ -500,16 +500,16 @@ namespace adept {
 	  for ( ; i[last] < dims[last]; ++i[last]) {
 	    f.accumulate(total, rhs.next_value(loc));
 	  }
-	  rank = E::rank-1;
-	  while (--rank >= 0) {
-	    if (++i[rank] >= dims[rank]) {
-	      i[rank] = 0;
+	  my_rank = E::rank-1;
+	  while (--my_rank >= 0) {
+	    if (++i[my_rank] >= dims[my_rank]) {
+	      i[my_rank] = 0;
 	    }
 	    else {
 	      break;
 	    }
 	  }
-	} while (rank >= 0);
+	} while (my_rank >= 0);
 	f.finish(total, n);
       }
       return total;
@@ -555,7 +555,7 @@ namespace adept {
 	ExpressionSize<E::rank> i(0);
 	ExpressionSize<E::rank-1> inew(0);
 	ExpressionSize<E::n_arrays> loc(0);
-	int rank;
+	int my_rank;
 	static const int last = E::rank-1;
 	do {
 	  i[last] = 0;
@@ -577,39 +577,39 @@ namespace adept {
 	  // Advancing to next innermost loop is somewhat involved
 	  // since we have to do something different when we reach the
 	  // dimension that is being reduced
-	  rank = E::rank-1;
-	  while (--rank >= 0) {
-	    ++i[rank];
-	    if (rank < reduce_dim) {
-	      ++inew[rank];
-	      if (i[rank] >= dims[rank]) {
-		i[rank] = 0;
-		inew[rank] = 0;
+	  my_rank = E::rank-1;
+	  while (--my_rank >= 0) {
+	    ++i[my_rank];
+	    if (my_rank < reduce_dim) {
+	      ++inew[my_rank];
+	      if (i[my_rank] >= dims[my_rank]) {
+		i[my_rank] = 0;
+		inew[my_rank] = 0;
 	      }
 	      else {
 		break;
 	      }   
 	    }
-	    else if (rank == reduce_dim) {
-	      if (i[rank] >= dims[rank]) {
-		i[rank] = 0;
+	    else if (my_rank == reduce_dim) {
+	      if (i[my_rank] >= dims[my_rank]) {
+		i[my_rank] = 0;
 	      }
 	      else {
 		break;
 	      }   
 	    }
 	    else {
-	      ++inew[rank-1];
-	      if (i[rank] >= dims[rank]) {
-		i[rank] = 0;
-		inew[rank-1] = 0;
+	      ++inew[my_rank-1];
+	      if (i[my_rank] >= dims[my_rank]) {
+		i[my_rank] = 0;
+		inew[my_rank-1] = 0;
 	      }
 	      else {
 		break;
 	      }
 	    }
 	  }
-	} while (rank >= 0);
+	} while (my_rank >= 0);
 	
 	if (f.finish_needed) {
 	  f.finish(total, dims[reduce_dim]);
@@ -645,7 +645,7 @@ namespace adept {
 	Index n = dims.size();
 	ExpressionSize<E::rank> i(0);
 	ExpressionSize<E::n_arrays> loc(0);
-	int rank;
+	int my_rank;
 	static const int last = E::rank-1;
 	ADEPT_ACTIVE_STACK->check_space(E::n_active * n); // FIX!
 	do {
@@ -655,16 +655,16 @@ namespace adept {
 	  for ( ; i[last] < dims[last]; ++i[last]) {
 	    f.accumulate_active(total, rhs, loc);
 	  }
-	  rank = E::rank-1;
-	  while (--rank >= 0) {
-	    if (++i[rank] >= dims[rank]) {
-	      i[rank] = 0;
+	  my_rank = E::rank-1;
+	  while (--my_rank >= 0) {
+	    if (++i[my_rank] >= dims[my_rank]) {
+	      i[my_rank] = 0;
 	    }
 	    else {
 	      break;
 	    }
 	  }
-	} while (rank >= 0);
+	} while (my_rank >= 0);
 	if (f.active_finish_needed) {
 	  f.finish_active(total, n);
 	}
@@ -726,7 +726,7 @@ namespace adept {
 	ExpressionSize<E::rank> i(0);
 	ExpressionSize<E::rank-1> inew(0);
 	ExpressionSize<E::n_arrays> loc(0);
-	int rank;
+	int my_rank;
 	Active<Type> total;
 	do {
 	  i[reduce_dim] = 0;
@@ -744,42 +744,42 @@ namespace adept {
 	    f.finish_active(total, dims[reduce_dim]);
 	  }
 	  result.get_lvalue(inew) = total;
-	  rank = E::rank;
-	  while (--rank >= 0) {
-	    if (rank == reduce_dim) {
+	  my_rank = E::rank;
+	  while (--my_rank >= 0) {
+	    if (my_rank == reduce_dim) {
 	      continue;
 	    }
-	    ++i[rank];
-	    if (rank < reduce_dim) {
-	      ++inew[rank];
-	      if (i[rank] >= dims[rank]) {
-		i[rank] = 0;
-		inew[rank] = 0;
+	    ++i[my_rank];
+	    if (my_rank < reduce_dim) {
+	      ++inew[my_rank];
+	      if (i[my_rank] >= dims[my_rank]) {
+		i[my_rank] = 0;
+		inew[my_rank] = 0;
 	      }
 	      else {
 		break;
 	      }   
 	    }
-	    else if (rank == reduce_dim) {
-	      if (i[rank] >= dims[rank]) {
-		i[rank] = 0;
+	    else if (my_rank == reduce_dim) {
+	      if (i[my_rank] >= dims[my_rank]) {
+		i[my_rank] = 0;
 	      }
 	      else {
 		break;
 	      }   
 	    }
 	    else {
-	      ++inew[rank-1];
-	      if (i[rank] >= dims[rank]) {
-		i[rank] = 0;
-		inew[rank-1] = 0;
+	      ++inew[my_rank-1];
+	      if (i[my_rank] >= dims[my_rank]) {
+		i[my_rank] = 0;
+		inew[my_rank-1] = 0;
 	      }
 	      else {
 		break;
 	      }
 	    }
 	  }
-	} while (rank >= 0);
+	} while (my_rank >= 0);
       }
     }
 

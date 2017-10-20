@@ -27,7 +27,7 @@ namespace adept {
 
     public:
       // Static data
-      static const int rank_ = 2;
+      static const int rank  = 2;
       static const bool is_active  = L::is_active || R::is_active;
       static const int  store_result = is_active;
       static const int  n_active  = LArray::n_active + RArray::n_active;

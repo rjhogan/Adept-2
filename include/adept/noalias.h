@@ -21,7 +21,7 @@ namespace adept {
     struct NoAlias
       : public Expression<Type, NoAlias<Type, R> > 
     {
-      static const int  rank_      = R::rank;
+      static const int  rank       = R::rank;
       static const bool is_active  = R::is_active;
       static const int  n_active   = R::n_active;
       static const int  n_scratch  = R::n_scratch;

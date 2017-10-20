@@ -25,7 +25,7 @@ namespace adept {
       // expression to be discerned at compile time
       static const bool is_active  = IsActive;
       static const bool is_lvalue  = true;
-      static const int  rank_      = Rank;
+      static const int  rank       = Rank;
       static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
       static const int  n_scratch  = 0;
       static const int  n_arrays   = 1;

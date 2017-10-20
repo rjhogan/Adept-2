@@ -24,7 +24,7 @@ namespace adept {
 
     public:
       // Static data
-      static const int rank_ = E::rank+1;
+      static const int  rank       = E::rank+1;
       static const bool is_active  = E::is_active;
       static const int  n_active   = ArrayType::n_active;
       static const int  n_scratch  = 0;
@@ -36,7 +36,7 @@ namespace adept {
 
     protected:
       const ArrayType array;
-      ExpressionSize<rank_> dims;
+      ExpressionSize<rank> dims;
       Index n;
 
     public:
@@ -46,7 +46,7 @@ namespace adept {
 	  dims[i] = array.dimension(i);
 	}
 	dims[SpreadDim] = n_;
-	for (int i = SpreadDim+1; i < rank_; ++i) {
+	for (int i = SpreadDim+1; i < rank; ++i) {
 	  dims[i] = array.dimension(i-1);
 	}
 	// Communicate empty array if n == 0
@@ -55,7 +55,7 @@ namespace adept {
 	}
       }
 
-      bool get_dimensions_(ExpressionSize<rank_>& dim) const {
+      bool get_dimensions_(ExpressionSize<rank>& dim) const {
 	dim = dims;
 	return true;
       }
@@ -86,7 +86,7 @@ namespace adept {
       template <int MyArrayNum, int NArrays>
       void advance_location_(ExpressionSize<NArrays>& loc) const {
 	// If false this if statement should be optimized away
-	if (SpreadDim < rank_-1) {
+	if (SpreadDim < rank-1) {
 	  array.template advance_location_<MyArrayNum>(loc);
 	}
       }
@@ -109,7 +109,7 @@ namespace adept {
       template <int MyArrayNum, int NArrays>
       Packet<Type> 
       packet_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return packet_at_location_local_<SpreadDim==rank_-1,MyArrayNum>(loc);
+	return packet_at_location_local_<SpreadDim==rank-1,MyArrayNum>(loc);
 
       }
 
@@ -137,14 +137,14 @@ namespace adept {
     public:
 
       template <int MyArrayNum, int NArrays>
-      void set_location_(const ExpressionSize<rank_>& i, 
+      void set_location_(const ExpressionSize<rank>& i, 
 			 ExpressionSize<NArrays>& index) const {
-	ExpressionSize<rank_-1> i_array(0);
+	ExpressionSize<rank-1> i_array(0);
 	int j = 0;
 	for ( ; j < SpreadDim; ++j) {
 	  i_array[j] = i[j];
 	}
-	for ( ; j < rank_-1; ++j) {
+	for ( ; j < rank-1; ++j) {
 	  i_array[j] = i[j+1];
 	}
 	array.template set_location_<MyArrayNum>(i_array, index);

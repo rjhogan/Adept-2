@@ -35,7 +35,7 @@ namespace adept {
 	protected Op {
 
       // Static data
-      static const int  rank_ = (L::rank > R::rank ? L::rank : R::rank);
+      static const int  rank  = (L::rank > R::rank ? L::rank : R::rank);
       static const bool is_active = (L::is_active || R::is_active) 
 	&& !is_same<Type, bool>::value;
       static const int  store_result = is_active * Op::store_result;
@@ -344,7 +344,7 @@ namespace adept {
 	protected Op {
 
       // Static data
-      static const int rank_ = R::rank;
+      static const int rank  = R::rank;
       static const bool is_active = R::is_active && !is_same<Type, bool>::value;
       static const int  store_result = is_active * Op::store_result;
       static const int n_active = cast<R>::n_active;
@@ -531,7 +531,7 @@ namespace adept {
 	protected Op {
 
       // Static data
-      static const int rank_ = L::rank;
+      static const int rank  = L::rank;
       static const bool is_active = L::is_active && !is_same<Type,bool>::value;
       static const int  store_result = is_active * Op::store_result;
       static const int n_active  = cast<L>::n_active;

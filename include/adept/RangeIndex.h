@@ -1,6 +1,6 @@
 /* RangeIndex.h -- Helper classes to enable indexing of arrays
 
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -57,7 +57,7 @@ namespace adept {
     struct EndIndex : public Expression<Index, EndIndex>
     {
       // Static definitions
-      static const int  rank_      = 0;
+      static const int  rank       = 0;
       static const bool is_active  = false;
       static const int  n_scratch  = 0;
       static const int  n_arrays   = 0;
@@ -172,7 +172,7 @@ namespace adept {
       : public Expression<Index, RangeIndex<BeginType, EndType, StrideType> >
     {
     public:
-      static const int  rank_      = 1;
+      static const int  rank       = 1;
       static const bool is_active  = false;
       static const int  n_scratch  = 0;
       static const int  n_arrays   = 1;
@@ -272,7 +272,7 @@ namespace adept {
     class AllIndex : public Expression<Index, AllIndex>
     {
     public:
-      static const int  rank_     = 1;
+      static const int  rank      = 1;
       static const bool is_active = false;
       static const int  n_active  = 0;
       static const int  n_static_ = 0;

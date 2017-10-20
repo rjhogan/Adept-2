@@ -30,7 +30,7 @@ namespace adept {
       : public Expression<Type, UnaryOperation<Type, Op, R> >,
 	protected Op<Type> {
       
-      static const int  rank_      = R::rank;
+      static const int  rank       = R::rank;
       static const bool is_active  = R::is_active && !is_same<Type,bool>::value;
       static const int  n_active   = R::n_active;
       // FIX! Only store if active and if needed
@@ -299,7 +299,7 @@ namespace adept {
     struct Transpose
       : public Expression<Type, Transpose<Type, R> > 
     {
-      static const int  rank_      = 2;
+      static const int  rank       = 2;
       static const bool is_active_ = R::is_active;
       static const int  n_active_  = R::n_active;
       static const int  n_scratch_ = R::n_scratch;
@@ -397,7 +397,7 @@ namespace adept {
       : public Expression<bool, UnaryBoolOperation<Type, Op, R> >,
 	protected Op<Type> {
       
-      static const int  rank_      = R::rank;
+      static const int  rank       = R::rank;
       static const bool is_active  = false;
       static const int  n_active   = 0;
       static const int  n_scratch  = 0;

@@ -1,6 +1,6 @@
 /* IndexedArray.h -- Support for indexed arrays
 
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -189,7 +189,7 @@ namespace adept {
     {
       static const bool value 
       = std::numeric_limits<typename T::type>::is_integer
-	&& T::rank == 1;
+	&& cast<T>::rank == 1;
     };
     
     template <typename T>
@@ -288,7 +288,7 @@ namespace adept {
       // ---------------------------------------------------------------------
       // Section 5.1. IndexedArray: Static definitions
       // ---------------------------------------------------------------------
-      static const int  rank_      = Rank;
+      static const int  rank       = Rank;
       static const int  n_scratch  = 1;
       static const int  n_active   = IsActive;
 
@@ -540,9 +540,10 @@ namespace adept {
       // Assign active scalar expression to an active array by first
       // converting the RHS to an active scalar
       template <typename EType, class E>
-      typename enable_if<E::rank == 0 && (Rank > 0) && IsActive && !E::is_lvalue,
+      typename enable_if<E::rank == 0 && (Rank > 0)
+	                 && IsActive && !E::is_lvalue,
 	IndexedArray&>::type
-	operator=(const Expression<EType,E>& rhs) {
+      operator=(const Expression<EType,E>& rhs) {
 	Active<EType> x = rhs;
 	*this = x;
 	return *this;

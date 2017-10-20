@@ -20,8 +20,6 @@
 #include <adept/ScratchVector.h>
 #include <adept/Packet.h>
 
-#define ADEPT_GNU_COMPILER (defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER))
-
 namespace adept {
 
   using internal::Packet;
@@ -46,32 +44,10 @@ namespace adept {
   public:
     typedef Type type;
 
-    // Expression is used as the base class for the curiously
-    // recurring template pattern (CRTP), and it needs to be able to
-    // access the static members of any derived classes. Unfortunately
-    // this has to be done in different ways on different compilers
-    // :-(
-#if ADEPT_GNU_COMPILER
-    // In the case of g++, we must define the static constants
-    // immediately; if they are defined outside the class, they are
-    // not treated as static constants and so cannot be used in
-    // compile time expressions.
+    // There are several "static const" members in the derived
+    // classes, some of which require fall-back values, defined here:
 
-    // Rank of the array
-    static const int  rank = A::rank_;
-
-
-#else
-    // ...but for other compilers, defining the static constants
-    // in-class means that derived classes using CRTP fail to compile,
-    // so the definitions need to be provided after the class
-    // definition.
-
-    static const int  rank; // = A::rank_;
-#endif
-
-    // Fall-back position is that an expression is not vectorizable:
-    // only those that are need to define is_vectorizable_.
+    // By default an expression is not vectorizable.
     static const bool is_vectorizable = false;
 
     // Classes derived from this one that do not define how many
@@ -84,10 +60,10 @@ namespace adept {
     // on the operation stack
     static const int  n_active = 0;
 
+    // Is this an active expression?
     static const bool is_active = false;
 
-    // Expressions cannot be lvalues by default, but override this
-    // bool if they are
+    // Expressions cannot be lvalues by default
     static const bool is_lvalue = false;
 
     // The presence of _adept_expression_flag is used to define the
@@ -346,17 +322,6 @@ namespace adept {
 
   }; // End struct Expression
 
-#if !ADEPT_GNU_COMPILER
-  // Non-GNU compilers have problems with static members of Expression
-  // depending on its template argument when used in combination with
-  // the Curiously Recurring Template Pattern. This can be solved by
-  // putting the definition of each immediately after the Expression
-  // class definition.
-  template <typename Type, class A>
-  const int Expression<Type,A>::rank = A::rank_;
-
-#endif
-#undef ADEPT_GNU_COMPILER
 
   // ---------------------------------------------------------------------
   // SECTION 2: Definition of Scalar type
@@ -369,7 +334,7 @@ namespace adept {
 
     template <typename Type>
     struct Scalar : public Expression<Type, Scalar<Type> > {
-      static const int  rank_      = 0;
+      static const int  rank       = 0;
       static const int  n_scratch  = 0;
       static const int  n_active   = 0;
       static const int  n_arrays   = 0;
