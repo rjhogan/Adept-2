@@ -285,6 +285,15 @@ namespace adept {
   typedef int Index;
 #endif
 
+  // ---------------------------------------------------------------------
+  // 6: Disable stupid warnings
+  // ---------------------------------------------------------------------
+
+#ifdef __INTEL_COMPILER
+// "type qualifiers are meaningless here"
+#pragma warning disable 2536
+#endif
+
 } // End namespace adept
 
 #endif

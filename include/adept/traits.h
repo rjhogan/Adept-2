@@ -73,7 +73,7 @@ namespace adept {
 
     // Define the macro in which a struct is defined that inherits
     // from compile_time_check
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
 #pragma GCC diagnostic warning "-Wpragmas"

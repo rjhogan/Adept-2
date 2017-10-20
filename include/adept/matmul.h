@@ -619,10 +619,18 @@ namespace adept {
     // The MatmulRHS class simply contains a reference to an array
     template <class A>
     struct MatmulRHS {
+      // The following are not used but enable cast<MatmulRHS>::... to
+      // work
+      static const int  rank      = A::rank;
+      static const bool is_active = A::is_active;
+      static const int  n_arrays  = 0;
+      static const bool n_active  = 0;
+      static const bool is_lvalue = false;
+      static const bool is_vectorizable = false;
+      static const int  n_scratch = 0;
       // The following are necessary in order that other binary
       // operator* functions can compile, even if they are rejected
       // for a particular multiplication
-      static const bool is_active = A::is_active;
       typedef typename A::type type;
       typedef bool _adept_expression_flag;
       // Constructor simply saves a reference to the expression
