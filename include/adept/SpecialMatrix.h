@@ -1,6 +1,6 @@
 /* SpecialMatrix.h -- Active or inactive symmetric and band-diagonal matrices
 
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -36,40 +36,9 @@ namespace adept {
     // -------------------------------------------------------------------
     // SpecialMatrix Engine helper classes
     // -------------------------------------------------------------------
-    /*
-    enum TriangularOrientation {
-      LOWER_TRIANGULAR, UPPER_TRIANGULAR
-    };
-    */
     enum SymmMatrixOrientation {
       ROW_LOWER_COL_UPPER=0, ROW_UPPER_COL_LOWER=1
     };
-    /*
-    template <MatrixStorageOrder Order>
-    struct MatrixStorageOrderHelper {
-      const char* name() { return "RowMajor"; }
-    };
-    template <>
-    struct MatrixStorageOrderHelper<COL_MAJOR> {
-      const char* name() { return "ColumnMajor"; }
-    };
-    template <TriangularOrientation Order>
-    struct TriangularOrientationHelper {
-      const char* name() { return "LowerTriangular"; }
-    };
-    template <>
-    struct TriangularOrientationHelper<UPPER_TRIANGULAR> {
-      const char* name() { return "UpperTriangular"; }
-    };
-    template <SymmMatrixOrientation Order>
-    struct SymmMatrixOrientationHelper {
-      const char* name() { return "RowLowerColumnUpper"; }
-    };
-    template <>
-    struct SymmMatrixOrientationHelper<ROW_UPPER_COL_LOWER> {
-      const char* name() { return "RowUpperColumnLower"; }
-    };
-    */
 
     // -------------------------------------------------------------------
     // Conventional matrix storage engine
@@ -499,11 +468,6 @@ namespace adept {
 	  return ActiveReference<Type>(data[ind], gradient_index+ind);
 	}
       }
-      /*
-      Index data_size(Index dim, Index offset) const {
-	return dim*(offset+1); // + dim; // - LDiags;
-      }
-      */
       using BandEngine<ROW_MAJOR,LDiags,UDiags>::data_size;
 
       Index upper_offset(Index dim, Index offset, Index offdiag) const {
@@ -684,8 +648,6 @@ namespace adept {
     // -------------------------------------------------------------------
     // Symmetric band matrix storage engine
     // -------------------------------------------------------------------
-
-    // Should implement triangular matrices here
     */
 
     // -------------------------------------------------------------------
@@ -1610,26 +1572,9 @@ namespace adept {
       return (offset_ == Engine::pack_offset(dimension_));
     }
   
-    /*
-  protected:
-    template <bool MyIsActive>
-    typename internal::enable_if<MyIsActive, Index>::type
-    my_gradient_index() const {
-      return storage_->gradient_index() + (data_ - storage_->data());
-    }
-    template <bool MyIsActive>
-    typename internal::enable_if<!MyIsActive, Index>::type
-    my_gradient_index() const {
-      return -1;
-    }
-  public:
-    */
-
     // Return the gradient index for the first element in the array,
     // or -1 if not active
     Index gradient_index() const {
-      //      ADEPT_STATIC_ASSERT(IsActive, CANNOT_ACCESS_GRADIENT_INDEX_OF_INACTIVE_ARRAY);
-      //return my_gradient_index<IsActive>();
       return GradientIndex<IsActive>::get();
     }
 
@@ -1711,33 +1656,6 @@ namespace adept {
       }
     }
 
-
-  
-    /*
-    // The Stack::independent(x) and Stack::dependent(y) functions add
-    // the gradient_index of objects x and y to std::vector<uIndex>
-    // objects in Stack. Since x and y may be scalars or arrays, this
-    // is best done by delegating to the Active or SpecialMatrix classes.
-    template <typename IndexType>
-    void push_gradient_indices(std::vector<IndexType>& vec) const {
-      ExpressionSize<Rank> i(0);
-      Index gradient_ind = gradient_index();
-      Index index = 0;
-      int rank;
-      do {
-	// Innermost loop - note that the counter is index, not max_index
-	for (Index max_index = index + dimensions_[Rank-1]*offset_[Rank-1];
-	     index < max_index;
-	     index += offset_[Rank-1]) {
-	  vec.push_back(gradient_ind + index);
-	}
-	// Increment counters appropriately depending on which
-	// dimensions have been finished
-	advance_index(index, rank, i);
-      } while (rank >= 0);
-    }
-    */
-
     // Return inactive array linked to original data
     SpecialMatrix<Type, Engine, false> inactive_link() {
       SpecialMatrix<Type, Engine, false> A;
@@ -1810,24 +1728,6 @@ namespace adept {
     // SpecialMatrix: 7. Protected member functions
     // -------------------------------------------------------------------
   protected:
-
-    /*
-    // Used in traversing through an array
-    void advance_index(Index& index, int& rank, ExpressionSize<Rank>& i) const {
-      index -= offset_[Rank-1]*dimensions_[Rank-1];
-      rank = Rank-1;
-      while (--rank >= 0) {
-	if (++i[rank] >= dimensions_[rank]) {
-	  i[rank] = 0;
-	  index -= offset_[rank]*(dimensions_[rank]-1);
-	}
-	else {
-	  index += offset_[rank];
-	  break;
-	}
-      }
-    }
-    */
 
     // When assigning a scalar to a whole array, there may be
     // advantage in specialist behaviour depending on the rank of the

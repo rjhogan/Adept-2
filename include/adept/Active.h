@@ -328,21 +328,6 @@ namespace adept {
       return val_; 
     }
 
-    /*
-    template <int Rank>
-    Type get(const ExpressionSize<Rank>&) const {
-      return val_; 
-    }
-    */
-
-    /*
-    // Calculate the gradient and return the numerical value
-    Type value_and_gradient(Stack& stack) const {
-      stack.push_rhs(1.0, gradient_index_);
-      return val_;
-    }
-    */
-
     // Get the index of the gradient information for this object
     const Index& gradient_index() const { return gradient_index_; }
 
@@ -567,22 +552,6 @@ namespace adept {
     // -------------------------------------------------------------------
   protected:
     
-    /*
-    // Mechanism to check that we are not initializing an active
-    // scalar with an array expression on the right hand side
-    template <typename AType, class E>
-    typename enable_if<!(E::rank>0)>::type
-    check_not_array(const Expression<Active<AType>,E>&) { }
-
-    template <typename AType, class E> 
-    typename enable_if<(E::rank>0)>::type
-    check_not_array(const Expression<Active<AType>,E>& e) {
-      // Hopefully the error message produced if this function is
-      // instantiated is understandable
-      typedef typename E::ERROR_Attempt_to_assign_active_scalar_to_array_expression error;
-    }
-    */
-
     // -------------------------------------------------------------------
     // 7. Data
     // -------------------------------------------------------------------

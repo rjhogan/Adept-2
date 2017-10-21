@@ -581,9 +581,6 @@ namespace adept {
 	  push_rhs(multiplier, rhs_index);
 	}
 	if (!update_lhs(lhs_index)) {
-	  // std::cout << "LHS index = " << lhs_index << ", RHS index = " << rhs_index 
-	  // 	    << ", last index = " << statement_[n_statements_-1].index << "\n";
-	  // std::cout.flush();
 	  throw wrong_gradient("Wrong gradient: append_derivative_dependence called on a different active number from the most recent add_derivative_dependence call"
 			       ADEPT_EXCEPTION_LOCATION);
 	}

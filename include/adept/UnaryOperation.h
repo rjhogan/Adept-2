@@ -55,14 +55,9 @@ namespace adept {
 	return arg.get_dimensions(dim);
       }
 
-//       Index get_dimension_with_len(Index len) const {
-// 	return arg.get_dimension_with_len_(len);
-//       }
-
       std::string expression_string_() const {
 	std::string str;
 	str = operation_string();
-	//	str += "(" + static_cast<const R*>(&arg)->expression_string() + ")";
 	str += "(" + arg.expression_string() + ")";
 	return str;
       }
@@ -76,27 +71,10 @@ namespace adept {
       template <int n>
       int alignment_offset_() const { return arg.template alignment_offset_<n>(); }
 
-      /*
-      template <int Rank>
-      Type get(const ExpressionSize<Rank>& i) const {
-	return operation(arg.get(i));
-      }
-      */
-
       template <int Rank>
       Type value_with_len_(Index i, Index len) const {
 	return operation(arg.value_with_len(i, len));
       }
-      /*
-      template <int Rank>
-      Type get_scalar() const {
-	return operation(arg.get_scalar());
-      }
-      template <int Rank>
-      Type get_scalar_with_len() const {
-	return operation(arg.get_scalar_with_len());
-      }
-      */
       
       template <int MyArrayNum, int NArrays>
       void advance_location_(ExpressionSize<NArrays>& loc) const {
@@ -290,99 +268,8 @@ namespace adept {
 
 
   // ---------------------------------------------------------------------
-  // SECTION 3.4: Unary operations: transpose function
+  // SECTION 3.4: Unary operations: transpose function [DELETED]
   // ---------------------------------------------------------------------
-
-  namespace internal {
-    /*
-    template <typename Type, class R>
-    struct Transpose
-      : public Expression<Type, Transpose<Type, R> > 
-    {
-      static const int  rank       = 2;
-      static const bool is_active_ = R::is_active;
-      static const int  n_active_  = R::n_active;
-      static const int  n_scratch_ = R::n_scratch;
-      static const int  n_arrays_  = R::n_arrays;
-
-      const R& arg;
-
-      Transpose(const Expression<Type, R>& arg_)
-	: arg(arg_.cast()) { }
-      
-      template <int Rank>
-	bool get_dimensions_(ExpressionSize<Rank>& dim) const {
-	return arg.get_dimensions(dim);
-      }
-
-      std::string expression_string_() const {
-	std::string str = "transpose(";
-	str += static_cast<const R*>(&arg)->expression_string() + ")";
-	return str;
-      }
-
-      bool is_aliased_(const Type* mem1, const Type* mem2) const {
-	return arg.is_aliased(mem1,mem2);
-      }
-
-      template <int Rank>
-      Type value_with_len_(Index i, Index len) const {
-	return operation(arg.value_with_len(i, len));
-      }
-      
-      template <int MyArrayNum, int NArrays>
-      void advance_location_(ExpressionSize<NArrays>& loc) const {
-	arg.advance_location_<MyArrayNum>(loc);
-      }
-
-      template <int MyArrayNum, int NArrays>
-      Type value_at_location_(const ExpressionSize<NArrays>& loc) const {
-	return arg.value_at_location_<MyArrayNum>(loc);
-      }
-
-      template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
-      Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
-				    ScratchVector<NScratch>& scratch) const {
-	return arg.value_at_location_store_<MyArrayNum,MyScratchNum>(loc, 
-								     scratch);
-      }
-
-      template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
-      Type value_stored_(const ExpressionSize<NArrays>& loc,
-			 const ScratchVector<NScratch>& scratch) const {
-	return scratch[MyScratchNum];
-      }
-
-      template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
-      void calc_gradient_(Stack& stack, 
-			  const ExpressionSize<NArrays>& loc,
-			  const ScratchVector<NScratch>& scratch) const {
-	arg.template calc_gradient_<MyArrayNum, MyScratchNum>(stack, loc, 
-							      scratch);
-      }
-
-      template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch,
-		typename MyType>
-      void calc_gradient_(Stack& stack, 
-			  const ExpressionSize<NArrays>& loc,
-			  const ScratchVector<NScratch>& scratch,
-			  MyType multiplier) const {
-	arg.template calc_gradient_<MyArrayNum, MyScratchNum+1>(stack, loc, 
-								scratch,
-								multiplier);
-      }
-
-      template <int MyArrayNum, int Rank, int NArrays>
-      void set_location_(const ExpressionSize<Rank>& i, 
-			 ExpressionSize<NArrays>& index) const {
-	arg.set_location_<MyArrayNum>(i, index);
-      }
-
-    }; // End struct Transpose
-    */
-
-  }
-
 
   // ---------------------------------------------------------------------
   // SECTION 3.5: Unary operations: returning boolean expression
@@ -415,10 +302,6 @@ namespace adept {
       bool get_dimensions_(ExpressionSize<Rank>& dim) const {
 	return arg.get_dimensions(dim);
       }
-
-//       Index get_dimension_with_len(Index len) const {
-// 	return arg.get_dimension_with_len_(len);
-//       }
 
       std::string expression_string_() const {
 	std::string str;

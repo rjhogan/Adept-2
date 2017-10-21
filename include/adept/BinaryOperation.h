@@ -1,6 +1,6 @@
 /* BinaryOperation.h -- Binary operations on Adept expressions
 
-    Copyright (C) 2014-2016 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014-2017 European Centre for Medium-Range Weather Forecasts
 
     Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -71,23 +71,6 @@ namespace adept {
 	return my_get_dimensions<L::rank != 0, R::rank != 0>(dim);
       }
 
-//       Index get_dimension_with_len(Index len) const {
-// 	Index ldim = left.get_dimension_with_len_(len);
-// 	Index rdim = right.get_dimension_with_len_(len);
-// 	if (ldim == rdim) {
-// 	  // Dimensions match
-// 	  return ldim;
-// 	}
-// 	else if ((ldim < 1 || rdim < 1)
-// 		 || (ldim > 1 && rdim > 1)) {
-// 	  // Dimensions don't match or there has been 
-// 	  return -1;
-// 	}
-// 	else {
-// 	  return ldim > rdim ? ldim : rdim;
-// 	}
-//       }
-
     protected:
 
       template <bool LIsArray, bool RIsArray, int Rank>
@@ -128,8 +111,6 @@ namespace adept {
 	}
 	else {
 	  str = operation_string();
-	  //	  str += "(" + static_cast<const L*>(&left)->expression_string()
-	  //	    + "," + static_cast<const R*>(&right)->expression_string() + ")";
 	  str += "(" + left.expression_string()
 	    + "," + right.expression_string() + ")";
 	}
@@ -236,10 +217,6 @@ namespace adept {
       typename enable_if<StoreResult==0, Type>::type
       my_value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				       ScratchVector<NScratch>& scratch) const {
-	/*
-	return operation(left .value_at_location_<MyArrayNum>(loc),
-			 right.value_at_location_<MyArrayNum+L::n_arrays>(loc));
-	*/
 	return operation(left.template value_at_location_store_<MyArrayNum,MyScratchNum+n_local_scratch>(loc, scratch),
 			 right.template value_at_location_store_<MyArrayNum+L::n_arrays,
 			 MyScratchNum+L::n_scratch+n_local_scratch>(loc, scratch));
@@ -600,14 +577,6 @@ namespace adept {
       }
       template <int MyArrayNum, int NArrays>
       Packet<Type> packet_at_location_(const ExpressionSize<NArrays>& loc) const {
-	/*
-	std::cout << left.packet_at_location_<MyArrayNum>(loc)
-		  << operation_string()
-		  << Packet<Type>(right)
-		  << "=" << operation(left.packet_at_location_<MyArrayNum>(loc),
-			 Packet<Type>(right))
-		  << "\n";
-	*/
 	return operation(left.template packet_at_location_<MyArrayNum>(loc),
 			 right);
       }
@@ -1383,43 +1352,6 @@ ADEPT_DEFINE_OPERATOR(Or, operator||, ||, " || ")
 ADEPT_DEFINE_OPERATOR(And, operator&&, &&, " && ")
 
 #undef ADEPT_DEFINE_OPERATOR
-
-  /*
-  // Conditional operators should behave exactly the same as with
-  // non-active arguments so in each of the cases below the value()
-  // function is called to extract the value of the expression
-#define ADEPT_DEFINE_CONDITIONAL(OPERATOR, OP)			\
-  template <class A, class B>					\
-  inline							\
-  bool OPERATOR(const Expression<A>& a,				\
-		const Expression<B>& b) {			\
-    return a.value() OP b.value();				\
-  }								\
-								\
-  template <class A>						\
-  inline							\
-  bool OPERATOR(const Expression<A>& a, const Real& b) {	\
-    return a.value() OP b;					\
-  }								\
-  								\
-  template <class B>						\
-  inline							\
-  bool OPERATOR(const Real& a, const Expression<B>& b) {	\
-    return a OP b.value();					\
-  }
-
-  ADEPT_DEFINE_CONDITIONAL(operator==, ==)
-  ADEPT_DEFINE_CONDITIONAL(operator!=, !=)
-  ADEPT_DEFINE_CONDITIONAL(operator>, >)
-  ADEPT_DEFINE_CONDITIONAL(operator<, <)
-  ADEPT_DEFINE_CONDITIONAL(operator>=, >=)
-  ADEPT_DEFINE_CONDITIONAL(operator<=, <=)
-  
-#undef ADEPT_DEFINE_CONDITIONAL
-  */
-
-
-// 
 
   template <typename Type, class R>
   inline

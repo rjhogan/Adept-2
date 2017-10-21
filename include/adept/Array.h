@@ -285,21 +285,6 @@ namespace adept {
 
   public:
 
-    /*
-#ifdef ADEPT_MOVE_SEMANTICS
-    Array(Array&& rhs) 
-      : GradientIndex<IsActive>(rhs.gradient_index()), 
-	data_(rhs.data()), storage_(rhs.storage()), 
-	dimensions_(rhs.dimensions()), offset_(rhs.offset())
-    {
-      if (storage_) storage_->add_link(); 
-#ifdef ADEPT_VERBOSE_FUNCTIONS
-      std::cout << "  running constructor Array(Array&&)\n";
-#endif
-    }
-#endif
-    */
-
     // Initialize with an expression on the right hand side by
     // evaluating the expression, requiring the ranks to be equal.
     // Note that this constructor enables expressions to be used as
@@ -453,7 +438,6 @@ namespace adept {
     inline //__attribute__((always_inline))
     typename enable_if<E::rank == Rank, Array&>::type
     operator=(const Expression<EType,E>&  __restrict rhs) {
-      //      asm("# %%% ADEPT OPERATOR=");
 #ifdef ADEPT_VERBOSE_FUNCTIONS
       std::cout << "  running Array::operator=(const Expression&)\n";
 #endif
@@ -497,7 +481,6 @@ namespace adept {
 	  // expression type. perhaps a better way would be to make
 	  // copy.assign_no_alias(rhs) work.
 	  copy = rhs;
-	  //*this = copy;
 	  assign_expression_<Rank, IsActive, E::is_active>(copy);
 	}
 	else {
@@ -511,7 +494,6 @@ namespace adept {
 	}
 #endif
       }
-      //      asm("# %%% ADEPT END OPERATOR=");
       return *this;
     }
 
@@ -542,7 +524,6 @@ namespace adept {
 	Type const * ptr_end;
 	data_range(ptr_begin, ptr_end);
 	if (rhs.is_aliased(ptr_begin, ptr_end)) {
-	  //	  std::cout << "ALIASED!\n";
 	  Array<Rank,Type,IsActive> copy;
 	  copy.assign_inactive(rhs);
 	  //	  *this = copy;
@@ -617,57 +598,6 @@ namespace adept {
       return *this;
     }
 
-    /*
-    Array& operator=(const std::vector<typename active_scalar<Type,IsActive>::type>& data) {
-      
-    }
-    */
-
-    // All the compound assignment operators are unpacked, i.e. a+=b
-    // becomes a=a+b; first for an Expression on the rhs.  We use
-    // "noalias" sine there is no need for the entirety of the
-    // right-hand-side of the expression to be copied before
-    // evaluation.
-    /*
-    template<typename EType, class E>
-    Array& operator+=(const Expression<EType,E>& rhs) {
-      return *this = (noalias(*this) + rhs);
-    }
-    template<typename EType, class E>
-    Array& operator-=(const Expression<EType,E>& rhs) {
-      return *this = (noalias(*this) - rhs);
-    }
-    template<typename EType, class E>
-    Array& operator*=(const Expression<EType,E>& rhs) {
-      return *this = (noalias(*this) * rhs);
-    }
-    template<typename EType, class E>
-    Array& operator/=(const Expression<EType,E>& rhs) {
-      return *this = (noalias(*this) / rhs);
-    }
-
-    // And likewise for a passive scalar on the rhs
-    template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, Array&>::type
-    operator+=(const PType& rhs) {
-      return *this = (noalias(*this) + rhs);
-    }
-    template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, Array&>::type
-    operator-=(const PType& rhs) {
-      return *this = (noalias(*this) - rhs);
-    }
-    template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, Array&>::type
-    operator*=(const PType& rhs) {
-      return *this = (noalias(*this) * rhs);
-    }
-    template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, Array&>::type
-    operator/=(const PType& rhs) {
-      return *this = (noalias(*this) / rhs);
-    }
-    */  
 #define ADEPT_DEFINE_OPERATOR(OPERATOR, OPSYMBOL)		\
     template <class RType>				\
     Array& OPERATOR(const RType& rhs) {			\
@@ -680,13 +610,6 @@ namespace adept {
   //    ADEPT_DEFINE_OPERATOR(operator&=, &);
   //    ADEPT_DEFINE_OPERATOR(operator|=, |);
 #undef ADEPT_DEFINE_OPERATOR
-
-    /*
-    // Enable the A.where(B) = C construct (definition is in where.h)
-    template <class B>
-    typename enable_if<B::rank == Rank, Where<Array,B> >::type
-    where(const Expression<bool,B>& bool_expr);
-    */
 
     // Enable the A.where(B) = C construct.
 
@@ -743,7 +666,6 @@ namespace adept {
       Type const * ptr_end;
       data_range(ptr_begin, ptr_end);
       if (rhs.is_aliased(ptr_begin, ptr_end)) {
-	//	std::cout << "ALIASED - making copy!\n";
 	Array<Rank,Type,IsActive> copy;
 	copy = rhs;
 	assign_conditional_<IsActive>(bool_expr.cast(), copy);
@@ -792,16 +714,6 @@ namespace adept {
 	int ndims = 0;
 	shape_initializer_list_(list, dims, ndims);
 	resize(dims);
-	/*
-	  // Compile-time checks mean that the following should never happen
-	if (Rank != ndims) {
-	  throw size_mismatch("Rank of initializer list does not match rank of Array"
-			    ADEPT_EXCEPTION_LOCATION);
-	}
-	else {
-	  resize(dims);
-	}
-	*/
       }
       else if (list.size() > static_cast<std::size_t>(dimensions_[0])) {
 	throw size_mismatch("Multi-dimensional initializer list larger than slowest-varying dimension of Array"
@@ -1191,14 +1103,6 @@ namespace adept {
       new_offset[inew_rank] = i.stride(dimensions_[irank])*offset_[irank];
       ++inew_rank;
     }
-
-    /*
-    // Some Array rvalues need to be references in order to be
-    // accepted by functions
-    Array& reference() { return *this; }
-    const Array& const_reference() { return *this; }
-    const Array& const_reference() const { return *this; }
-    */
 
   public:
 
@@ -1956,22 +1860,6 @@ namespace adept {
       return offset_[j];
     }
 
-  /*
-    // Get dimensions for matrix operations, treating 1D arrays as
-    // column vectors
-    template <int MyRank>
-    typename internal::enable_if<Rank==1 && MyRank==2, void>::type
-    get_matrix_dimensions(ExpressionSize<MyRank>& dim) const {
-      dim[0] = dimensions_[0];
-      dim[1] = 1;
-    }
-    template <int MyRank>
-    typename internal::enable_if<Rank==2 && MyRank==2, void>::type
-    get_matrix_dimensions(ExpressionSize<MyRank>& dim) const {
-      dim = dimensions_;
-    }
-  */  
-
     // Return constant reference to offsets
     const ExpressionSize<Rank>& offset() const {
       return offset_;
@@ -2247,20 +2135,6 @@ namespace adept {
       return offset_[0] == 1;
     }
 
-  protected:
-    /*
-    template <bool MyIsActive>
-    typename internal::enable_if<MyIsActive, Index>::type
-    my_gradient_index() const {
-      return storage_->gradient_index() + (data_ - storage_->data());
-    }
-    template <bool MyIsActive>
-    typename internal::enable_if<!MyIsActive, Index>::type
-    my_gradient_index() const {
-      return -1;
-    }
-    */
-
   public:
     // Return the gradient index for the first element in the array,
     // or -1 if not active
@@ -2411,17 +2285,7 @@ namespace adept {
       // Swap dimensions
       return out.in_place_transpose();
     }
-  /*
-    template<int MyRank>
-    typename enable_if<MyRank == 1, Array<2,Type,IsActive> >::type
-    my_T() {
-      // Transpose 1D array, treating it as a length-N column
-      // vector, so returning a 1xN 2D array
-      return Array<2,Type,IsActive>(data_, storage_,
-				    ExpressionSize<2>(1,dimensions_[0]),
-				    ExpressionSize<2>(dimensions_[0]*offset_[0],offset_[0]));
-    }
-  */
+
   public:
     // Out-of-place transpose
     Array<2,Type,IsActive>
@@ -2819,61 +2683,6 @@ namespace adept {
     }
 
 
-    // void
-    // push_lhs_empty_rhs() {
-    //   if (is_contiguous()) {
-    // 	// Push the full range of elements, noting that for contiguous
-    // 	// arrays the total size of the array is
-    // 	// dimension_[0]*offset_[0]
-    // 	ADEPT_ACTIVE_STACK->push_lhs_range(gradient_index(), 
-    // 					   dimension_[0]*offset_[0]);
-    //   }
-    //   else {
-    // 	Index gradient_ind = gradient_index();
-	
-    //   }
-    // }
-    
-
-
-    // Specialization for 1D arrays
-    /*
-  template<int Rank, typename LType, typename RType>
-  inline
-  typename enable_if <Rank==1,void>::type
-  assign_inactive_scalar_to_array<Rank,LType,RType>(LType* data,
-						 const ExpressionSize<Rank>& dim,
-						 const ExpressionSize<Rank>& offset,
-						 RType x) {
-    for (Index i = 0; i < dim[0]; i += offset[0]) {
-      data[i] = x;
-    }
-  }
-    */
-    // Specialization for 2D arrays
-    /*
-  template<typename LType, typename RType>
-  inline
-  void assign_inactive_scalar_to_array<2,LType,RType>(LType* data,
-				       const ExpressionSize<2>& dim,
-				       const ExpressionSize<2>& offset,
-				       RType x) {
-    // This could be optimized by (1) testing to see if offset[1] >
-    // offset[0] which would indicate column-major order and the for
-    // loops should be reversed, and/or testing if offset[1] == 1, in
-    // which case the inner loop could use ++index that the compiler
-    // might be better able to optimize.
-    Index index = 0, spacing = offset[0]-dim[1]*offset[1];
-    for (  Index i0 = 0; i0 < dim[0]; ++i0, index += spacing) {
-      for (Index i1 = 0; i1 < dim[1]; ++i1, index += offset[1]) {
-	data[Index] = x;
-      }
-    }
-  }
-    */
-
-
-
     // When copying an expression to a whole array, there may be
     // advantage in specialist behaviour depending on the rank of the
     // array
@@ -2956,17 +2765,13 @@ namespace adept {
 	  // Scalar version
 	  t[index] = rhs.next_value_contiguous(ind);
 	}
-	asm("# %%% ADEPT NEXT PACKET LOOP");
 	for (int index = istartvec ; index < iendvec;
 	     index += Packet<Type>::size) {
 	  // Vectorized version
-	  asm("# %%% ADEPT NEXT PACKET PUT");
 	  //	    rhs.next_packet(ind).put(data_+index)
 	  // FIX may need unaligned store
 	  rhs.next_packet(ind).put(t+index);
-	  asm("# %%% ADEPT END NEXT PACKET PUT");
 	}
-	asm("# %%% ADEPT END NEXT PACKET LOOP");
 	for (int index = iendvec ; index < dimensions_[0]; ++index) {
 	  // Scalar version
 	  t[index] = rhs.next_value_contiguous(ind);
@@ -3015,7 +2820,6 @@ namespace adept {
 	  iendvec += istartvec;
 	}
 
-	//	std::cout << "istartvec=" << istartvec << " iendvec=" << iendvec << "\n";
 
 	do {
 	  i[last] = 0;
@@ -3025,18 +2829,14 @@ namespace adept {
 	    // Scalar version
 	    data_[index] = rhs.next_value_contiguous(ind);
 	  }
-	  asm("# %%% ADEPT NEXT PACKET LOOP");
 	  Type* const __restrict t = data_; // Avoids an unnecessary load for some reason
 	  for ( ; i[last] < iendvec; i[last] += Packet<Type>::size,
 		  index += Packet<Type>::size) {
 	    // Vectorized version
-	    asm("# %%% ADEPT NEXT PACKET PUT");
 	    //	    rhs.next_packet(ind).put(data_+index);
 	    // FIX may need unaligned store
 	    rhs.next_packet(ind).put(t+index);
-	    asm("# %%% ADEPT END NEXT PACKET PUT");
 	  }
-	  asm("# %%% ADEPT END NEXT PACKET LOOP");
 	  for ( ; i[last] < dimensions_[last]; ++i[last], ++index) {
 	    // Scalar version
 	    data_[index] = rhs.next_value_contiguous(ind);

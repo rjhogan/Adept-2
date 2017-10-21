@@ -90,16 +90,6 @@ namespace adept {
     static const bool is_vectorizable = Packet<Type>::is_vectorized;
 
   protected:
-    /*
-    template <int Dim> struct dimension_ { static const int value = 0; };
-    template <> struct dimension_<0> { static const int value = J0; };
-    template <> struct dimension_<1> { static const int value = J1; };
-    template <> struct dimension_<2> { static const int value = J2; };
-    template <> struct dimension_<3> { static const int value = J3; };
-    template <> struct dimension_<4> { static const int value = J4; };
-    template <> struct dimension_<5> { static const int value = J5; };
-    template <> struct dimension_<6> { static const int value = J6; };
-    */
     template <int Dim, Index X0, Index X1, Index X2,
 	      Index X3, Index X4, Index X5, Index X6>
     struct dimension_alias { };
@@ -287,47 +277,6 @@ namespace adept {
       return *this;
     }
 
-    /*
-    // Assignment to an array expression of the same rank in which the
-    // activeness of the right-hand-side is ignored
-    template <typename EType, class E>
-    typename enable_if<E::rank == Rank, FixedArray&>::type
-    assign_inactive(const Expression<EType,E>& rhs) {
-      ExpressionSize<Rank> dims;
-      if (!rhs.get_dimensions(dims)) {
-	std::string str = "FixedArray size mismatch in "
-	  + rhs.expression_string() + ".";
-	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
-      }
-      else if (empty()) {
-	resize(dims);
-      }
-      else if (!compatible(dims, dimensions_)) {
-	std::string str = "Expr";
-	str += dims.str() + " object assigned to " + expression_string_();
-	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
-      }
-
-      if (!empty()) {
-	// Check for aliasing first
-	Type const * ptr_begin;
-	Type const * ptr_end;
-	data_range(ptr_begin, ptr_end);
-	if (rhs.is_aliased(ptr_begin, ptr_end)) {
-	  //	  std::cout << "ALIASED!\n";
-	  FixedArray<Rank,Type,IsActive> copy;
-	  copy.assign_inactive(rhs);
-	  //	  *this = copy;
-	  assign_expression_<Rank, IsActive, false>(copy);
-	}
-	else {
-	  assign_expression_<Rank, IsActive, false>(rhs);
-	}
-      }
-      return *this;
-    }
-    */
-
     // Assignment to a single value copies to every element
     template <typename RType>
     typename enable_if<is_not_expression<RType>::value, FixedArray&>::type
@@ -371,56 +320,11 @@ namespace adept {
 
       return *this;
     }
-
-    // All the compound assignment operators are unpacked, i.e. a+=b
-    // becomes a=a+b; first for an Expression on the rhs.  We use
-    // "noalias" sine there is no need for the entirety of the
-    // right-hand-side of the expression to be copied before
-    // evaluation.
-    /*
-    template<typename EType, class E>
-    FixedArray& operator+=(const Expression<EType,E>& rhs) {
-      return *this = (noalias(*this) + rhs);
-    }
-    template<typename EType, class E>
-    FixedArray& operator-=(const Expression<EType,E>& rhs) {
-      return *this = (noalias(*this) - rhs);
-    }
-    template<typename EType, class E>
-    FixedArray& operator*=(const Expression<EType,E>& rhs) {
-      return *this = (noalias(*this) * rhs);
-    }
-    template<typename EType, class E>
-    FixedArray& operator/=(const Expression<EType,E>& rhs) {
-      return *this = (noalias(*this) / rhs);
-    }
-
-    // And likewise for a passive scalar on the rhs
-    template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, FixedArray&>::type
-    operator+=(const PType& rhs) {
-      return *this = (noalias(*this) + rhs);
-    }
-    template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, FixedArray&>::type
-    operator-=(const PType& rhs) {
-      return *this = (noalias(*this) - rhs);
-    }
-    template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, FixedArray&>::type
-    operator*=(const PType& rhs) {
-      return *this = (noalias(*this) * rhs);
-    }
-    template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, FixedArray&>::type
-    operator/=(const PType& rhs) {
-      return *this = (noalias(*this) / rhs);
-    }
-    */  
+    
 #define ADEPT_DEFINE_OPERATOR(OPERATOR, OPSYMBOL)		\
-    template <class RType>				\
+    template <class RType>					\
     FixedArray& OPERATOR(const RType& rhs) {			\
-      return *this = noalias(*this OPSYMBOL rhs);	\
+      return *this = noalias(*this OPSYMBOL rhs);		\
     }
     ADEPT_DEFINE_OPERATOR(operator+=, +);
     ADEPT_DEFINE_OPERATOR(operator-=, -);
@@ -429,13 +333,6 @@ namespace adept {
   //    ADEPT_DEFINE_OPERATOR(operator&=, &);
   //    ADEPT_DEFINE_OPERATOR(operator|=, |);
 #undef ADEPT_DEFINE_OPERATOR
-
-    /*
-    // Enable the A.where(B) = C construct (definition is in where.h)
-    template <class B>
-    typename enable_if<B::rank == rank, Where<FixedArray,B> >::type
-    where(const Expression<bool,B>& bool_expr);
-    */
 
     // Enable the A.where(B) = C construct.
   
@@ -531,13 +428,6 @@ namespace adept {
 
       // Enact the assignment using the Array version
       inactive_link() = list;
-      /*
-      Index index = 0;
-      for (auto i = std::begin(list); i < std::end(list); ++i,
-	   ++index) {
-	(*this)[index] = *i;
-      }
-      */
       return *this;
     }
 #endif
@@ -844,8 +734,6 @@ namespace adept {
       return Array<1,Type,IsActive>(data_, i0.begin(J0), new_dim, new_offset,
 				    GradientIndex<IsActive>::get());
     }
-
-      // GOT HERE!
 
   private:
     // For multi-dimensional arrays, we need a helper function
@@ -1917,16 +1805,6 @@ namespace adept {
       return gradient;
     }
 
-    // std::vector<typename internal::active_scalar<Type,IsActive>::type>
-    // std_vector() const {
-    //   ADEPT_STATIC_ASSERT(rank == 1, STD_VECTOR_ONLY_AVAILABLE_FOR_RANK_1_ARRAYS);
-    //   std::vector<typename internal::active_scalar<Type,IsActive>::type> data(I0);
-    //   for (Index i = 0; i < I0; ++i) {
-    // 	data[i] = (*this)(i);
-    //   }
-    //   return data;
-    // }
-
     void
     put(std::vector<typename internal::active_scalar<Type,IsActive>::type>& data) const {
       ADEPT_STATIC_ASSERT(rank == 1, PUT_ONLY_AVAILABLE_FOR_RANK_1_ARRAYS);
@@ -2100,62 +1978,6 @@ namespace adept {
 	advance_index(index, my_rank, i);
       } while (my_rank >= 0);
     }
-
-
-    // void
-    // push_lhs_empty_rhs() {
-    //   if (is_contiguous()) {
-    // 	// Push the full range of elements, noting that for contiguous
-    // 	// arrays the total size of the array is
-    // 	// dimension_[0]*offset_[0]
-    // 	ADEPT_ACTIVE_STACK->push_lhs_range(gradient_index(), 
-    // 					   dimension_[0]*offset_[0]);
-    //   }
-    //   else {
-    // 	Index gradient_ind = gradient_index();
-	
-    //   }
-    // }
-    
-
-
-    // Specialization for 1D arrays
-    /*
-  template<int rank_, typename LType, typename RType>
-  inline
-  typename enable_if <rank_==1,void>::type
-  assign_inactive_scalar_to_array<rank_,LType,RType>(LType* data,
-						 const ExpressionSize<rank_>& dim,
-						 const ExpressionSize<rank_>& offset,
-						 RType x) {
-    for (Index i = 0; i < dim[0]; i += offset[0]) {
-      data[i] = x;
-    }
-  }
-    */
-    // Specialization for 2D arrays
-    /*
-  template<typename LType, typename RType>
-  inline
-  void assign_inactive_scalar_to_array<2,LType,RType>(LType* data,
-				       const ExpressionSize<2>& dim,
-				       const ExpressionSize<2>& offset,
-				       RType x) {
-    // This could be optimized by (1) testing to see if offset[1] >
-    // offset[0] which would indicate column-major order and the for
-    // loops should be reversed, and/or testing if offset[1] == 1, in
-    // which case the inner loop could use ++index that the compiler
-    // might be better able to optimize.
-    Index index = 0, spacing = offset[0]-dim[1]*offset[1];
-    for (  Index i0 = 0; i0 < dim[0]; ++i0, index += spacing) {
-      for (Index i1 = 0; i1 < dim[1]; ++i1, index += offset[1]) {
-	data[Index] = x;
-      }
-    }
-  }
-    */
-
-
 
     // When copying an expression to a whole array, there may be
     // advantage in specialist behaviour depending on the rank of the

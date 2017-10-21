@@ -1,6 +1,6 @@
 /* Expression.h -- Base class for arrays and active objects
 
-    Copyright (C) 2014-2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014-2017 European Centre for Medium-Range Weather Forecasts
 
     Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -80,45 +80,11 @@ namespace adept {
       return cast().get_dimensions_(dim);
     }
 
-    // Return the dimension of a rank-1 expression to be used as an
-    // index to an array, where "len" is the length of the dimension
-    // being indexed
-//     Index get_dimension_with_len(Index len) const {
-//       ADEPT_STATIC_ASSERT(rank == 1,
-// 		  GET_DIMENSION_WITH_LEN_ONLY_APPLICABLE_TO_ARRAYS_OF_RANK_1);
-//       return cast().get_dimension_with_len_(len);
-//     }
-
     // Return a string representation of the expression
     std::string expression_string() const {
       return cast().expression_string_();
     }
     
-    // Get a copy of the value at the specified location
-    /*
-    template <int Rank>
-    Type value_(const ExpressionSize<Rank>& j) const {
-      return cast().value_(j);
-    }
-    */
-    /*
-    // Get a reference to the value at the specified location
-    template <int Rank>
-    Type& get_lvalue(const ExpressionSize<Rank>& j) {
-      throw array_exception("Attempt to use an Expression as an l-value");
-    }
-    */
-
-    // Get the value at the specified location, but also supplying a
-    // length so that if the expression contains "end", it will
-    // resolve to length-1
-    /*
-    template <int Rank>
-    Type value_with_len(const ExpressionSize<Rank>& j, Index len) const {
-      return cast().value_with_len_(j, len);
-    }
-    */
-    //    template <int reqRank>
     Type value_with_len(Index j, Index len) const {
       ADEPT_STATIC_ASSERT(A::rank<=1,
 		  VALUE_WITH_LEN_ONLY_APPLICABLE_TO_ARRAYS_OF_RANK_0_OR_1);
@@ -128,13 +94,9 @@ namespace adept {
     // These functions are for rank-0 expressions where there is no
     // indexing required
     Type scalar_value() const { 
-      //      ADEPT_STATIC_ASSERT(rank > 0,
-      //	  SCALAR_VALUE_ONLY_APPLICABLE_TO_EXPRESSIONS_OF_RANK_0);
-      //      return cast().scalar_value_(); 
       ExpressionSize<0> dummy_index;
       return cast().template value_at_location_<0>(dummy_index);
     }
-    //    Type get_scalar_with_len(Index len) const { return cast().get_scalar_with_len(len); }
 
     // Return true if any memory in the expression lies between mem1
     // and mem2: used to test for aliasing when doing assignment.
@@ -182,46 +144,16 @@ namespace adept {
     is_aliased(const MyType* mem1, const MyType* mem2) const {
       return false;
     }
-
-    // Calculate the gradient of the function and pass the necessary
-    // information to the Stack
-    /*
-    template <int Rank>
-    void calc_gradient(Stack& stack, const ExpressionSize<Rank>& i) const {
-      cast().calc_gradient(stack, i);
-    }
-    */
-    
-    // As the previous but multiplying the gradient by "multiplier"
-    /*
-    template <int Rank>
-    void calc_gradient(Stack& stack, Type& multiplier,
-		       const ExpressionSize<Rank>& i) const {
-      cast().calc_gradient(stack, multiplier, i);
-    }
-    */
   
     Type 
     scalar_value_and_gradient(Stack& stack) const {
       internal::ScratchVector<A::n_scratch> scratch;
-      //      Type val = cast().scalar_value_store_<0>(scratch);
-      //      cast().calc_scalar_gradient_(*ADEPT_ACTIVE_STACK, scratch);
       ExpressionSize<0> dummy_index;
       Type val = cast().template value_at_location_store_<0,0>(dummy_index, scratch);
       cast().template calc_gradient_<0,0>(*ADEPT_ACTIVE_STACK, dummy_index, scratch);
       return val;
     }
  
-    /*
-    template <int Rank>
-    Type value_and_gradient(Stack& stack, 
-			    const ExpressionSize<Rank>& i) const {
-      Type val = cast().get(i);
-      cast().calc_gradient(stack, i);
-      return val;
-    }
-    */
-
     // For each array in the expression use location "i" to return the
     // memory index
     template <int Rank, int NArrays>
@@ -290,19 +222,6 @@ namespace adept {
       ++index;
       return val;
     }
-
-    /*
-    template <int NArrays, typename MyType>
-    Type next_value_and_gradient(Stack& stack,
-				 ExpressionSize<NArrays>& index,
-				 const MyType& multiplier) const {
-      internal::ScratchVector<A::n_scratch> scratch;
-      Type val = cast().template value_at_location_store_<0,0>(index, scratch);
-      cast().template calc_gradient_<0,0>(stack, index, scratch, multiplier);
-      cast().template advance_location_<0>(index);
-      return val;
-    }
-    */
 
     // This is used in norm2()
     template <int NArrays, typename MyType>

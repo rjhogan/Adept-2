@@ -1,6 +1,6 @@
 /* ActiveConstReference.h -- Const reference to an active element of an array
 
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -238,15 +238,6 @@ namespace adept {
 						       rhs.gradient_index(),
 						       multiplier);
     }
-    // void add_derivative_dependence(const Active<Type>& rhs,
-    // 				   const Real& multiplier) const {
-    //   add_derivative_dependence(&rhs, &multiplier, 1);
-    // }
-    // void append_derivative_dependence(const Active<Type>& rhs,
-    // 				      const Real& multiplier) const {
-    //   append_derivative_dependence(&rhs, &multiplier, 1);
-    // }
-      
  
     // -------------------------------------------------------------------
     // 4.1. Public member functions used by other expressions

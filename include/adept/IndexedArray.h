@@ -176,13 +176,6 @@ namespace adept {
 	 typename enable_if<is_not_expression<T>::value>::type>
     { static const bool value = false; };
 
-    /*
-    template <typename T>
-    struct is_int_vector<std::vector<T> > {
-      static const bool value = std::numeric_limits<T>::is_integer;
-    };
-    */
-    
     template <typename T>
     struct is_int_vector<T,
        typename enable_if<!is_not_expression<T>::value>::type>
@@ -208,35 +201,8 @@ namespace adept {
     
     
     // ---------------------------------------------------------------------
-    // Section 4. is_indexed
+    // Section 4. is_irregular_index
     // ---------------------------------------------------------------------
-    // is_indexed<Rank,I0,I1,...>::value is "true" if indices I0 to
-    // I[Rank-1] contains at least one integer vector and all the
-    // other are valid indices.  The ::count member gives the number
-    // of non-scalar indices, which is the rank of the IndexedArray
-    // objects resulting from indexing an Array of the specified Rank
-    // with indices I0 to I[Rank-1].
-    /*
-    template <int Rank, typename I0, typename I1 = Index, 
-	      typename I2 = Index, typename I3 = Index,
-	      typename I4 = Index, typename I5 = Index,
-	      typename I6 = Index>
-    struct is_indexed {
-      static const bool value
-        = (   is_int_vector<I0>::value || is_int_vector<I1>::value
-	   || is_int_vector<I2>::value || is_int_vector<I3>::value
-	   || is_int_vector<I4>::value || is_int_vector<I5>::value
-	   || is_int_vector<I6>::value)
-	&& (   is_index<I0>::value && is_index<I1>::value
-	    && is_index<I2>::value && is_index<I3>::value
-	    && is_index<I4>::value && is_index<I5>::value
-	    && is_index<I6>::value);
-      static const int count 
-         = 7 - (  is_scalar_int<I1>::count + is_scalar_int<I2>::count
-	        + is_scalar_int<I3>::count + is_scalar_int<I4>::count
-		+ is_scalar_int<I5>::count + is_scalar_int<I6>::count);
-    };
-    */
 
     // is_irregular_index<Rank,I0,I1,...>::value is "true" if indices
     // I0 to I[Rank-1] contains at least one integer vector that could
@@ -523,8 +489,6 @@ namespace adept {
 	    Array<Rank,Type,IsActive> copy;
 	    copy = noalias(rhs);
 	    assign_expression_<IsActive, E::is_active>(copy);
-	    //	    std::cout << "Warning: alias correction not applied in IndexedArray\n";
-	    //assign_expression_<IsActive, E::is_active>(rhs);
 	  }
 	  else {
 #endif

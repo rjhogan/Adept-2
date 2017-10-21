@@ -1,6 +1,6 @@
 /* ActiveReference.h -- Reference to an active element of an array
 
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -231,21 +231,6 @@ namespace adept {
       return val_; 
     }
 
-    /*
-    template <int Rank>
-    Type get(const ExpressionSize<Rank>&) const {
-      return val_; 
-    }
-    */
-
-    /*
-    // Calculate the gradient and return the numerical value
-    Type value_and_gradient(Stack& stack) const {
-      stack.push_rhs(1.0, gradient_index_);
-      return val_;
-    }
-    */
-
     // Get the index of the gradient information for this object
     const Index& gradient_index() const { return gradient_index_; }
 
@@ -381,15 +366,7 @@ namespace adept {
 						       rhs.gradient_index(),
 						       multiplier);
     }
-    // void add_derivative_dependence(const Active<Type>& rhs,
-    // 				   const Real& multiplier) {
-    //   add_derivative_dependence(&rhs, &multiplier, 1);
-    // }
-    // void append_derivative_dependence(const Active<Type>& rhs,
-    // 				      const Real& multiplier) {
-    //   append_derivative_dependence(&rhs, &multiplier, 1);
-    // }
-      
+     
  
     // -------------------------------------------------------------------
     // 4.1. Public member functions used by other expressions
@@ -472,22 +449,6 @@ namespace adept {
     // For use in creating active references, to get a non-const
     // reference to the underlying passive data
     Type& lvalue() { return val_; }
-
-    /*
-    // Mechanism to check that we are not initializing an active
-    // scalar with an array expression on the right hand side
-    template <typename AType, class E>
-    typename enable_if<!(E::rank>0)>::type
-    check_not_array(const Expression<ActiveReference<AType>,E>&) { }
-
-    template <typename AType, class E> 
-    typename enable_if<(E::rank>0)>::type
-    check_not_array(const Expression<ActiveReference<AType>,E>& e) {
-      // Hopefully the error message produced if this function is
-      // instantiated is understandable
-      typedef typename E::ERROR_Attempt_to_assign_active_scalar_to_array_expression error;
-    }
-    */
 
     // -------------------------------------------------------------------
     // 7. Data
