@@ -48,12 +48,19 @@ echo "/* $ADEPT_SOURCE_HEADER - Source code for the Adept library
 
 */
 
+/* Feel free to delete this warning: */
+#ifdef _MSC_FULL_VER 
+#pragma message(\"warning: the adept_source.h header file has not been edited so BLAS matrix multiplication and LAPACK linear-algebra support have been disabled\")
+#else
 #warning \"The adept_source.h header file has not been edited so BLAS matrix multiplication and LAPACK linear-algebra support have been disabled\"
+#endif
 
 /* Uncomment this if you are linking to the BLAS library (header file
-not required) to enable matrix multiplication */ //#define HAVE_BLAS 1
+   not required) to enable matrix multiplication */
+//#define HAVE_BLAS 1
 
-/* Uncomment this if you are linking to the LAPACK library (header file not required) */
+/* Uncomment this if you are linking to the LAPACK library (header
+   file not required) */
 //#define HAVE_LAPACK 1
 
 /* Uncomment this if you have the cblas.h header from OpenBLAS */

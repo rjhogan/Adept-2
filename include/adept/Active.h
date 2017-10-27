@@ -129,10 +129,6 @@ namespace adept {
       *this = rhs;
     }
 
-#ifdef ADEPT_COPY_CONSTRUCTOR_ONLY_ON_RETURN_FROM_FUNCTION 
-#warning "ADEPT_COPY_CONSTRUCTOR_ONLY_ON_RETURN_FROM_FUNCTION was unsafe so has no effect"
-#endif
-
     // Construction with an expression.  This is primarily used so
     // that if we define a function func(aReal a), it will also accept
     // active expressions by implicitly converting them to an aReal.
