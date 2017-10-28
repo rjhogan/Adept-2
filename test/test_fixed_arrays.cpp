@@ -346,45 +346,53 @@ main(int argc, const char** argv) {
   should_fail = false;
 
 #ifndef MARVEL_STYLE
-  HEADING("MATRIX MULTIPLICATION");
-  EVAL2("Matrix-Matrix multiplication", myMatrix33, S, myMatrix23, M, S = M.T() ** M);
-  EVAL2("Matrix-Matrix multiplication with matmul", myMatrix33, S, myMatrix23, M, S = matmul(M.T(), M));
+  if (adept::have_matrix_multiplication()) {
+    HEADING("MATRIX MULTIPLICATION");
+    EVAL2("Matrix-Matrix multiplication", myMatrix33, S, myMatrix23, M, S = M.T() ** M);
+    EVAL2("Matrix-Matrix multiplication with matmul", myMatrix33, S, myMatrix23, M, S = matmul(M.T(), M));
 
-  should_fail = true;
-  EVAL2("Matrix-Matrix multiplication with inner dimension mismatch", myMatrix33, S, myMatrix23, M, S = M ** M);
-  should_fail = false;
-
-  // TESTING!
-  EVAL2("Matrix-Matrix-Vector multiplication", myVector3, v, myMatrix33, S, v = S ** S ** v);
-
-  EVAL2("Matrix-Matrix-Vector multiplication", myVector3, v, myMatrix33, S, v = S ** log(S) ** S(0,__));
-  EVAL2("Vector-Matrix multiplication", myVector3, v, myMatrix33, S, v = v ** S);
-  EVAL2("Vector-Matrix multiplication with matmul", myVector3, v, myMatrix33, S, v = matmul(v, S));
-  EVAL2("SymmMatrix-Vector multiplication", myVector3, v, mySymmMatrix, O, v = O ** v);
-  EVAL2("SymmMatrix-Matrix multiplication", myMatrix33, S, mySymmMatrix, O, S = O ** S);
-  EVAL2("Vector-SymmMatrix multiplication", myVector3, v, mySymmMatrix, O, v = v ** O);
-  EVAL2("Matrix-SymmMatrix multiplication", myMatrix23, M, mySymmMatrix, O, M = M ** O);
-  EVAL2("DiagMatrix-Vector multiplication", myVector3, v, myDiagMatrix, D, v = D ** v);
-  EVAL2("TridiagMatrix-Vector multiplication", myVector3, v, myTridiagMatrix, T, v = T ** v);
-  EVAL2("TridiagMatrix-Matrix multiplication", myMatrix33, S, myTridiagMatrix, T, S = T ** S);
-  EVAL2("Vector-TridiagMatrix multiplication", myVector3, v, myTridiagMatrix, T, v = v ** T);
-  EVAL2("Matrix-TridiagMatrix multiplication", myMatrix23, M, myTridiagMatrix, T, M = M ** T);
+    should_fail = true;
+    EVAL2("Matrix-Matrix multiplication with inner dimension mismatch", myMatrix33, S, myMatrix23, M, S = M ** M);
+    should_fail = false;
+    
+    // TESTING!
+    EVAL2("Matrix-Matrix-Vector multiplication", myVector3, v, myMatrix33, S, v = S ** S ** v);
+    
+    EVAL2("Matrix-Matrix-Vector multiplication", myVector3, v, myMatrix33, S, v = S ** log(S) ** S(0,__));
+    EVAL2("Vector-Matrix multiplication", myVector3, v, myMatrix33, S, v = v ** S);
+    EVAL2("Vector-Matrix multiplication with matmul", myVector3, v, myMatrix33, S, v = matmul(v, S));
+    EVAL2("SymmMatrix-Vector multiplication", myVector3, v, mySymmMatrix, O, v = O ** v);
+    EVAL2("SymmMatrix-Matrix multiplication", myMatrix33, S, mySymmMatrix, O, S = O ** S);
+    EVAL2("Vector-SymmMatrix multiplication", myVector3, v, mySymmMatrix, O, v = v ** O);
+    EVAL2("Matrix-SymmMatrix multiplication", myMatrix23, M, mySymmMatrix, O, M = M ** O);
+    EVAL2("DiagMatrix-Vector multiplication", myVector3, v, myDiagMatrix, D, v = D ** v);
+    EVAL2("TridiagMatrix-Vector multiplication", myVector3, v, myTridiagMatrix, T, v = T ** v);
+    EVAL2("TridiagMatrix-Matrix multiplication", myMatrix33, S, myTridiagMatrix, T, S = T ** S);
+    EVAL2("Vector-TridiagMatrix multiplication", myVector3, v, myTridiagMatrix, T, v = v ** T);
+    EVAL2("Matrix-TridiagMatrix multiplication", myMatrix23, M, myTridiagMatrix, T, M = M ** T);
+  }
+  else {
+    std::cout << "NO MATRIX MULTIPLICATION TESTS PERFORMED BECAUSE ADEPT COMPILED WITHOUT LAPACK\n";
+  }
 
 #ifndef ALL_ACTIVE
-  HEADING("LINEAR ALGEBRA");
-  EVAL2("Solving general linear equations Ax=b", myVector3, v, myMatrix33, S, v = solve(S,v));
-
-  EVAL2("Solving general linear equations AX=B", myMatrix23, M, myMatrix33, S, M.T() = solve(S,M.T()));
-  EVAL2("Solving linear equations Ax=b with symmetric A", myVector3, v, mySymmMatrix, O, v = solve(O,v));
-  EVAL2("Solving linear equations AX=B with symmetric A", myMatrix23, M, mySymmMatrix, O, M.T() = solve(O,M.T()));
-  //  EVAL2("Solving linear equations AX=B with symmetric A and B", myMatrix, S, mySymmMatrix, O, S = solve(O,P));
-  EVAL2("Invert general matrix", myMatrix33, C, myMatrix33, S, C = inv(S));
-
+  if (adept::have_linear_algebra()) {
+    HEADING("LINEAR ALGEBRA");
+    EVAL2("Solving general linear equations Ax=b", myVector3, v, myMatrix33, S, v = solve(S,v));
+    
+    EVAL2("Solving general linear equations AX=B", myMatrix23, M, myMatrix33, S, M.T() = solve(S,M.T()));
+    EVAL2("Solving linear equations Ax=b with symmetric A", myVector3, v, mySymmMatrix, O, v = solve(O,v));
+    EVAL2("Solving linear equations AX=B with symmetric A", myMatrix23, M, mySymmMatrix, O, M.T() = solve(O,M.T()));
+    EVAL2("Invert general matrix", myMatrix33, C, myMatrix33, S, C = inv(S));
+  }
+  else {
+    std::cout << "NO LINEAR ALGEBRA TESTS PERFORMED BECAUSE ADEPT COMPILED WITHOUT LAPACK\n";
+  }    
 #else
-  std::cout << "NO LINEAR ALGEBRA TESTS PERFORMED BECAUSE ACTIVE ARRAYS NOT YET SUPPORTED\n";
+    std::cout << "NO LINEAR ALGEBRA TESTS PERFORMED BECAUSE ACTIVE ARRAYS NOT YET SUPPORTED\n";
 #endif
 #else
-  std::cout << "NO MATRIX TESTS PERFORMED BECAUSE USING MARVEL-STYLE ACTIVE ARRAYS\n";
+    std::cout << "NO MATRIX TESTS PERFORMED BECAUSE USING MARVEL-STYLE ACTIVE ARRAYS\n";
 #endif
 
 

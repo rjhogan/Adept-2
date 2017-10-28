@@ -141,4 +141,26 @@ namespace adept {
 #endif
   }
 
+  // Was the library compiled with matrix multiplication support (from
+  // BLAS)?
+  bool
+  have_matrix_multiplication() {
+#ifdef HAVE_BLAS
+    return true;
+#else
+    return false;
+#endif
+  }
+
+  // Was the library compiled with linear algebra support (e.g. inv
+  // and solve from LAPACK)
+  bool
+  have_linear_algebra() {
+#ifdef HAVE_LAPACK
+    return true;
+#else
+    return false;
+#endif
+  }
+
 } // End namespace adept

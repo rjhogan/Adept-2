@@ -1,6 +1,6 @@
 /* settings.h -- View/change the overall Adept settings
 
-    Copyright (C) 2016 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2016-2017 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -33,6 +33,13 @@ namespace adept {
   // Adept has been configured.
   std::string configuration();
 
+  // Was the library compiled with matrix multiplication support (from
+  // BLAS)?
+  bool have_matrix_multiplication();
+
+  // Was the library compiled with linear algebra support (e.g. inv
+  // and solve from LAPACK)
+  bool have_linear_algebra();
 
   // -------------------------------------------------------------------
   // Get/set number of threads for array operations
