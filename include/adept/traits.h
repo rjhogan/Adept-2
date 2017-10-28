@@ -154,7 +154,7 @@ namespace adept {
     // is active, "false" otherwise.
     // Then the default case for non-expressions returns false
     
-    template <typename T> struct cast; // Forward declaration
+    template <typename T> struct expr_cast; // Forward declaration
 
     template <typename T, class Enable = void>
     struct is_active { };
@@ -166,7 +166,7 @@ namespace adept {
     // Expressions define a static const bool called "is_active"
     template <typename T>
     struct is_active<T, typename enable_if<!is_not_expression<T>::value>::type>
-    { static const bool value = cast<T>::is_active; };
+    { static const bool value = expr_cast<T>::is_active; };
     
 
     // ---------------------------------------------------------------------
@@ -210,7 +210,7 @@ namespace adept {
     {
       static const bool value
       = std::numeric_limits<typename T::type>::is_integer
-	&& cast<T>::rank == 0; 
+	&& expr_cast<T>::rank == 0; 
       static const int  count = value;
     };
 

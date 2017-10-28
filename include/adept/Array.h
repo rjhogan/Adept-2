@@ -2688,12 +2688,12 @@ namespace adept {
     // array
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
     inline
-    typename enable_if<!LocalIsActive && (!cast<E>::is_vectorizable
+    typename enable_if<!LocalIsActive && (!expr_cast<E>::is_vectorizable
 					  || !is_same<typename E::type,Type>::value),void>::type
     assign_expression_(const E& rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<LocalRank> i(0);
-      ExpressionSize<cast<E>::n_arrays> ind(0);
+      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
       Index index = 0;
       int my_rank;
       static const int last = LocalRank-1;
@@ -2729,7 +2729,7 @@ namespace adept {
     // Vectorized version for Rank-1 arrays
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
     inline //__attribute__((always_inline))
-    typename enable_if<!LocalIsActive && cast<E>::is_vectorizable && LocalRank == 1
+    typename enable_if<!LocalIsActive && expr_cast<E>::is_vectorizable && LocalRank == 1
 		       && is_same<typename E::type,Type>::value,void>::type
       // Removing the reference speeds things up because otherwise E
       // is dereferenced each loop
@@ -2737,7 +2737,7 @@ namespace adept {
       assign_expression_(const E rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<1> i(0);
-      ExpressionSize<cast<E>::n_arrays> ind(0);
+      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
 
       if (dimensions_[0] >= Packet<Type>::size*2
 	  && offset_[0] == 1
@@ -2792,7 +2792,7 @@ namespace adept {
     // Vectorized version
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
     inline
-    typename enable_if<!LocalIsActive && cast<E>::is_vectorizable && (LocalRank > 1)
+    typename enable_if<!LocalIsActive && expr_cast<E>::is_vectorizable && (LocalRank > 1)
                        && is_same<typename E::type,Type>::value,void>::type
     // Removing the reference speeds things up because otherwise E
     // is dereferenced each loop
@@ -2800,7 +2800,7 @@ namespace adept {
       assign_expression_(const E rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<LocalRank> i(0);
-      ExpressionSize<cast<E>::n_arrays> ind(0);
+      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
       Index index = 0;
       int my_rank;
       static const int last = LocalRank-1;
@@ -2872,14 +2872,14 @@ namespace adept {
       }
 #endif
       ExpressionSize<LocalRank> i(0);
-      ExpressionSize<cast<E>::n_arrays> ind(0);
+      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
       Index index = 0;
       int my_rank;
       static const int last = LocalRank-1;
 
-      ADEPT_ACTIVE_STACK->check_space(cast<E>::n_active * size());
+      ADEPT_ACTIVE_STACK->check_space(expr_cast<E>::n_active * size());
 
-      if (cast<E>::is_vectorizable && rhs.all_arrays_contiguous()) {
+      if (expr_cast<E>::is_vectorizable && rhs.all_arrays_contiguous()) {
 	// Contiguous source and destination data
 	Type* const __restrict t = data_; // Avoids an unnecessary load for some reason
 	do {
@@ -2923,7 +2923,7 @@ namespace adept {
       }
 #endif
       ExpressionSize<LocalRank> i(0);
-      ExpressionSize<cast<E>::n_arrays> ind(0);
+      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
       Index index = 0;
       int my_rank;
       Index gradient_ind = gradient_index();
@@ -2948,7 +2948,7 @@ namespace adept {
     typename enable_if<!LocalIsActive,void>::type
     assign_conditional_inactive_scalar_(const B& bool_expr, C rhs) {
       ExpressionSize<Rank> i(0);
-      ExpressionSize<cast<B>::n_arrays> bool_ind(0);
+      ExpressionSize<expr_cast<B>::n_arrays> bool_ind(0);
       Index index = 0;
       int my_rank;
       static const int last = Rank-1;
@@ -2978,7 +2978,7 @@ namespace adept {
 #endif
 
       ExpressionSize<Rank> i(0);
-      ExpressionSize<cast<B>::n_arrays> bool_ind(0);
+      ExpressionSize<expr_cast<B>::n_arrays> bool_ind(0);
       Index index = 0;
       int my_rank;
       static const int last = Rank-1;
@@ -3002,8 +3002,8 @@ namespace adept {
     typename enable_if<!LocalIsActive,void>::type
     assign_conditional_(const B& bool_expr, const C& rhs) {
       ExpressionSize<Rank> i(0);
-      ExpressionSize<cast<B>::n_arrays> bool_ind(0);
-      ExpressionSize<cast<C>::n_arrays> rhs_ind(0);
+      ExpressionSize<expr_cast<B>::n_arrays> bool_ind(0);
+      ExpressionSize<expr_cast<C>::n_arrays> rhs_ind(0);
       Index index = 0;
       int my_rank;
       static const int last = Rank-1;
@@ -3043,14 +3043,14 @@ namespace adept {
       }
 #endif
       ExpressionSize<Rank> i(0);
-      ExpressionSize<cast<B>::n_arrays> bool_ind(0);
-      ExpressionSize<cast<C>::n_arrays> rhs_ind(0);
+      ExpressionSize<expr_cast<B>::n_arrays> bool_ind(0);
+      ExpressionSize<expr_cast<C>::n_arrays> rhs_ind(0);
       Index index = 0;
       int my_rank;
       static const int last = Rank-1;
       bool is_gap = false;
 
-      ADEPT_ACTIVE_STACK->check_space(cast<C>::n_active * size());
+      ADEPT_ACTIVE_STACK->check_space(expr_cast<C>::n_active * size());
       do {
 	i[last] = 0;
 	rhs.set_location(i, rhs_ind);

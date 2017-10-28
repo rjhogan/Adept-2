@@ -478,7 +478,7 @@ namespace adept {
 	delete[] data;
 #endif
 #elif defined(_MSC_VER)
-	_aligned_free(ptr);
+	_aligned_free(data);
 #endif
       }
     }

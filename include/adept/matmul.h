@@ -619,8 +619,8 @@ namespace adept {
     // The MatmulRHS class simply contains a reference to an array
     template <class A>
     struct MatmulRHS {
-      // The following are not used but enable cast<MatmulRHS>::... to
-      // work
+      // The following are not used but enable
+      // expr_cast<MatmulRHS>::... to work
       static const int  rank      = A::rank;
       static const bool is_active = A::is_active;
       static const int  n_arrays  = 0;

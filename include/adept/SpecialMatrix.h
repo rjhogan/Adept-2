@@ -1778,7 +1778,7 @@ namespace adept {
     assign_expression_(const E& rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<2> i(0);
-      ExpressionSize<cast<E>::n_arrays> ind(0);
+      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
       Index j_start, j_end_plus_1, index, index_stride;
       for ( ; i[0] < dimension_; ++i[0]) {
 	Engine::get_row_range(i[0], dimension_, offset_, 
@@ -1803,8 +1803,8 @@ namespace adept {
       }
 #endif
       ExpressionSize<2> i(0);
-      ExpressionSize<cast<E>::n_arrays> ind(0);
-      ADEPT_ACTIVE_STACK->check_space(cast<E>::n_active * size());
+      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
+      ADEPT_ACTIVE_STACK->check_space(expr_cast<E>::n_active * size());
       Index j_start, j_end_plus_1, index, index_stride;
       for ( ; i[0] < dimension_; ++i[0]) {
 	Engine::get_row_range(i[0], dimension_, offset_, 

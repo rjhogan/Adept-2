@@ -321,11 +321,19 @@ namespace adept {
 
 
     // ---------------------------------------------------------------------
-    // SECTION 3. "cast" helper 
+    // SECTION 3. "expr_cast" helper 
     // ---------------------------------------------------------------------
 
+    // The following enables one of the static consts only in a
+    // derived class of Expression to be extracted, and is useful when
+    // you don't know whether a template argument to a function is an
+    // Expression or a class derived from it.  Thus
+    // expr_cast<Expression<double,Array> >::is_vectorizable and
+    // expr_cast<Array>::is_vectorizable would both return
+    // Array::is_vectorizable.
+
     template <class E>
-    struct cast {
+    struct expr_cast {
       // Rank of the array
       static const int  rank = E::rank;
       // Number of scratch floating-point variables needed in the
@@ -354,7 +362,7 @@ namespace adept {
     };
 
     template <typename T, class E>
-    struct cast<Expression<T,E> > {
+    struct expr_cast<Expression<T,E> > {
       static const int  rank = E::rank;
       static const int  n_scratch = E::n_scratch;
       static const int  n_arrays = E::n_arrays;
@@ -365,7 +373,6 @@ namespace adept {
       static const bool is_lvalue = E::is_lvalue;
       static const bool is_vectorizable = E::is_vectorizable;
     };
-
 
   }
 }

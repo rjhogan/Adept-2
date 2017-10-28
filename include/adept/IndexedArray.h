@@ -182,7 +182,7 @@ namespace adept {
     {
       static const bool value 
       = std::numeric_limits<typename T::type>::is_integer
-	&& cast<T>::rank == 1;
+	&& expr_cast<T>::rank == 1;
     };
     
     template <typename T>
@@ -703,7 +703,7 @@ namespace adept {
 		    CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_INDEXED_ARRAY);
 	ExpressionSize<Rank> coords(0);
 	ExpressionSize<a_rank> a_coords(0);
-	ExpressionSize<cast<E>::n_arrays> loc(0);
+	ExpressionSize<expr_cast<E>::n_arrays> loc(0);
 	ExpressionSize<1> a_loc(0);
 	int dim;
 	static const int last = Rank-1;
@@ -737,7 +737,7 @@ namespace adept {
 #endif
 	ExpressionSize<Rank> coords(0);
 	ExpressionSize<a_rank> a_coords(0);
-	ExpressionSize<cast<E>::n_arrays> loc(0);
+	ExpressionSize<expr_cast<E>::n_arrays> loc(0);
 	ExpressionSize<1> a_loc(0);
 	int dim;
 	static const int last = Rank-1;
@@ -772,12 +772,12 @@ namespace adept {
 #endif
 	ExpressionSize<Rank> coords(0);
 	ExpressionSize<a_rank> a_coords(0);
-	ExpressionSize<cast<E>::n_arrays> loc(0);
+	ExpressionSize<expr_cast<E>::n_arrays> loc(0);
 	ExpressionSize<1> a_loc(0);
 	int dim;
 	static const int last = Rank-1;
 
-	ADEPT_ACTIVE_STACK->check_space(cast<E>::n_active * dimensions_[0]);
+	ADEPT_ACTIVE_STACK->check_space(expr_cast<E>::n_active * dimensions_[0]);
 	do {
 	  coords[last] = 0;
 	  rhs.set_location(coords, loc);

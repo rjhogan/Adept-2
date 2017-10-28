@@ -39,7 +39,7 @@ namespace adept {
       static const bool is_active = (L::is_active || R::is_active) 
 	&& !is_same<Type, bool>::value;
       static const int  store_result = is_active * Op::store_result;
-      static const int  n_active = cast<L>::n_active + cast<R>::n_active;
+      static const int  n_active = expr_cast<L>::n_active + expr_cast<R>::n_active;
       // Assume the only local scratch variable is the result of the
       // binary expression
       static const int  n_local_scratch = store_result; 
@@ -324,7 +324,7 @@ namespace adept {
       static const int rank  = R::rank;
       static const bool is_active = R::is_active && !is_same<Type, bool>::value;
       static const int  store_result = is_active * Op::store_result;
-      static const int n_active = cast<R>::n_active;
+      static const int n_active = expr_cast<R>::n_active;
       // Assume the only local scratch variable is the result of the
       // binary expression
       static const int  n_local_scratch = store_result; 
@@ -511,7 +511,7 @@ namespace adept {
       static const int rank  = L::rank;
       static const bool is_active = L::is_active && !is_same<Type,bool>::value;
       static const int  store_result = is_active * Op::store_result;
-      static const int n_active  = cast<L>::n_active;
+      static const int n_active  = expr_cast<L>::n_active;
       // Assume the only local scratch variable is the result of the
       // binary expression
       static const int  n_local_scratch = store_result; 
