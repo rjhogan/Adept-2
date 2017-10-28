@@ -183,10 +183,8 @@ namespace adept {
 
     template <int NArrays>
     Packet<Type> next_packet(ExpressionSize<NArrays>& index) const {
-      asm("# %%% ADEPT PACKET CALCULATION");
       Packet<Type> val
       	= cast().template packet_at_location_<0>(index);
-      asm("# %%% ADEPT END PACKET CALCULATION");
       index += Packet<Type>::size;
       return val;
     }

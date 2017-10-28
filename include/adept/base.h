@@ -210,7 +210,7 @@
 // C++11 has thread_local as part of the language, and should be
 // supported on non-Mac C++11 platforms
 #define ADEPT_THREAD_LOCAL thread_local
-#elif defined(_WIN32)
+#elif defined(_MSC_VER)
 // Windows C++98 has a different way to specify thread-local storage
 // from the GCC/Intel/Sun/IBM compilers.
 #define ADEPT_THREAD_LOCAL __declspec(thread)
@@ -292,6 +292,9 @@ namespace adept {
 #ifdef __INTEL_COMPILER
 // "type qualifiers are meaningless here"
 #pragma warning disable 2536
+#elif defined(_MSC_VER)
+// "multiple copy constructors specified"
+#pragma warning( disable : 4521 )
 #endif
 
 } // End namespace adept
