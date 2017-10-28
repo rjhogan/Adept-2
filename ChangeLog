@@ -2,6 +2,9 @@ version 2.0.3 (28 October 2017)
 	- Replaced template class "cast" with "expr_cast" to avoid clash
 	with Expression's non-template member function; this enables
 	compilation with Visual C++.
+	- Added adept::have_matrix_multiplication() and
+	adept::have_linear_algebra() to test for BLAS and LAPACK
+	(respectively) at run-time
 
 version 2.0.2 (21 October 2017)
 	- Fixed standards-compliance problem with use of Expression in
