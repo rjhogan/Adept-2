@@ -91,6 +91,7 @@ namespace adept {
       typedef T intrinsic_type;
       static const int size = 1;
       static const std::size_t alignment_bytes = sizeof(T);
+      static const std::size_t align_mask = -1; // all bits = 1
       static const bool is_vectorized = false;
       Packet() : data(0.0) { }
       explicit Packet(const T* d) : data(*d) { }
@@ -111,28 +112,31 @@ namespace adept {
     // contains a single SSE2/AVX intrinsic data object.
     // -------------------------------------------------------------------
 
-#define ADEPT_DEF_PACKET_TYPE(TYPE, INT_TYPE, SET0,	        \
+#define ADEPT_DEF_PACKET_TYPE(TYPE, INTRINSIC_TYPE, SET0,	\
 			      LOAD, LOADU, SET1, STORE, STOREU,	\
 			      ADD, SUB, MUL, DIV, SQRT,		\
 			      MIN, MAX, HSUM, HPROD,		\
 			      HMIN, HMAX)			\
     template <> struct Packet<TYPE> {				\
-      typedef INT_TYPE intrinsic_type;				\
-      static const int size = sizeof(INT_TYPE) / sizeof(TYPE);	\
+      typedef INTRINSIC_TYPE intrinsic_type;			\
+      static const int size					\
+        = sizeof(INTRINSIC_TYPE) / sizeof(TYPE);		\
       static const int intrinsic_size				\
-        = sizeof(INT_TYPE) / sizeof(TYPE);			\
+        = sizeof(INTRINSIC_TYPE) / sizeof(TYPE);		\
       static const std::size_t					\
-	alignment_bytes = sizeof(INT_TYPE);			\
+	alignment_bytes = sizeof(INTRINSIC_TYPE);		\
+      static const std::size_t					\
+        align_mask = sizeof(INTRINSIC_TYPE)-1;			\
       static const bool is_vectorized = true;			\
       Packet()              : data(SET0())  { }			\
       Packet(const TYPE* d) : data(LOAD(d)) { }			\
       Packet(const TYPE* d, int) : data(LOADU(d)) { }		\
       Packet(TYPE d)        : data(SET1(d)) { }			\
-      Packet(INT_TYPE d)    : data(d) { }			\
+      Packet(INTRINSIC_TYPE d)    : data(d) { }			\
       void put(TYPE* __restrict d) const { STORE(d, data); }	\
       void put_unaligned(TYPE* __restrict d) const		\
       { STOREU(d, data); }					\
-      void operator=(INT_TYPE d) { data=d; }			\
+      void operator=(INTRINSIC_TYPE d) { data=d; }		\
       void operator=(const Packet<TYPE>& __restrict d)		\
       { data=d.data; }						\
       void operator+=(const Packet<TYPE>& __restrict d)		\
@@ -145,7 +149,7 @@ namespace adept {
       { data = DIV(data, d.data); }				\
       TYPE value() const { return value_; }			\
       union {							\
-	INT_TYPE data;						\
+	INTRINSIC_TYPE data;					\
 	TYPE value_;						\
       };							\
     };								\

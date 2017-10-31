@@ -2064,13 +2064,22 @@ namespace adept {
     }
     bool all_arrays_contiguous_() const { return offset_[Rank-1] == 1 && columns_aligned_<Rank>(); }
 
+    // Is the first data element aligned to a packet boundary?
+    bool is_aligned_() const {
+      return !(reinterpret_cast<std::size_t>(data_) & Packet<Type>::align_mask);
+      // If we could union data with a uintptr_t object then we could
+      // do the following, but there is no guarantee that uintptr_t
+      // exists :-(
+      //      return !(data_unsigned_int_ & Packet<Type>::align_mask);
+    }
+
     // Return the number of unaligned elements before reaching the
     // first element on an alignment boundary, which is in units of
     // "n" Types.
     template <int n>
     int alignment_offset_() const {
       // This is rather slow!
-      return (reinterpret_cast<unsigned long long int>(reinterpret_cast<void*>(data_))/sizeof(Type)) % n;
+      return (reinterpret_cast<std::size_t>(reinterpret_cast<void*>(data_))/sizeof(Type)) % n;
     }
 
     Type value_with_len_(const Index& j, const Index& len) const {
@@ -2502,6 +2511,57 @@ namespace adept {
       return data_[loc];
     }
 
+    // Return a scalar
+    template <bool IsAligned, int MyArrayNum, typename PacketType,
+	      int NArrays>
+    typename enable_if<is_same<Type,PacketType>::value, Type>::type
+    values_at_location_(const ExpressionSize<NArrays>& loc) const {
+      return data_[loc[MyArrayNum]];
+    }
+
+    // Return a Paket from an aligned memory address
+    template <bool IsAligned, int MyArrayNum, typename PacketType,
+	      int NArrays>
+    typename enable_if<IsAligned && is_same<Packet<Type>,PacketType>::value, PacketType>::type
+    values_at_location_(const ExpressionSize<NArrays>& loc) const {
+      return Packet<Type>(data_+loc[MyArrayNum]);
+    }    
+
+    // Return a Paket from an unaligned memory address
+    template <bool IsAligned, int MyArrayNum, typename PacketType,
+	      int NArrays>
+    typename enable_if<!IsAligned && is_same<Packet<Type>,PacketType>::value, PacketType>::type
+    values_at_location_(const ExpressionSize<NArrays>& loc) const {
+      // integer dummy second argument indicates unaligned load
+      return Packet<Type>(data_+loc[MyArrayNum], 0); 
+    }    
+
+    // Return a scalar
+    template <bool UseStored, bool IsAligned, int MyArrayNum, int MyScratchNum,
+	      typename PacketType, int NArrays, int NScratch>
+    typename enable_if<is_same<Type,PacketType>::value, Type>::type
+    values_at_location_store_(const ExpressionSize<NArrays>& loc,
+			      ScratchVector<NScratch,PacketType>& scratch) const {
+      return data_[loc[MyArrayNum]];
+    }
+
+    // Return a Paket from an aligned memory address
+    template <bool UseStored, bool IsAligned, int MyArrayNum, int MyScratchNum,
+	      typename PacketType, int NArrays, int NScratch>
+    typename enable_if<IsAligned && is_same<Packet<Type>,PacketType>::value, PacketType>::type
+    values_at_location_store_(const ExpressionSize<NArrays>& loc,
+			      ScratchVector<NScratch,PacketType>& scratch) const {
+      return Packet<Type>(data_+loc[MyArrayNum]);
+    }
+    // Return a Paket from an unaligned memory address
+    template <bool UseStored, bool IsAligned, int MyArrayNum, int MyScratchNum,
+	      typename PacketType, int NArrays, int NScratch>
+    typename enable_if<!IsAligned && is_same<Packet<Type>,PacketType>::value, PacketType>::type
+    values_at_location_store_(const ExpressionSize<NArrays>& loc,
+			      ScratchVector<NScratch,PacketType>& scratch) const {
+      return Packet<Type>(data_+loc[MyArrayNum], 0);
+    }
+   
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
 				  ScratchVector<NScratch>& scratch) const {
@@ -2535,6 +2595,26 @@ namespace adept {
       stack.push_rhs(multiplier, gradient_index() + loc[MyArrayNum]);
     }
   
+    template <int MyArrayNum, int MyScratchNum, int MyActiveNum,
+	      int NArrays, int NScratch, int NActive>
+    void calc_gradient_packet_(Stack& stack, 
+			       const ExpressionSize<NArrays>& loc,
+			       const ScratchVector<NScratch,Packet<Real> >& scratch,
+			       ScratchVector<NActive,Packet<Real> >& gradients) const {
+      stack.push_rhs_indices<Packet<Real>::size,NActive>(gradient_index() + loc[MyArrayNum]);
+      gradients[MyActiveNum] = Packet<Real>(1.0);
+    }
+
+    template <int MyArrayNum, int MyScratchNum, int MyActiveNum,
+	      int NArrays, int NScratch, int NActive, typename MyType>
+    void calc_gradient_packet_(Stack& stack, 
+			       const ExpressionSize<NArrays>& loc,
+			       const ScratchVector<NScratch,Packet<Real> >& scratch,
+			       ScratchVector<NActive,Packet<Real> >& gradients,
+			       const MyType& multiplier) const {
+      stack.push_rhs_indices<Packet<Real>::size,NActive>(gradient_index() + loc[MyArrayNum]);
+      gradients[MyActiveNum] = multiplier;
+    }
 
 
     // -------------------------------------------------------------------

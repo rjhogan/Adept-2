@@ -342,6 +342,13 @@ namespace adept {
 				    complex_type>::type type;
     };
 
+    // If ever the template arguments are the same
+    // (e.g. Packet<double>), we simply return this type
+    template <typename T>
+    struct promote<T,T> {
+      typedef T type;
+    };
+
   
     // ---------------------------------------------------------------------
     // 13. rank_compatible

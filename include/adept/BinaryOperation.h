@@ -124,6 +124,11 @@ namespace adept {
 	return left.all_arrays_contiguous_()
 	  &&  right.all_arrays_contiguous_();
       }
+
+      bool is_aligned_() const {
+	return left.is_aligned_() && right.is_aligned_();
+      }
+      
       template <int n>
       int alignment_offset_() const {
 	int l = left.template alignment_offset_<n>();
@@ -163,6 +168,21 @@ namespace adept {
 			 right.template packet_at_location_<MyArrayNum+L::n_arrays>(loc));
       }
 
+      template <bool IsAligned,	int MyArrayNum, typename PacketType,
+	int NArrays>
+      PacketType values_at_location_(const ExpressionSize<NArrays>& loc) const {
+	return operation(left.template  values_at_location_<IsAligned,MyArrayNum,PacketType>(loc),
+			 right.template values_at_location_<IsAligned,MyArrayNum+L::n_arrays,PacketType>(loc));
+      }
+
+      template <bool UseStored, bool IsAligned,	int MyArrayNum, int MyScratchNum,
+		typename PacketType, int NArrays, int NScratch>
+      PacketType values_at_location_store_(const ExpressionSize<NArrays>& loc,
+		   ScratchVector<NScratch,PacketType>& scratch) const {
+	return my_values_at_location_store_<store_result,UseStored,IsAligned,
+					    MyArrayNum,MyScratchNum>(loc, scratch);
+      }
+
       // Adept-1.x did not store for addition and subtraction!
       // Moreover, we should ideally not ask inactive arguments to
       // store their result.
@@ -190,6 +210,7 @@ namespace adept {
 		      right.template value_at_location_store_<MyArrayNum+L::n_arrays,
 						     MyScratchNum+L::n_scratch+n_local_scratch>(loc, scratch));
       }
+
       // In differentiating "a/b", it helps to store "1/b";
       // "operation_store" is only provided by Divide and Atan2
       template <int StoreResult, int MyArrayNum, int MyScratchNum, 
@@ -230,6 +251,58 @@ namespace adept {
 			 right.template value_at_location_<MyArrayNum+L::n_arrays>(loc));
       }
     
+      template <int StoreResult, bool UseStored, bool IsAligned, int MyArrayNum, int MyScratchNum,
+		typename PacketType, int NArrays, int NScratch>
+      typename enable_if<StoreResult==1 && !UseStored, PacketType>::type
+      my_values_at_location_store_(const ExpressionSize<NArrays>& loc,
+				   ScratchVector<NScratch,PacketType>& scratch) const {
+	return scratch[MyScratchNum]
+	  = operation(left.template values_at_location_store_<UseStored,IsAligned,MyArrayNum,
+		                                     MyScratchNum+n_local_scratch>(loc, scratch),
+		      right.template values_at_location_store_<UseStored,IsAligned,MyArrayNum+L::n_arrays,
+		                                     MyScratchNum+L::n_scratch+n_local_scratch>(loc, scratch));
+      }
+
+      template <int StoreResult, bool UseStored, bool IsAligned, int MyArrayNum, int MyScratchNum,
+		typename PacketType, int NArrays, int NScratch>
+      typename enable_if<StoreResult==2 && !UseStored, PacketType>::type
+      my_values_at_location_store_(const ExpressionSize<NArrays>& loc,
+				   ScratchVector<NScratch,PacketType>& scratch) const {
+	return scratch[MyScratchNum]
+	  = Op::operation_store(left.template values_at_location_store_<UseStored,IsAligned,MyArrayNum,
+		                                     MyScratchNum+n_local_scratch>(loc, scratch),
+				right.template values_at_location_store_<UseStored,IsAligned,MyArrayNum+L::n_arrays,
+				                     MyScratchNum+L::n_scratch+n_local_scratch>(loc, scratch),
+				scratch[MyScratchNum+1]);
+      }
+
+      template <int StoreResult, bool UseStored, bool IsAligned, int MyArrayNum, int MyScratchNum,
+		typename PacketType, int NArrays, int NScratch>
+      typename enable_if<(StoreResult>0) && UseStored, PacketType>::type
+      my_values_at_location_store_(const ExpressionSize<NArrays>& loc,
+				   ScratchVector<NScratch,PacketType>& scratch) const {
+	return scratch[MyScratchNum];
+      }
+
+      template <int StoreResult, bool UseStored, bool IsAligned, int MyArrayNum, int MyScratchNum,
+		typename PacketType, int NArrays, int NScratch>
+      typename enable_if<StoreResult==0 && !UseStored, PacketType>::type
+      my_values_at_location_store_(const ExpressionSize<NArrays>& loc,
+				   ScratchVector<NScratch,PacketType>& scratch) const {
+	return operation(left.template values_at_location_store_<UseStored,IsAligned,MyArrayNum,
+		                                     MyScratchNum+n_local_scratch>(loc, scratch),
+			 right.template values_at_location_store_<UseStored,IsAligned,MyArrayNum+L::n_arrays,
+		                                     MyScratchNum+L::n_scratch+n_local_scratch>(loc, scratch));
+      }
+
+      template <int StoreResult, bool UseStored, bool IsAligned, int MyArrayNum, int MyScratchNum,
+		typename PacketType, int NArrays, int NScratch>
+      typename enable_if<StoreResult==0 && UseStored, PacketType>::type
+      my_values_at_location_store_(const ExpressionSize<NArrays>& loc,
+				   ScratchVector<NScratch,PacketType>& scratch) const {
+	return operation(left.template values_at_location_<IsAligned,MyArrayNum,PacketType>(loc),
+			 right.template values_at_location_<IsAligned,MyArrayNum+L::n_arrays,PacketType>(loc));
+      }
 
     public:
 
@@ -371,6 +444,11 @@ namespace adept {
       bool all_arrays_contiguous_() const {
 	return right.all_arrays_contiguous_(); 
       }
+
+       bool is_aligned_() const {
+	return right.is_aligned_();
+      }    
+
       template <int n>
       int alignment_offset_() const { return right.template alignment_offset_<n>(); }
 
@@ -559,6 +637,11 @@ namespace adept {
       bool all_arrays_contiguous_() const {
 	return left.all_arrays_contiguous_(); 
       }
+
+      bool is_aligned_() const {
+	return left.is_aligned_();
+      }
+
       template <int n>
       int alignment_offset_() const { return left.template alignment_offset_<n>(); }
 

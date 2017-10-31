@@ -65,6 +65,17 @@ namespace adept {
 #endif
       }
 
+      // Push the gradient indices of a vectorized operation on to the
+      // stack.  We assume here that check_space() as been called
+      // before so there is enough space to hold these elements. The
+      // multipliers will be added later.
+      template <Index Num, Index Stride>
+      void push_rhs_indices(const uIndex& gradient_index) {
+	for (Index i = 0; i < Num; ++i) {
+	  index_[n_operations_+i*Stride] = gradient_index+i;
+	}
+	++n_operations_;
+      }
 
       // Push a statement on to the stack: this is done after a
       // sequence of operation pushes; gradient_index is the index of

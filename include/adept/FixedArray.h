@@ -1582,10 +1582,14 @@ namespace adept {
     // By design, FixedArrays are row-major and row-wise access is
     // contiguous
     bool all_arrays_contiguous_() const { return true; }
-  
+ 
+    bool is_aligned_() const {
+      return !(reinterpret_cast<std::size_t>(data_) & Packet<Type>::align_mask);
+    }
+
     template <int n>
     int alignment_offset_() const {
-      return (reinterpret_cast<long long int>(data_)/sizeof(Type)) % n; 
+      return (reinterpret_cast<std::size_t>(data_)/sizeof(Type)) % n; 
     }
 
     Type value_with_len_(const Index& j, const Index& len) const {

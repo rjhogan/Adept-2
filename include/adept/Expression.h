@@ -115,6 +115,12 @@ namespace adept {
     // objects that aren't arrays)
     bool all_arrays_contiguous_() const { return true; }
 
+    // Are all the arrays in the expression aligned to a Packet<Type>
+    // boundary?
+    bool is_aligned() const {
+      return cast().is_aligned();
+    }
+
     // In order to perform optimal vectorization, the first memory
     // addresses of each inner dimension must be aligned
     // appropriately, or they should all have the same offset so that
@@ -295,6 +301,19 @@ namespace adept {
 			 const ScratchVector<NScratch>& scratch) const
       { return val_; }
 
+      template <bool IsAligned,	int MyArrayNum, typename PacketType,
+	int NArrays>
+      PacketType values_at_location_(const ExpressionSize<NArrays>& loc) const {
+	return PacketType(val_);
+      }
+
+      template <bool UseStored, bool IsAligned,	int MyArrayNum, int MyScratchNum,
+		typename PacketType, int NArrays, int NScratch>
+      PacketType values_at_location_store_(const ExpressionSize<NArrays>& loc,
+		   ScratchVector<NScratch,PacketType>& scratch) const {
+	return PacketType(val_);
+      }
+
       template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
       void calc_gradient_(Stack& stack, 
 			  const ExpressionSize<NArrays>& loc,
@@ -306,6 +325,21 @@ namespace adept {
 			  const ExpressionSize<NArrays>& loc,
 			  const ScratchVector<NScratch>& scratch,
 			  const MyType& multiplier) const {}
+
+      template <bool IsAligned, int MyArrayNum, int MyScratchNum, int MyActiveNum,
+		int NArrays, int NScratch, int NActive>
+      void calc_gradient_packet_(Stack& stack, 
+				 const ExpressionSize<NArrays>& loc,
+				 const ScratchVector<NScratch,Packet<Real> >& scratch,
+				 ScratchVector<NActive,Packet<Real> >& gradients) const {}
+
+      template <bool IsAligned, int MyArrayNum, int MyScratchNum, int MyActiveNum,
+		int NArrays, int NScratch, int NActive, typename MyType>
+      void calc_gradient_packet_(Stack& stack, 
+				 const ExpressionSize<NArrays>& loc,
+				 const ScratchVector<NScratch,Packet<Real> >& scratch,
+				 ScratchVector<NActive,Packet<Real> >& gradients,
+				 const MyType& multiplier) const {}
 
       template <int MyArrayNum, int Rank, int NArrays>
       void set_location_(const ExpressionSize<Rank>& i, 

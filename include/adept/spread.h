@@ -75,6 +75,10 @@ namespace adept {
 	return array.all_arrays_contiguous_();
       }
 
+      bool is_aligned_() const {
+	return array.is_aligned_();
+      }
+     
       template <int N>
       int alignment_offset_() const {
 	return array.template alignment_offset_<N>();
