@@ -1607,7 +1607,7 @@ can also throw a \code{gradient\_out\_of\_range} exception if new
 \codebf{set\_gradient} function was called.
 %
 \citem{void add\_derivative\_dependence(const adouble\&\ r, const
-  adouble\&\ g)} Add a differential statement to the currently active
+  double\&\ g)} Add a differential statement to the currently active
 stack of the form $\delta \codebf{l}=\codebf{g}\times\delta
 \codebf{r}$, where \codebf{l} is the \codebf{adouble} object from which
 this function is called.  This function is needed to interface to
@@ -1616,7 +1616,7 @@ software containing hand-coded Jacobians, as described in section
 $\partial\codebf{l}/\partial\codebf{r}$ obtained from such software.
 %
 \citem{void append\_derivative\_dependence(const adouble\&\ r, const
-  adouble\&\ g)} Assuming that the same \codebf{adouble} object has just
+  double\&\ g)} Assuming that the same \codebf{adouble} object has just
 had its \codebf{add\_derivative\_dependence} member function called,
 this function appends ${}+\codebf{g}\times\delta\codebf{r}$ to the
 most recent differential statement on the stack.  If the calling
@@ -2927,7 +2927,7 @@ otherwise.
 threads used for matrix operations by the BLAS library, or zero to use
 the upper limit on your system. The number returned is the number
 actually used.  
-\citem{int num\_blas\_threads(int n)} Return the maximum number of
+\citem{int max\_blas\_threads()} Return the maximum number of
 threads available for matrix operations by the BLAS library.
 %
 \end{description}

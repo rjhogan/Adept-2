@@ -1,20 +1,24 @@
 \documentclass[10pt,a4,landscape]{article}
 % Page set up
-\setlength{\oddsidemargin}{0cm} %{0.5cm}
-\setlength{\evensidemargin}{0cm} %{0.5cm}
-\setlength{\topmargin}{-5cm}
-\setlength{\textheight}{24cm}
-\setlength{\textwidth}{16cm}
+\setlength{\oddsidemargin}{-1cm} %{0.5cm}
+\setlength{\evensidemargin}{-1cm} %{0.5cm}
+\setlength{\topmargin}{-3cm}
+%\setlength{\topmargin}{0cm}
+%\setlength{\textheight}{24cm}
+%\setlength{\textwidth}{16cm}
+\setlength{\textheight}{19cm}
+\setlength{\textwidth}{26cm}
 \setlength{\marginparsep}{0.5cm}
 \setlength{\marginparwidth}{0cm}
-\setlength{\parindent}{1em}
-\setlength{\parskip}{0cm}
-\renewcommand{\baselinestretch}{1.1}
+%\setlength{\parindent}{1em}
+%\setlength{\parskip}{0.5ex}
+\def\myvskip{\vskip 1ex}
+\def\hangingpar{\parshape 2 0cm \linewidth 1ex \dimexpr\linewidth-1ex\relax}
+\renewcommand{\baselinestretch}{1.05}
 \sloppy
-
+%\usepackage{multicol}
 \usepackage{lmodern}\usepackage[T1]{fontenc}
 \usepackage{color}
-%\renewcommand{\rmdefault}{sbc}
 \usepackage[figuresright]{rotating}
 \DeclareFontFamily{T1}{lmttc}{\hyphenchar \font-1 }
 \DeclareFontShape{T1}{lmttc}{m}{n}
@@ -23,59 +27,341 @@
      {<->sub*lmttc/m/sl}{}
 \DeclareFontShape{T1}{lmttc}{m}{sl}
      {<-> ec-lmtlco10}{}
-\begin{document}
-\pagestyle{empty}
 \def\myfont{\fontfamily{cmss}\fontseries{lmtt}\selectfont}
 \def\mysize{\footnotesize}
-\def\mysize{\normalsize}
+\def\mysize{\small}
+\def\codeindent{\hspace{\tabcolsep}}
+\setlength{\parindent}{0pt}
+\def\code#1{\texttt{#1}}
+\renewcommand{\rmdefault}{cmss}
+\begin{document}
+\pagestyle{empty}
+\twocolumn
+\mysize\myfont\section*{\Huge Adept reference sheet}
+%\section*{General}
+All functions and types are placed in the \code{adept} namespace.
+\subsection*{Header files}
+\begin{tabular}{ll}
+\code{adept.h} & Include if only scalar automatic differentiation is required\\
+\code{adept\_arrays.h} & Include if array capabilities are needed \\
+\code{adept\_source.h} & Include entire Adept library, so linking to library not required \\
+\end{tabular}
+
+\subsection*{Query functions}
+\begin{tabular}{ll}
+\code{active\_stack()} & Return pointer to currently active \code{Stack} object\\
+\code{version()} & Return \code{std::string} containing Adept version number\\
+\code{configuration()} & Return \code{std::string} describing Adept configuration\\
+\code{have\_matrix\_multiplication()} & Adept compiled with matrix mult.\ enabled (BLAS)?\\
+\code{have\_linear\_algebra()} & Adept compiled with linear-algebra enabled (LAPACK)?\\
+\code{set\_max\_blas\_threads(n)} & Set maximum threads for matrix operations\\
+\code{max\_blas\_threads()} & Get maximum threads for matrix operations\\
+\code{is\_thread\_unsafe()} & Global \code{Stack} object is \textit{not} thread-local?\\
+\end{tabular}
+\subsection*{Preprocessor variables}
+The following can be defined to change the behaviour of your code:\\
+\begin{tabular}{ll}
+\code{ADEPT\_STACK\_THREAD\_UNSAFE} & Thread-unsafe \code{Stack} (faster)\\
+\code{ADEPT\_RECORDING\_PAUSABLE} & Recording can be paused (slower)\\
+\code{ADEPT\_NO\_AUTOMATIC\_DIFFERENTIATION} & Turn off differentiation\\
+\code{ADEPT\_TRACK\_NON\_FINITE\_GRADIENTS} & Exception thrown if derivative non-finite\\
+\code{ADEPT\_BOUNDS\_CHECKING} & Check array bounds (slower)\\
+\code{ADEPT\_NO\_ALIAS\_CHECKING} & Turn off alias checking (faster)\\
+\code{ADEPT\_STORAGE\_THREAD\_SAFE} & Thread-safe array storage (slower)\\
+\end{tabular}
+
+The \code{ADEPT\_VERSION} variable contains version number as an
+integer, e.g.\ \code{20103} for ``2.0.3''.
+\section*{Automatic differentiation functionality}
+\subsection*{Scalar types}
+\begin{tabular}{ll}
+\code{Real} & Scalar type used for differentiation (usually
+\code{double})\\
+\code{aReal} & Active scalar of underlying type \code{Real} \\
+\code{adouble}, \code{afloat} & Active scalars of underlying type
+\code{double} and \code{float}\\
+\end{tabular}
+\subsection*{Basic reverse-mode workflow}
+\begin{tabular}{ll}
+\code{Stack stack;} & Object to store derivative information\\
+\code{aVector x = \{1.0, 2.0\};} & Initialize independent (input) variables\\
+\code{stack.new\_recording();} & Start a new recording\\
+\code{aReal y = algorithm(x);} & Any complicated algorithm here (output)\\
+\code{y.set\_gradient(1.0);} & Seed adjoint of objective function\\
+\code{stack.reverse();} & Perform reverse-mode differentiation\\
+\code{Vector dy\_dx = x.get\_gradient();} & Return gradients of algorithm\\
+\end{tabular}
+
+
+\subsection*{Basic Jacobian workflow}
+\begin{tabular}{ll}
+\code{Stack stack;} & Object to store derivative information\\
+\code{aVector x = \{1.0, 2.0\};} & Initialize independent (input) variables\\
+\code{stack.new\_recording();} & Start a new recording\\
+\code{aVector y = algorithm(x);} & Algorithm with vector output\\
+\code{stack.independent(x);} & Declare independent variables \\
+\code{stack.dependent(y);} & Declare dependent variables\\
+\code{Matrix jac = stack.jacobian();} & Compute Jacobian matrix\\
+\end{tabular}
+
+\subsection*{\code{Stack} member functions}
+Constructors:\\
+\begin{tabular}{ll}
+\code{Stack stack;} & Construct and activate immediately \\
+\code{Stack stack(false);} & Construct in inactive state\\
+\end{tabular}
+Member functions:\\
+\begin{tabular}{ll}
+\code{.new\_recording()} & Clear any existing differential statements\\
+\code{.pause\_recording()} & Pause recording (\code{ADEPT\_PAUSABLE\_RECORDING} required)\\
+\code{.continue\_recording()} & Continue recording \\
+\code{.is\_recording()} & Is Adept currently recording?\\
+\code{.forward()} & Perform forward-mode differentiation\\
+\code{.compute\_tangent\_linear()} & ...as above\\
+\code{.reverse()} & Perform reverse-mode differentiation\\
+\code{.compute\_adjoint()} & ...as above\\
+\code{.independent(x)} & Declare an independent variable (active scalar or array)\\
+\code{.independent(xptr,n)} & Declare \code{n} independent scalar variables starting at \code{xptr} \\
+\code{.dependent(y)} & Declare a dependent variable (active scalar or array)\\
+\code{.dependent(yptr,n)} & Declare \code{n} dependent scalar variables starting at \code{yptr}\\
+\code{.jacobian(jacptr)} & Return Jacobian matrix into \code{jacptr} (column major)\\
+\code{.clear\_gradients()} & Clear gradients set with \code{set\_gradient} function \\
+\code{.clear\_independents()} & Clear independent variables\\
+\code{.clear\_dependents()} & Clear dependent variables\\
+\code{.n\_independents()} & Number of independent variables declared \\
+\code{.n\_dependents()} & Number of dependent variables declared\\
+\end{tabular}
+\begin{tabular}{ll}
+\code{.print\_status()} & Print status of \code{Stack} to standard output\\
+\code{.print\_statements()} & Print list of differential statements\\
+\code{.print\_gradients()} & Print current values of gradients\\
+\code{.activate()} & Activate the stack \\
+\code{.deactivate()} & Deactivate the stack\\
+\code{.is\_active()} & Is the stack currently active?\\
+\code{.memory()} & Return number of bytes currently used\\
+\code{.preallocate\_statements(n)} & Preallocate space for \code{n} statements\\
+\code{.preallocate\_operations(n)} & Preallocate space for \code{n} operations\\
+\end{tabular}
+\subsection*{\code{aReal} member functions}
+The first three functions below also work with active array arguments, where
+\code{g} would be of the equivalent passive array type:\\
+\begin{tabular}{ll}
+\code{.set\_gradient(g)} & Initialize gradient to \code{g} \\
+\code{.get\_gradient()} & After forward or reverse pass, return gradient\\
+\code{.get\_gradient(g)} & As above, but writing gradient to \code{g}\\
+\code{.add\_derivative\_dependence(a,p)} & Add \code{p}$\times\delta$\code{a} to the stack\\
+\code{.append\_derivative\_dependence(a,p)} & Append $+$\code{p}$\times\delta$\code{a} to the stack\\
+\end{tabular}
+
+\section*{Array functionality}
+\subsection*{Dense dynamic array types}
+\begin{tabular}{ll}
+\code{Vector}, \code{Matrix}, \code{Array3D}, \code{Array4D}... \code{Array7D} & Arrays of type \code{Real}\\
+\code{intVector}, \code{intMatrix}, \code{intArray3D}...  \code{intArray7D}& Arrays of type \code{int}\\
+\code{boolVector}, \code{boolMatrix}, \code{boolArray3D}...  \code{boolArray7D}& Arrays of type \code{bool}\\
+\code{floatVector}, \code{floatMatrix}, \code{floatArray3D}... \code{floatARray7D} & Arrays of type \code{float}\\
+\code{aVector}, \code{aMatrix}, \code{aArray3D}... \code{aArray7D} & Active arrays of type \code{Real}\\
+\end{tabular}
+\myvskip
+Define new dynamic array types as follows:\\
+\begin{tabular}{l}
+\code{typedef Array<short,2,false> shortMatrix;}\\
+\code{typedef Array<float,3,true> afloatArray3D;}
+\end{tabular}
+
+\subsection*{Dense fixed-size array types}
+\begin{tabular}{ll}
+\code{Vector2}, \code{Vector3}, \code{Vector4} & Passive vectors of fixed length 2--4\\ 
+\code{Matrix22}, \code{Matrix33}, \code{Matrix44} & Passive matrices of fixed size 2$\times$2, 3$\times$3, 4$\times$4\\
+\code{aVector2}, \code{aVector3}, \code{aVector4} & Active vectors of fixed length 2--4\\ 
+\code{aMatrix22}, \code{aMatrix33}, \code{aMatrix44} & Active matrices of fixed size 2$\times$2, 3$\times$3, 4$\times$4\\
+\end{tabular}
+\myvskip
+Define new fixed array types as follows:\\
+\begin{tabular}{l}
+\code{typedef FixedArray<short,false,2,4> shortMatrix24;}\\
+\code{typedef FixedArray<Real,true,3,3,3> aArray333;}
+\end{tabular}
+\subsection*{Special square matrix types}
+\begin{tabular}{ll}
+\code{SymmMatrix}, \code{aSymmMatrix} & Symmetric matrix\\
+\code{DiagMatrix}, \code{aDiagMatrix} & Diagonal matrix\\
+\code{TridiagMatrix}, \code{aTridiagMatrix} & Tridiagonal matrix\\
+\code{PentadiagMatrix}, \code{aPentadiagMatrix} & Pentadiagonal matrix\\
+\code{LowerMatrix}, \code{aLowerMatrix} & Lower-triangular matrix\\
+\code{UpperMatrix}, \code{aUpperMatrix} & Upper-triangular matrix\\
+\end{tabular}
+\subsection*{Dense dynamic array constructors}
+\begin{tabular}{ll}
+\code{Matrix M;} & Create an empty matrix of type \code{Real}\\
+\code{Matrix N(M);} & Create matrix \code{N} sharing data with existing matrix \code{M}\\
+\code{Matrix N = M;} & ...as above\\
+\code{Matrix N(3,4);} & Create matrix with size 3$\times$4\\
+\code{Matrix N(dimensions(3,4));} & ...as above\\
+\code{Matrix N(M.dimensions());} & Create matrix with the same size as \code{M}\\
+\code{Matrix N(ptr,dimensions(3,4));} & Create 3$\times$4 matrix sharing data from pointer \code{ptr}\\
+\code{Matrix N = log(M);} & Create matrix containing data copied from right-hand-side\\
+\code{Matrix N = \{\{1.0,2.0\},\{3.0,4.0\}\};} & Create 2$\times$2 matrix from initializer list (C++11)\\
+\end{tabular}
+\subsection*{Resize and link}
+\begin{tabular}{ll}
+\code{.clear()} & Return array to original empty state\\
+\code{.resize(3,4)} & Resize array discarding data\\
+\code{.resize(dimensions(3,4))} & ...as above\\
+\code{.resize\_row\_major(3,4)} & Resize with row-major storage (default)\\
+\code{.resize\_column\_major(3,4)} & Resize with column-major storage\\
+\code{.resize(M.dimensions())} & Resize to same as \code{M}\\
+\code{N >{}>= M;} & Discard existing data and link to array on right-hand-side\\
+\end{tabular}
+\subsection*{Query}
+\begin{tabular}{ll}
+\code{::rank} & Number of array dimensions\\
+\code{.empty()} & Returns \code{true} if array is empty, \code{false} otherwise\\
+\code{.dimensions()} & Returns an object that can be used to resize other arrays\\
+\code{.dimension(i)} & Returns length of dimension \code{i}\\
+\code{.size()} & Returns total number of elements\\
+\code{.data()} & Return pointer to underlying passive data\\
+\code{.const\_data()} & Return \code{const} pointer to underlying data\\
+\end{tabular}
+\subsection*{Fill}
+\begin{tabular}{ll}
+\code{M = 1.0;} & Fill all elements of array with the same number\\
+\code{M <{}< 1.0, 2.0, 3.0, 4.0;} & Fill first four elements of array\\
+\code{M = \{\{1.0,2.0\},\{3.0,4.0\}\};} & Fill 2$\times$2 matrix (C++11)\\
+\end{tabular}
+\subsection*{Indexing and slicing}
+Dense arrays can be indexed/sliced using the function-call operator
+with as many arguments as there are dimensions (e.g.\ index a matrix
+with \code{M(i,j)}). In all cases slice can be used as an lvalue or
+rvalue. If all arguments are scalars then a single element of the
+array is extracted. The following special values are available:\\
+\begin{tabular}{ll}
+\code{end} & The last element of the dimension being indexed\\
+\code{end-1} & The penultimate element of the dimension being indexed (any integer arithmetic is possible)\\
+\end{tabular}
+
+If one or more argument is a \textit{regular index range} then the return
+type will be an \code{Array} pointing to part of the original
+array. For every scalar argument, its rank will be reduced by one
+compared to the original array. The available ranges are:\\
+\begin{tabular}{ll}
+\code{\_\_} & \\
+\code{range(ibeg,iend)} &\\
+\code{stride(ibeg,iend,istride)} &\\
+\end{tabular}
+
+If any of the arguments is a \textit{irregular index range} (such as
+an \code{intVector} containing an arbitrary list of indices) then the
+return type will be an \code{IndexedArray}. If used as an lvalue, it
+will modify the original array, but if passed into a function
+receiving an \code{Array} type then any modifications inside the
+function will not affect the original array.
+\subsection*{Passing arrays to and from functions}
+There are three ways an array can be passed to a function:\\
+\begin{tabular}{ll}
+\code{const Matrix\&} \\
+\code{Matrix\&} \\
+\code{Matrix}
+\end{tabular}
+
+\subsection*{Member functions returning lvalue}
+The functions in this section return an \code{Array} that links to the
+original data and can be used on the left- or right-hand-side of an
+assignment. The following only work on dynamic or fixed-size dense
+arrays:\\
+\begin{tabular}{ll}
+\code{.subset(ibeg0,iend0,ibeg1,iend1,...)} & Contiguous subset\\
+\code{.permute(i0,i1,...)} & Permute dimensions\\
+\code{.diag\_matrix()} & For vector, return \code{DiagMatrix}\\
+\code{.soft\_link()} \\
+\end{tabular}
+
+The following works on any matrix:\\
+\begin{tabular}{ll}
+\code{.T()} & Transpose of matrix\\
+\end{tabular}
+
+The following work only with square matrices, including special square
+matrices\\
+\begin{tabular}{ll}
+\code{.diag\_vector()} & Return vector linked to its diagonals\\
+\code{.diag\_vector(i)} & Return vector linked to offdiagonal \code{i}\\
+\code{.submatrix\_on\_diagonal(ibeg,iend)} & Return square matrix lying on diagonal\\
+\end{tabular}
+\subsection*{Elemental mathematical functions}
+\code{value(x)}
+
+\hangingpar
+Binary operators: \code{+}, \code{-},
+  \code{*} and \code{/}.
+
+\hangingpar
+Assignment operators:  \code{+=}, \code{-=}, \code{*=} and \code{/=}.
+
+\hangingpar
+Unary functions: \code{sqrt}, \code{exp},
+  \code{log}, \code{log10}, \code{sin}, \code{cos}, \code{tan},
+  \code{asin}, \code{acos}, \code{atan}, \code{sinh}, \code{cosh},
+  \code{tanh}, \code{abs}, \code{asinh}, \code{acosh}, \code{atanh},
+  \code{expm1}, \code{log1p}, \code{cbrt}, \code{erf}, \code{erfc},
+  \code{exp2}, \code{log2}, \code{round}, \code{trunc}, \code{rint}
+  and \code{nearbyint}.
+
+\hangingpar
+Binary functions: \code{pow}, \code{atan2}, \code{min},
+  \code{max}, \code{fmin} and \code{fmax}.
+
+\hangingpar
+Unary functions returning \code{bool} expressions: \code{isfinite},
+\code{isinf} and \code{isnan}.
+
+\hangingpar
+Binary operators returning \code{bool} expressions: \code{==},
+\code{!=}, \code{>}, \code{<}, \code{>=} and \code{<=}.
+
+\subsection*{Alias-related functions}
+\begin{tabular}{ll}
+\code{eval(M)} \\
+\code{noalias(M)}\\
+\end{tabular}
+\subsection*{Reduction functions}
+\begin{tabular}{ll}
+\code{sum(M)} & Return the sum of all elements in \code{M}\\
+\code{sum(M,i)} & Return array of rank one less than \code{M} containing sum along \code{i}th dimension (0 based)\\
+\end{tabular}
+
+\hangingpar Other reduction functions working in the same way:
+\code{mean}, \code{product}, \code{minval}, \code{maxval}, \code{norm2}.
+
+\begin{tabular}{ll}
+\code{dot\_product(x,y)} & The same as \code{sum(a*b)} for rank-1
+arguments\\
+\end{tabular}
+\subsection*{Expansion functions}
+\begin{tabular}{ll}
+\code{spread<d>(M,n)} & Replicate \code{M} array expression \code{n}
+times along dimension \code{d}\\
+\code{outer\_product(x,y)} & Return rank-2 outer product from two
+rank-1 arguments\\
+\end{tabular}
+\subsection*{Matrix multiplication and linear algebra}
+\begin{tabular}{ll}
+\code{matmul(M,N)} & Matrix multiply, where at least one argument must
+be a matrix, and orientation of any vector arguments is inferred\\
+\code{M ** N} & Shortcut for \code{matmul}; precedence is the same as normal
+  multiply\\
+\code{inv(M)} & Inverse of square matrix\\
+\code{solve(A,x)} & Solve system of linear equations\\ 
+\end{tabular}
+
+\onecolumn
+
+\newpage
 
 \def\Y{\textbf{Y}}
 \def\r#1{\rotatebox{90}{#1}}
-\iffalse
-\begin{table}[tb!]
-\fontfamily{cmss}\fontseries{lmtt}\selectfont
-\caption{Comparison of optimized matrix-vector capabilities}
-\begin{tabular}{lccccccc}
-\hline
-Property & \r{Fortran 9x} & \r{Blitz} & \r{Boost/uBLAS} & \r{Eigen}
-& \r{Blaze} & \r{Adept} & \r{valarray (GNU)} \\
-\hline
-Maximum array rank 
-& 7/15 & $n$ & 2 & 2 & 2 & 7 & 1 \\
-Bounds checking option 
-& \Y & ? & \Y & \Y & ? & \Y & N \\
-Fixed-length class 
-& \Y & \Y & N? & \Y & \Y & N & N \\
-Parallelization 
-& \Y? & N & ? & vectorization & ? & N & ? \\
-Reference counting 
-& N & N? & ? & ? & ? & \Y & N \\
-Linear algebra 
-& N & N & \Y & \Y & N & \Y & N \\
-%Stack class: stack(x)
-Linking 
-& \Y & N? & ? & ? & ? & \Y & ? \\
-Arbitrary templated types 
-& N & \Y & \Y & \Y & \Y? & \Y? & \Y\\
-Arbitrary storage
-& N & \Y & \Y & \Y & N? & \Y & N\\
-Sparse
-& N & N & \Y & \Y & N & N & N\\
-Triangular/banded/symmetric
-& N & N & \Y & diag & ? & \Y & N\\
-Alias checking
-& \Y? & \Y? & manual & \Y & ? & \Y & ?\\
-Automatic alias fix
-& N & ? & ? N & ? & \Y & ? \\
-Arbitrary starting index
-& \Y & ? & ? & ? & ? & N & N\\
-Algorithmic differentiation
-& N & N & N & N & N & \Y & N\\
-\hline\end{tabular}
-\end{table}
-\newpage
-\fi
-\def\code#1{\texttt{#1}}
+
+\setlength{\topmargin}{-3cm}
 \begin{table}[tb!]
 %\caption{
 \begin{center}
@@ -190,7 +476,7 @@ Clear &
 Link/associate &
 \code{A => B} &
 &
-\code{A >>= B} &
+\code{A >{}>= B} &
 %Low-level access via \code{Map}
 (Complicated)
 \\
