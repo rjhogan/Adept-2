@@ -19,9 +19,9 @@ that has virtually all the automatic-differentiation capabilities of
 version 2.0.
 
 For further information see:
-* The [Adept-2 web site] (http://www.met.reading.ac.uk/clouds/adept/)
-* A detailed [User Guide] (http://www.met.reading.ac.uk/clouds/adept/adept_documentation_2.0.pdf)
-* [A paper published in ACM TOMS] (http://www.met.reading.ac.uk/~swrhgnrj/publications/adept.pdf) describing the automatic differentiation capability
+* The [Adept web site](http://www.met.reading.ac.uk/clouds/adept/)
+* A detailed [User Guide](http://www.met.reading.ac.uk/clouds/adept/adept_documentation.pdf)
+* [A paper published in ACM TOMS](http://www.met.reading.ac.uk/~swrhgnrj/publications/adept.pdf) describing the automatic differentiation capability
 
 To build Adept from a GitHub snapshot, do the following:
 
