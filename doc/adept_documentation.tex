@@ -419,7 +419,7 @@ automatic-differentiation functionality:
 \item[Full Jacobian matrix] Given the non-linear function $\y=f(\x)$
   relating vector $\y$ to vector $\x$ coded in C or C++, after a
   little code modification \Adept\ can compute the Jacobian matrix
-  $\H=\partial\y/\x$, where the element at row $i$ and column $j$ of
+  $\H=\partial\y/\partial\x$, where the element at row $i$ and column $j$ of
   $\H$ is $H_{i,j}=\partial y_i/\partial x_j$. This matrix will be
   computed much more rapidly and accurately than if you simply
   recompute the function multiple times, each time perturbing a
@@ -615,7 +615,7 @@ respect to its inputs, you would do this:
  double algorithm_and_gradient(
                      const double x_val[2], // Input values
                      double dy_dx[2]) {     // Output gradients
-   adept::Stack stack,                      // Where the derivative information is stored
+   adept::Stack stack;                      // Where the derivative information is stored
    using adept::adouble;                    // Import adouble from adept
    adouble x[2] = {x_val[0], x_val[1]};     // Initialize active input variables
    stack.new_recording();                   // Start recording
