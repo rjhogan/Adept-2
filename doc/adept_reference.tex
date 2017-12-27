@@ -37,45 +37,20 @@
 \begin{document}
 \pagestyle{empty}
 \twocolumn
-\mysize\myfont\section*{\Huge Adept reference sheet}
+\mysize\myfont\section*{\Huge Adept Quick Reference}
 %\section*{General}
 All functions and types are placed in the \code{adept} namespace.
 \subsection*{Header files}
 \begin{tabular}{ll}
 \code{adept.h} & Include if only scalar automatic differentiation is required\\
-\code{adept\_arrays.h} & Include if array capabilities are needed \\
+\code{adept\_arrays.h} & Include if array capabilities are needed as well\\
 \code{adept\_source.h} & Include entire Adept library, so linking to library not required \\
 \end{tabular}
 
-\subsection*{Query functions}
-\begin{tabular}{ll}
-\code{active\_stack()} & Return pointer to currently active \code{Stack} object\\
-\code{version()} & Return \code{std::string} containing Adept version number\\
-\code{configuration()} & Return \code{std::string} describing Adept configuration\\
-\code{have\_matrix\_multiplication()} & Adept compiled with matrix mult.\ enabled (BLAS)?\\
-\code{have\_linear\_algebra()} & Adept compiled with linear-algebra enabled (LAPACK)?\\
-\code{set\_max\_blas\_threads(n)} & Set maximum threads for matrix operations\\
-\code{max\_blas\_threads()} & Get maximum threads for matrix operations\\
-\code{is\_thread\_unsafe()} & Global \code{Stack} object is \textit{not} thread-local?\\
-\end{tabular}
-\subsection*{Preprocessor variables}
-The following can be defined to change the behaviour of your code:\\
-\begin{tabular}{ll}
-\code{ADEPT\_STACK\_THREAD\_UNSAFE} & Thread-unsafe \code{Stack} (faster)\\
-\code{ADEPT\_RECORDING\_PAUSABLE} & Recording can be paused (slower)\\
-\code{ADEPT\_NO\_AUTOMATIC\_DIFFERENTIATION} & Turn off differentiation\\
-\code{ADEPT\_TRACK\_NON\_FINITE\_GRADIENTS} & Exception thrown if derivative non-finite\\
-\code{ADEPT\_BOUNDS\_CHECKING} & Check array bounds (slower)\\
-\code{ADEPT\_NO\_ALIAS\_CHECKING} & Turn off alias checking (faster)\\
-\code{ADEPT\_STORAGE\_THREAD\_SAFE} & Thread-safe array storage (slower)\\
-\end{tabular}
-
-The \code{ADEPT\_VERSION} variable contains version number as an
-integer, e.g.\ \code{20103} for ``2.0.3''.
-\section*{Automatic differentiation functionality}
+%\section*{Automatic differentiation functionality}
 \subsection*{Scalar types}
 \begin{tabular}{ll}
-\code{Real} & Scalar type used for differentiation (usually
+\code{Real} & Passive scalar type used for differentiation (usually
 \code{double})\\
 \code{aReal} & Active scalar of underlying type \code{Real} \\
 \code{adouble}, \code{afloat} & Active scalars of underlying type
@@ -84,63 +59,24 @@ integer, e.g.\ \code{20103} for ``2.0.3''.
 \subsection*{Basic reverse-mode workflow}
 \begin{tabular}{ll}
 \code{Stack stack;} & Object to store derivative information\\
-\code{aVector x = \{1.0, 2.0\};} & Initialize independent (input) variables\\
+\code{aVector x = \{1.0, 2.0\};} & Initialize independent (input) variables (C++11)\\
 \code{stack.new\_recording();} & Start a new recording\\
-\code{aReal y = algorithm(x);} & Any complicated algorithm here (output)\\
+\code{aReal y = algorithm(x);} & Any complicated algorithm here\\
 \code{y.set\_gradient(1.0);} & Seed adjoint of objective function\\
 \code{stack.reverse();} & Perform reverse-mode differentiation\\
-\code{Vector dy\_dx = x.get\_gradient();} & Return gradients of algorithm\\
+\code{Vector dy\_dx = x.get\_gradient();} & Return gradients of output with respect to inputs\\
 \end{tabular}
 
 
 \subsection*{Basic Jacobian workflow}
 \begin{tabular}{ll}
 \code{Stack stack;} & Object to store derivative information\\
-\code{aVector x = \{1.0, 2.0\};} & Initialize independent (input) variables\\
+\code{aVector x = \{1.0, 2.0\};} & Initialize independent (input) variables (C++11)\\
 \code{stack.new\_recording();} & Start a new recording\\
 \code{aVector y = algorithm(x);} & Algorithm with vector output\\
 \code{stack.independent(x);} & Declare independent variables \\
 \code{stack.dependent(y);} & Declare dependent variables\\
-\code{Matrix jac = stack.jacobian();} & Compute Jacobian matrix\\
-\end{tabular}
-
-\subsection*{\code{Stack} member functions}
-Constructors:\\
-\begin{tabular}{ll}
-\code{Stack stack;} & Construct and activate immediately \\
-\code{Stack stack(false);} & Construct in inactive state\\
-\end{tabular}
-Member functions:\\
-\begin{tabular}{ll}
-\code{.new\_recording()} & Clear any existing differential statements\\
-\code{.pause\_recording()} & Pause recording (\code{ADEPT\_PAUSABLE\_RECORDING} required)\\
-\code{.continue\_recording()} & Continue recording \\
-\code{.is\_recording()} & Is Adept currently recording?\\
-\code{.forward()} & Perform forward-mode differentiation\\
-\code{.compute\_tangent\_linear()} & ...as above\\
-\code{.reverse()} & Perform reverse-mode differentiation\\
-\code{.compute\_adjoint()} & ...as above\\
-\code{.independent(x)} & Declare an independent variable (active scalar or array)\\
-\code{.independent(xptr,n)} & Declare \code{n} independent scalar variables starting at \code{xptr} \\
-\code{.dependent(y)} & Declare a dependent variable (active scalar or array)\\
-\code{.dependent(yptr,n)} & Declare \code{n} dependent scalar variables starting at \code{yptr}\\
-\code{.jacobian(jacptr)} & Return Jacobian matrix into \code{jacptr} (column major)\\
-\code{.clear\_gradients()} & Clear gradients set with \code{set\_gradient} function \\
-\code{.clear\_independents()} & Clear independent variables\\
-\code{.clear\_dependents()} & Clear dependent variables\\
-\code{.n\_independents()} & Number of independent variables declared \\
-\code{.n\_dependents()} & Number of dependent variables declared\\
-\end{tabular}
-\begin{tabular}{ll}
-\code{.print\_status()} & Print status of \code{Stack} to standard output\\
-\code{.print\_statements()} & Print list of differential statements\\
-\code{.print\_gradients()} & Print current values of gradients\\
-\code{.activate()} & Activate the stack \\
-\code{.deactivate()} & Deactivate the stack\\
-\code{.is\_active()} & Is the stack currently active?\\
-\code{.memory()} & Return number of bytes currently used\\
-\code{.preallocate\_statements(n)} & Preallocate space for \code{n} statements\\
-\code{.preallocate\_operations(n)} & Preallocate space for \code{n} operations\\
+\code{Matrix dy\_dx = stack.jacobian();} & Compute Jacobian matrix\\
 \end{tabular}
 \subsection*{\code{aReal} member functions}
 The first three functions below also work with active array arguments, where
@@ -153,7 +89,61 @@ The first three functions below also work with active array arguments, where
 \code{.append\_derivative\_dependence(a,p)} & Append $+$\code{p}$\times\delta$\code{a} to the stack\\
 \end{tabular}
 
-\section*{Array functionality}
+\subsection*{\code{Stack} member functions}
+Constructors:\\
+\begin{tabular}{ll}
+\code{Stack stack;} & Construct and activate immediately \\
+\code{Stack stack(false);} & Construct in inactive state\\
+\end{tabular}
+
+Member functions:\\
+\begin{tabular}{ll}
+\code{.new\_recording()} & Clear any existing differential statements\\
+\code{.pause\_recording()} & Pause recording (\code{ADEPT\_PAUSABLE\_RECORDING} needed)\\
+\code{.continue\_recording()} & Continue recording \\
+\code{.is\_recording()} & Is Adept currently recording?\\
+\code{.forward()} & Perform forward-mode differentiation\\
+\code{.compute\_tangent\_linear()} & ...as above\\
+\code{.reverse()} & Perform reverse-mode differentiation\\
+\code{.compute\_adjoint()} & ...as above\\
+\code{.independent(x)} & Declare an independent variable (active scalar or array)\\
+\code{.independent(xptr,n)} & Declare \code{n} independent scalar variables starting at \code{xptr} \\
+\code{.dependent(y)} & Declare a dependent variable (active scalar or array)\\
+\code{.dependent(yptr,n)} & Declare \code{n} dependent scalar variables starting at \code{yptr}\\
+\code{.jacobian()} & Return Jacobian matrix\\
+\code{.jacobian(jacptr)} & Place Jacobian matrix into \code{jacptr} (column major)\\
+\code{.jacobian(jacptr,false)} & Place Jacobian matrix into \code{jacptr} (row major)\\
+\code{.clear\_gradients()} & Clear gradients set with \code{set\_gradient} function \\
+\code{.clear\_independents()} & Clear independent variables\\
+\code{.clear\_dependents()} & Clear dependent variables\\
+\code{.n\_independents()} & Number of independent variables declared \\
+\code{.n\_dependents()} & Number of dependent variables declared\\
+%\end{tabular}
+%\begin{tabular}{ll}
+\code{.print\_status()} & Print status of \code{Stack} to standard output\\
+\code{.print\_statements()} & Print list of differential statements\\
+\code{.print\_gradients()} & Print current values of gradients\\
+\code{.activate()} & Activate the stack \\
+\code{.deactivate()} & Deactivate the stack\\
+\code{.is\_active()} & Is the stack currently active?\\
+\code{.memory()} & Return number of bytes currently used\\
+\code{.preallocate\_statements(n)} & Preallocate space for \code{n} statements\\
+\code{.preallocate\_operations(n)} & Preallocate space for \code{n} operations\\
+\end{tabular}
+
+\subsection*{Query functions in \code{adept} namespace}
+\begin{tabular}{ll}
+\code{active\_stack()} & Return pointer to currently active \code{Stack} object\\
+\code{version()} & Return \code{std::string} with Adept version number\\
+\code{configuration()} & Return \code{std::string} describing Adept configuration\\
+\code{have\_matrix\_multiplication()} & Adept compiled with matrix mult.\ (BLAS)?\\
+\code{have\_linear\_algebra()} & Adept compiled with linear-algebra (LAPACK)?\\
+\code{set\_max\_blas\_threads(n)} & Set maximum threads for matrix operations\\
+\code{max\_blas\_threads()} & Get maximum threads for matrix operations\\
+\code{is\_thread\_unsafe()} & Global \code{Stack} object is \textit{not} thread-local?\\
+\end{tabular}
+\newpage
+%\section*{Array functionality}
 \subsection*{Dense dynamic array types}
 \begin{tabular}{ll}
 \code{Vector}, \code{Matrix}, \code{Array3D}, \code{Array4D}... \code{Array7D} & Arrays of type \code{Real}\\
@@ -194,16 +184,16 @@ Define new fixed array types as follows:\\
 \subsection*{Dense dynamic array constructors}
 \begin{tabular}{ll}
 \code{Matrix M;} & Create an empty matrix of type \code{Real}\\
-\code{Matrix N(M);} & Create matrix \code{N} sharing data with existing matrix \code{M}\\
+\code{Matrix N(M);} & Create matrix sharing data with existing matrix\\
 \code{Matrix N = M;} & ...as above\\
 \code{Matrix N(3,4);} & Create matrix with size 3$\times$4\\
 \code{Matrix N(dimensions(3,4));} & ...as above\\
 \code{Matrix N(M.dimensions());} & Create matrix with the same size as \code{M}\\
 \code{Matrix N(ptr,dimensions(3,4));} & Create 3$\times$4 matrix sharing data from pointer \code{ptr}\\
-\code{Matrix N = log(M);} & Create matrix containing data copied from right-hand-side\\
+\code{Matrix N = log(M);} & Create matrix containing copy of right-hand-side\\
 \code{Matrix N = \{\{1.0,2.0\},\{3.0,4.0\}\};} & Create 2$\times$2 matrix from initializer list (C++11)\\
 \end{tabular}
-\subsection*{Resize and link}
+\subsection*{Array resize and link member functions}
 \begin{tabular}{ll}
 \code{.clear()} & Return array to original empty state\\
 \code{.resize(3,4)} & Resize array discarding data\\
@@ -213,23 +203,23 @@ Define new fixed array types as follows:\\
 \code{.resize(M.dimensions())} & Resize to same as \code{M}\\
 \code{N >{}>= M;} & Discard existing data and link to array on right-hand-side\\
 \end{tabular}
-\subsection*{Query}
+\subsection*{Array query member functions}
 \begin{tabular}{ll}
 \code{::rank} & Number of array dimensions\\
-\code{.empty()} & Returns \code{true} if array is empty, \code{false} otherwise\\
-\code{.dimensions()} & Returns an object that can be used to resize other arrays\\
-\code{.dimension(i)} & Returns length of dimension \code{i}\\
-\code{.size()} & Returns total number of elements\\
+\code{.empty()} & Return \code{true} if array is empty, \code{false} otherwise\\
+\code{.dimensions()} & Return an object that can be used to resize other arrays\\
+\code{.dimension(i)} & Return length of dimension \code{i}\\
+\code{.size()} & Return total number of elements\\
 \code{.data()} & Return pointer to underlying passive data\\
 \code{.const\_data()} & Return \code{const} pointer to underlying data\\
 \end{tabular}
-\subsection*{Fill}
+\subsection*{Array filling}
 \begin{tabular}{ll}
 \code{M = 1.0;} & Fill all elements of array with the same number\\
 \code{M <{}< 1.0, 2.0, 3.0, 4.0;} & Fill first four elements of array\\
 \code{M = \{\{1.0,2.0\},\{3.0,4.0\}\};} & Fill 2$\times$2 matrix (C++11)\\
 \end{tabular}
-\subsection*{Indexing and slicing}
+\subsection*{Array indexing and slicing}
 Dense arrays can be indexed/sliced using the function-call operator
 with as many arguments as there are dimensions (e.g.\ index a matrix
 with \code{M(i,j)}). In all cases slice can be used as an lvalue or
@@ -245,9 +235,9 @@ type will be an \code{Array} pointing to part of the original
 array. For every scalar argument, its rank will be reduced by one
 compared to the original array. The available ranges are:\\
 \begin{tabular}{ll}
-\code{\_\_} & \\
-\code{range(ibeg,iend)} &\\
-\code{stride(ibeg,iend,istride)} &\\
+\code{\_\_} & All elements of indexed dimension \\
+\code{range(ibeg,iend)} & Contiguous range from \code{ibeg} to \code{iend}\\
+\code{stride(ibeg,iend,istride)} & Strided range (\code{istride} can be negative but not zero)\\
 \end{tabular}
 
 If any of the arguments is a \textit{irregular index range} (such as
@@ -354,6 +344,20 @@ be a matrix, and orientation of any vector arguments is inferred\\
 \code{solve(A,x)} & Solve system of linear equations\\ 
 \end{tabular}
 
+\subsection*{Preprocessor variables}
+The following can be defined to change the behaviour of your code:\\
+\begin{tabular}{ll}
+\code{ADEPT\_STACK\_THREAD\_UNSAFE} & Thread-unsafe \code{Stack} (faster)\\
+\code{ADEPT\_RECORDING\_PAUSABLE} & Recording can be paused (slower)\\
+\code{ADEPT\_NO\_AUTOMATIC\_DIFFERENTIATION} & Turn off differentiation\\
+\code{ADEPT\_TRACK\_NON\_FINITE\_GRADIENTS} & Exception thrown if derivative non-finite\\
+\code{ADEPT\_BOUNDS\_CHECKING} & Check array bounds (slower)\\
+\code{ADEPT\_NO\_ALIAS\_CHECKING} & Turn off alias checking (faster)\\
+\code{ADEPT\_STORAGE\_THREAD\_SAFE} & Thread-safe array storage (slower)\\
+\end{tabular}
+
+The \code{ADEPT\_VERSION} variable contains version number as an
+integer, e.g.\ \code{20103} for ``2.0.3''.
 \onecolumn
 
 \newpage
