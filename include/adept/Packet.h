@@ -117,6 +117,27 @@ namespace adept {
       T data;
     };
 
+    // Default functions
+#ifdef ADEPT_CXX11_FEATURES
+    template <typename T>
+    Packet<T> fmin(const Packet<T>& __restrict x,
+		   const Packet<T>& __restrict y)
+    { return std::fmin(x.data,y.data); }
+    template <typename T>
+    Packet<T> fmax(const Packet<T>& __restrict x,
+		   const Packet<T>& __restrict y)
+    { return std::fmax(x.data,y.data); }
+#else
+    template <typename T>
+    Packet<T> fmin(const Packet<T>& __restrict x,
+		   const Packet<T>& __restrict y)
+    { return std::min(x.data,y.data); }
+    template <typename T>
+    Packet<T> fmax(const Packet<T>& __restrict x,
+		   const Packet<T>& __restrict y)
+    { return std::max(x.data,y.data); }
+#endif
+
     // -------------------------------------------------------------------
     // Define a specialization, and the basic mathematical operators
     // supported in hardware, for Packet in the case that each
