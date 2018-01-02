@@ -24,7 +24,18 @@
 #ifdef __SSE2__
 #include <xmmintrin.h> // SSE
 #include <emmintrin.h> // SSE2
+// GCC < 4.9.1 does not define _mm_undefined_ps in xmmintrin.h so we
+// use _mm_setzero_ps instead
+#ifndef __clang__
+#define GCC_VERSION (__GNUC__ * 10000 \
+                     + __GNUC_MINOR__ * 100 \
+                     + __GNUC_PATCHLEVEL__)
+#if GCC_VERSION < 40901
+#define _mm_undefined_ps _mm_setzero_ps
 #endif
+#endif // __clang__
+#endif // __SSE2__
+
 #ifdef __AVX__
 #include <tmmintrin.h> // SSE3
 #include <immintrin.h> // AVX
@@ -268,7 +279,10 @@ namespace adept {
       __m128d shuf  = _mm_castps_pd(shuftmp);
       return  _mm_cvtsd_f64(_mm_max_sd(vd, shuf));
     }
+#ifdef _mm_undefined_ps
+#undef _mm_undefined_ps
 #endif
+#endif // __SSE2__
 
 #ifdef __AVX__
     // Functions for an AVX packed vector of 8 floats
