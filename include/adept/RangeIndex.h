@@ -68,7 +68,7 @@ namespace adept {
       bool get_dimensions_(ExpressionSize<0>& dim) const
       { return true; }
       
-      std::string expression_string() const
+      std::string expression_string_() const
       { return std::string("end"); }
 
       bool is_aliased_(const Index* mem1, const Index* mem2) const

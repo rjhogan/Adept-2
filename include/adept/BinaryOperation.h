@@ -1332,11 +1332,11 @@ namespace adept {
 #undef ADEPT_DEFINE_OPERATION
 #undef ADEPT_DEFINE_SCALAR_RHS_OPERATION
 
-  // Treat expression divided by scalar differently since this can be
-  // changed to a more efficient multiplication
+  // Treat expression divided by floating-point scalar differently
+  // since this can be changed to a more efficient multiplication
   template<class L, typename RType>
   inline
-  typename internal::enable_if<internal::is_not_expression<RType>::value,
+  typename internal::enable_if<internal::is_not_expression<RType>::value && is_floating_point<RType>::value,
 			       internal::BinaryOpScalarRight<typename internal::promote<typename L::type,
 											RType>::type,
 							     L, internal::Multiply, 
@@ -1346,6 +1346,21 @@ namespace adept {
     using namespace adept::internal;
     typedef typename promote<typename L::type, RType>::type PType;
     return BinaryOpScalarRight<PType, L, Multiply, PType>(l.cast(), 1.0/static_cast<PType>(r));
+  };
+
+  // Treat expression divided by any other type of scalar as division
+  template<class L, typename RType>
+  inline
+  typename internal::enable_if<internal::is_not_expression<RType>::value && !is_floating_point<RType>::value,
+			       internal::BinaryOpScalarRight<typename internal::promote<typename L::type,
+											RType>::type,
+							     L, internal::Divide, 
+							     typename internal::promote<typename L::type,
+											RType>::type> >::type
+  operator/(const Expression<typename L::type, L>& l, const RType& r) {
+    using namespace adept::internal;
+    typedef typename promote<typename L::type, RType>::type PType;
+    return BinaryOpScalarRight<PType, L, Divide, PType>(l.cast(), static_cast<PType>(r));
   };
 
 // Now the operators returning boolean results

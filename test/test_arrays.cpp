@@ -461,6 +461,9 @@ main(int argc, const char** argv) {
   should_fail=true;
   EVAL2("reshape member function with invalid dimensions", myMatrix, M, false, myVector, vlong, M >>= vlong.reshape(5,5));
   should_fail=false;
+  EVAL("end/2 indexing", myVector, vlong, true, vlong(range(end/2,end)) = 0.0);
+  EVAL("end/2 indexing", myVector, vlong, true, vlong(range(0,end/2)) = 0.0);
+  EVAL("end/2 indexing", myVector, vlong, true, vlong.subset(end/2,end) = 0.0);
 
   HEADING("REDUCTION OPERATIONS"); 
   EVAL2("full sum", myReal, x, true, myMatrix, M, x = sum(M));

@@ -4,6 +4,9 @@ version 2.0.4 (3 January 2018)
 	- ADEPT_FAST preprocessor variable enables
 	ADEPT_NO_DIMENSION_CHECKING, ADEPT_NO_ALIAS_CHECKING and
 	ADEPT_STACK_THREAD_UNSAFE
+	- Divide by scalar now only converts to multiply by (1.0/scalar)
+	if scalar is of floating-point type; this fixes indexing with
+	"end/2"
 
 version 2.0.3 (28 October 2017)
 	- Replaced template class "cast" with "expr_cast" to avoid clash
