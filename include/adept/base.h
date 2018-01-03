@@ -81,16 +81,24 @@
 
 // Do we disable dimension checking when assigning an array expression
 // to another array?
-//#define ADEPT_NO_DIMENSION_CHECKING
+//#define ADEPT_NO_DIMENSION_CHECKING 1
 
 // Do we disable automatic alias checking in array operations?
-//#define ADEPT_NO_ALIAS_CHECKING
+//#define ADEPT_NO_ALIAS_CHECKING 1
+
+// A shortcut for faster execution that does not change the behaviour
+// of single-threaded bug-free code that uses the "eval" function in
+// case of aliasing
+#ifdef ADEPT_FAST
+#define ADEPT_STACK_THREAD_UNSAFE 1
+#define ADEPT_NO_DIMENSION_CHECKING 1
+#define ADEPT_NO_ALIAS_CHECKING 1
+#endif
 
 // The initial size of the stacks, which can be grown if required
 #ifndef ADEPT_INITIAL_STACK_LENGTH
 #define ADEPT_INITIAL_STACK_LENGTH 1000
 #endif
-
 
 // The statement and operation stacks
 #ifndef ADEPT_STACK_BLOCK_LENGTH
@@ -99,6 +107,13 @@
 
 //#define ADEPT_SUPPORT_HUGE_ARRAYS 1
 
+// Since subsetting an array causes a modification to the reference
+// counter in the underlying storage object, multiple threads
+// subsetting the same array can cause clashes unless the reference
+// counter is protected by a mutex. This is possible on C++11 by
+// making the reference counter of type std::atomic<int>, enabled by
+// defining the following:
+//#define ADEPT_STORAGE_THREAD_SAFE
 
 
 // ---------------------------------------------------------------------
@@ -157,14 +172,6 @@
 
 // This cannot be changed without rewriting the Adept library
 #define ADEPT_MAX_ARRAY_DIMENSIONS 7
-
-// Since subsetting an array causes a modification to the reference
-// counter in the underlying storage object, multiple threads
-// subsetting the same array can cause clashes unless the reference
-// counter is protected by a mutex. This is possible on C++11 by
-// making the reference counter of type std::atomic<int>, enabled by
-// defining the following:
-//#define ADEPT_STORAGE_THREAD_SAFE
 
 // ---------------------------------------------------------------------
 // 4: Miscellaneous
