@@ -506,7 +506,10 @@ namespace adept {
     template <typename Type>
     inline
     void free_aligned(Type* data) {
-      if (Packet<Type>::alignment_bytes <= 1) {
+      // Note that we need to use the same condition as used in
+      // alloc_aligned() in order that new[] is followed by delete[]
+      // and posix_memalign is followed by free
+      if (Packet<Type>::alignment_bytes < sizeof(void*)) {
 	delete[] data;
       }
       else { 
