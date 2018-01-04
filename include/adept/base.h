@@ -97,7 +97,7 @@
 
 // The initial size of the stacks, which can be grown if required
 #ifndef ADEPT_INITIAL_STACK_LENGTH
-#define ADEPT_INITIAL_STACK_LENGTH 1000
+#define ADEPT_INITIAL_STACK_LENGTH 1048576
 #endif
 
 // The statement and operation stacks

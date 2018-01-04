@@ -9,6 +9,7 @@ version 2.0.4 (4 January 2018)
 	"end/2"
 	- Fix bug in Packet.h (found by valgrind) to ensure new[] followed
 	by delete[] and posix_memalign followed by free
+	- Increase initial stack size from 1000 to 1024^2
 
 version 2.0.3 (28 October 2017)
 	- Replaced template class "cast" with "expr_cast" to avoid clash
