@@ -22,8 +22,8 @@
 
 // The version of the Adept library is specified both as a string and
 // an integer
-#define ADEPT_VERSION      20003
-#define ADEPT_VERSION_STR "2.0.3"
+#define ADEPT_VERSION      20004
+#define ADEPT_VERSION_STR "2.0.4"
 
 
 // ---------------------------------------------------------------------
