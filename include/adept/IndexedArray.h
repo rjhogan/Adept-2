@@ -1,6 +1,6 @@
 /* IndexedArray.h -- Support for indexed arrays
 
-    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2018 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -226,9 +226,10 @@ namespace adept {
 	    && is_index<I4>::value && is_index<I5>::value
 	    && is_index<I6>::value);
       static const int count 
-         = 7 - (  is_scalar_int<I1>::count + is_scalar_int<I2>::count
-	        + is_scalar_int<I3>::count + is_scalar_int<I4>::count
-		+ is_scalar_int<I5>::count + is_scalar_int<I6>::count);
+         = 7 - (  is_scalar_int<I0>::count + is_scalar_int<I1>::count
+		+ is_scalar_int<I2>::count + is_scalar_int<I3>::count
+		+ is_scalar_int<I4>::count + is_scalar_int<I5>::count
+		+ is_scalar_int<I6>::count);
     };
     
 
@@ -388,7 +389,7 @@ namespace adept {
 	// location of an indexed array is an invalid operation since
 	// it would require accessing the indexing array out of
 	// bounds. Hence the "if" test here.
-	if (loc[MyArrayNum+1] < dimensions_[a_fastest_varying_dim]) {
+	if (loc[MyArrayNum+1] < dimensions_[Rank-1]) {
 	  loc[MyArrayNum+2] = loc[MyArrayNum] + last_offset_
 	    * get_value_with_len_<a_fastest_varying_dim>(loc[MyArrayNum+1]);
 	}
@@ -833,11 +834,11 @@ namespace adept {
       }
 
       template <int InDim, int OutDim>
-      typename enable_if<InDim != Rank-1 && (OutDim < a_rank)
-			 && is_scalar_int<typename Ix<OutDim>::type>::value,
+      typename enable_if<(OutDim < a_rank)
+	                 && is_scalar_int<typename Ix<OutDim>::type>::value,
 			 void>::type
       translate_coords_(const ExpressionSize<Rank>& in,
-		       ExpressionSize<a_rank>& out) const {
+		        ExpressionSize<a_rank>& out) const {
 	// This is a singleton dimension so the 0th element is the
 	// only element
 	out[OutDim] = get_value_with_len(index_object_<OutDim>(),
@@ -847,7 +848,8 @@ namespace adept {
       }
 
       template <int InDim, int OutDim>
-      typename enable_if<InDim == Rank-1, void>::type
+      typename enable_if<!is_scalar_int<typename Ix<OutDim>::type>::value
+                         && InDim == Rank-1, void>::type
       translate_coords_(const ExpressionSize<Rank>& in,
 		       ExpressionSize<a_rank>& out) const {
 	// The final non-singleton dimension is set to zero, since it

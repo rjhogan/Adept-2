@@ -451,6 +451,8 @@ main(int argc, const char** argv) {
   EVAL2("diag_matrix external function", myMatrix, S, false, myVector, v, S = diag_matrix(v));
   EVAL2("transpose as rvalue via T member function", myMatrix, N, false, myMatrix, M, N = 2.0 * M.T());
   EVAL2("transpose as rvalue via permute member function", myMatrix, N, false, myMatrix, M, N = 2.0 * M.permute(1,0));
+  EVAL3("matrix indexing (scalar,non-contiguous)", myVector, v, false, myMatrix, N, intVector, index, v = N(1,index)); 
+  EVAL3("matrix indexing (non-contiguous,scalar)", myVector, v, false, myMatrix, N, intVector, index, v = N(index,1)); 
   EVAL3("2D arbitrary index as rvalue", myMatrix, M, false, myMatrix, N, intVector, index, M = const_cast<const myMatrix&>(N)(index,index));
   EVAL3("2D arbitrary index as lvalue assigned to scalar expression", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = 2.0*(myReal)(4.0));
   EVAL3("2D arbitrary index as lvalue", myMatrix, M, true, myMatrix, N, intVector, index, M(index,index) = N(__,range(1,2)));
