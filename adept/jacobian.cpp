@@ -319,6 +319,8 @@ namespace adept {
 	}
       }
     }
+
+    free_aligned(gradient_multipass_b);
   }
 
 
