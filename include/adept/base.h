@@ -185,6 +185,13 @@
 // Other C++11 features such as initializer lists, thread_local
 // keyword, extra mathematical functions etc:
 #define ADEPT_CXX11_FEATURES 1
+#elif defined(_MSVC_LANG)
+// Microsoft will only update __cplusplus when all C++11 features are
+// included
+#if _MSVC_LANG > 199711L
+#define ADEPT_MOVE_SEMANTICS 1
+#define ADEPT_CXX11_FEATURES 1
+#endif
 #endif
 
 // Check C++11 is being used if thread-safe array storage is required
@@ -218,7 +225,7 @@
 // supported on non-Mac C++11 platforms
 #define ADEPT_THREAD_LOCAL thread_local
 #elif defined(_MSC_VER)
-// Windows C++98 has a different way to specify thread-local storage
+// C++98 has a different way to specify thread-local storage
 // from the GCC/Intel/Sun/IBM compilers.
 #define ADEPT_THREAD_LOCAL __declspec(thread)
 #else
