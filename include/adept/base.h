@@ -225,7 +225,7 @@
 // supported on non-Mac C++11 platforms
 #define ADEPT_THREAD_LOCAL thread_local
 #elif defined(_MSC_VER)
-// C++98 has a different way to specify thread-local storage
+// Microsoft C++98 has a different way to specify thread-local storage
 // from the GCC/Intel/Sun/IBM compilers.
 #define ADEPT_THREAD_LOCAL __declspec(thread)
 #else
