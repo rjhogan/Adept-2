@@ -1578,6 +1578,7 @@ namespace adept {
       return GradientIndex<IsActive>::get();
     }
 
+    /*
     std::ostream& print(std::ostream& os) const {
       if (empty()) {
 	os << "(empty " << Engine::name() << ")";
@@ -1616,6 +1617,13 @@ namespace adept {
       }
       return os;
     }
+    */
+
+    std::ostream& print(std::ostream& os) const {
+      const Array<rank,Type,IsActive> x(*this);
+      x.print(os);
+      return os;
+    }    
 
     std::ostream& print_raw(std::ostream& os) const {
       if (empty()) {

@@ -1,6 +1,6 @@
 /* test_arrays.cpp - Test Adept's array functionality
 
-    Copyright (C) 2016-2017 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2016-2018 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -48,6 +48,31 @@ main(int argc, const char** argv) {
 	    << "   TESTING " << MESSAGE << "\n"
 
 #define COMMA ,
+
+
+#define SIMPLE_EVAL(MESSAGE, TYPE, X, INIT, EXPR)			\
+  std::cout << "--------------------------------------------------------------------\n" \
+	    << "### " << MESSAGE << "\n### " << #EXPR << "\n";	\
+  try {								\
+    TYPE X;								\
+    if (INIT) {								\
+      X = test. X;							\
+    }									\
+    std::cout << "Evaluating " << #EXPR << "\n";			\
+    std::cout.flush();						\
+    EXPR;								\
+    if (should_fail) { std::cout << "*** INCORRECT OUTCOME\n";	\
+      anomalous_results++;						\
+    }									\
+  } catch (adept::exception e) {					\
+    std::cout << "*** Failed with: " << e.what() << "\n";		\
+    if (!should_fail) { std::cout << "*** INCORRECT OUTCOME\n";	\
+      anomalous_results++;						\
+    }									\
+    else {								\
+      std::cout << "*** Correct behaviour\n";				\
+    }									\
+  }
 
 #define EVAL(MESSAGE, TYPE, X, INIT, EXPR)				\
   std::cout << "--------------------------------------------------------------------\n" \
@@ -662,6 +687,35 @@ main(int argc, const char** argv) {
   EVAL2("Fill matrix with vector using \"<<\"", myMatrix, M, true, myVector, v, M << 0.1 << 0.2 << 0.3 << v);
   EVAL2("Fill matrix with vector using \"<<\"", myMatrix, S, true, myVector, v, S << v << v << v);
   EVAL("Assign array using range", myVector, v, false, v = range(3,6));
+
+  HEADING("PRINTING WITH PLAIN STYLE");
+  adept::set_array_print_style(PRINT_STYLE_PLAIN);
+  SIMPLE_EVAL("Printing empty vector", myVector, v, false, std::cout << v << '\n');
+  SIMPLE_EVAL("Printing vector", myVector, v, true, std::cout << v << '\n');
+  SIMPLE_EVAL("Printing matrix", myMatrix, M, true, std::cout << M << '\n');
+  SIMPLE_EVAL("Printing 3D array", myArray3D, A, true, std::cout << A << '\n');
+
+  HEADING("PRINTING WITH CSV STYLE");
+  adept::set_array_print_style(PRINT_STYLE_CSV);
+  SIMPLE_EVAL("Printing empty vector", myVector, v, false, std::cout << v << '\n');
+  SIMPLE_EVAL("Printing vector", myVector, v, true, std::cout << v << '\n');
+  SIMPLE_EVAL("Printing matrix", myMatrix, M, true, std::cout << M << '\n');
+  SIMPLE_EVAL("Printing 3D array", myArray3D, A, true, std::cout << A << '\n');
+
+  HEADING("PRINTING WITH CURLY STYLE");
+  adept::set_array_print_style(PRINT_STYLE_CURLY);
+  SIMPLE_EVAL("Printing empty vector", myVector, v, false, std::cout << v << '\n');
+  SIMPLE_EVAL("Printing vector", myVector, v, true, std::cout << v << '\n');
+  SIMPLE_EVAL("Printing matrix", myMatrix, M, true, std::cout << M << '\n');
+  SIMPLE_EVAL("Printing 3D array", myArray3D, A, true, std::cout << A << '\n');
+
+  HEADING("PRINTING WITH MATLAB STYLE");
+  adept::set_array_print_style(PRINT_STYLE_MATLAB);
+  SIMPLE_EVAL("Printing empty vector", myVector, v, false, std::cout << v << '\n');
+  SIMPLE_EVAL("Printing vector", myVector, v, true, std::cout << v << '\n');
+  SIMPLE_EVAL("Printing matrix", myMatrix, M, true, std::cout << M << '\n');
+  SIMPLE_EVAL("Printing 3D array", myArray3D, A, true, std::cout << A << '\n');
+  adept::set_array_print_style(PRINT_STYLE_CURLY);
 
   HEADING("EXPRESSION PRINTING");
   EVAL("Send expression to standard output", myMatrix, M, true,

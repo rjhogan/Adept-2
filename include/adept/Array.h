@@ -1,6 +1,6 @@
 /* Array.h -- active or inactive Array of arbitrary rank
 
-    Copyright (C) 2014-2017 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014-2018 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -19,6 +19,7 @@
 #include <iostream>
 #include <sstream>
 #include <limits>
+#include <string>
 
 #include <adept/base.h>
 
@@ -37,6 +38,13 @@
 
 namespace adept {
   using namespace adept::internal;
+
+  enum ArrayPrintStyle {
+    PRINT_STYLE_PLAIN,
+    PRINT_STYLE_CSV,
+    PRINT_STYLE_CURLY,
+    PRINT_STYLE_MATLAB,
+  };
 
   namespace internal {
 
@@ -71,11 +79,26 @@ namespace adept {
 
     // When arrays are sent to a stream the dimensions can be grouped
     // with curly brackets
-    extern bool array_print_curly_brackets;
+    //    extern bool array_print_curly_brackets;
+
+    // Variables describing how arrays are written to a stream
+    extern ArrayPrintStyle array_print_style;
+    extern std::string vector_separator;
+    extern std::string vector_print_before;
+    extern std::string vector_print_after;
+    extern std::string array_opening_bracket;
+    extern std::string array_closing_bracket;
+    extern std::string array_contiguous_separator;
+    extern std::string array_non_contiguous_separator;
+    extern std::string array_print_before;
+    extern std::string array_print_after;
+    extern std::string array_print_empty_before;
+    extern std::string array_print_empty_after;
+    extern bool array_print_indent;
+    extern bool array_print_empty_rank;
 
     // Forward declaration to enable Array::where()
     //    template <class A, class B> class Where;
-
 
     // -------------------------------------------------------------------
     // Helper classes
@@ -2153,6 +2176,7 @@ namespace adept {
       return GradientIndex<IsActive>::get();
     }
 
+    /*
     std::ostream& print(std::ostream& os) const {
       if (empty()) {
 	os << "(empty " << Rank << "-D array)";
@@ -2208,6 +2232,68 @@ namespace adept {
 	  }
 	  os << "\n";
 	} while (my_rank >= 0);
+      }
+      return os;
+    }
+    */
+
+    std::ostream& print(std::ostream& os) const {
+      if (empty()) {
+	os << array_print_empty_before;
+	if (array_print_empty_rank) {
+	  os << Rank;
+	}
+	os << array_print_empty_after;
+      }
+      else if (Rank == 1) {
+	// Print a vector
+	os << vector_print_before << data_[0];
+	for (int i = 1; i < dimensions_[0]; ++i) {
+	  os << vector_separator << data_[i];
+	}
+	os << vector_print_after;
+      }
+      else {
+	// Print a multi-dimensional array
+	adept::ExpressionSize<Rank> i(0);
+	int my_rank = -1;
+	os << array_print_before;
+	do {
+	  if (array_print_indent) {
+	    if (my_rank >= 0) {
+	      os << " ";
+	      for (int r = 0; r < my_rank*array_opening_bracket.size(); r++) {
+		os << " ";
+	      }
+	    }
+	  }
+	  if (my_rank == -1) {
+	    for (int r = 1; r < Rank; r++) {
+	      os << array_opening_bracket;
+	    }
+	  }
+	  else {
+	    for (int r = my_rank+1; r < Rank; r++) {
+	      os << array_opening_bracket;
+	    }
+	  }
+	  for (i[Rank-1] = 0; i[Rank-1] < dimensions_[Rank-1]-1; ++i[Rank-1]) {
+	    os << data_[index_(i)] << array_contiguous_separator;
+	  }
+	  os << data_[index_(i)];
+	  my_rank = Rank-1;
+	  while (--my_rank >= 0) {
+	    if (++i[my_rank] >= dimensions_[my_rank]) {
+	      i[my_rank] = 0;
+	      os << array_closing_bracket;
+	    }
+	    else {
+	      os << array_closing_bracket << array_non_contiguous_separator;
+	      break;
+	    }
+	  }
+	} while (my_rank >= 0);
+	os << array_print_after;
       }
       return os;
     }
@@ -3156,7 +3242,16 @@ namespace adept {
 
 
     // -------------------------------------------------------------------
-    // Array: 8. Data
+    // Array: 8. Static variables
+    // -------------------------------------------------------------------
+  public:
+
+
+    void print_style(ArrayPrintStyle ps);
+
+
+    // -------------------------------------------------------------------
+    // Array: 9. Data
     // -------------------------------------------------------------------
   protected:
     Type* __restrict data_;           // Pointer to values
@@ -3179,11 +3274,20 @@ namespace adept {
     ::adept::internal::array_row_major_order = o;
   }
 
+  // Set the print style
+  void set_array_print_style(ArrayPrintStyle ps);
+
   // Change whether or not curly brackets are printed when arrays are
   // sent to a stream with the << operator
   inline
   void set_array_print_curly_brackets(bool o = true) {
-    ::adept::internal::array_print_curly_brackets = o;
+    //::adept::internal::array_print_curly_brackets = o;
+    if (o) {
+      set_array_print_style(PRINT_STYLE_CURLY);
+    }
+    else {
+      set_array_print_style(PRINT_STYLE_PLAIN);
+    }
   }
 
   // Print array on a stream
