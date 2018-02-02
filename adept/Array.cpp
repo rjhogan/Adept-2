@@ -68,15 +68,15 @@ namespace adept {
     case PRINT_STYLE_MATLAB:
        vector_separator = " ";
        vector_print_before = "[";
-       vector_print_after = "];";
+       vector_print_after = "]";
        array_opening_bracket = "";
        array_closing_bracket = "";
        array_contiguous_separator = " ";
        array_non_contiguous_separator = ";\n";
        array_print_before = "[";
-       array_print_after = "];";
+       array_print_after = "]";
        array_print_empty_before = "[";
-       array_print_empty_after = "];";
+       array_print_empty_after = "]";
        array_print_indent = true;
        array_print_empty_rank = false;
        break;

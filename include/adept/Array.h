@@ -3277,6 +3277,10 @@ namespace adept {
   // Set the print style
   void set_array_print_style(ArrayPrintStyle ps);
 
+  inline ArrayPrintStyle get_array_print_style() {
+    return internal::array_print_style;
+  }
+
   // Change whether or not curly brackets are printed when arrays are
   // sent to a stream with the << operator
   inline
