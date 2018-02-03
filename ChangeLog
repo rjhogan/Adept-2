@@ -1,6 +1,8 @@
 version 2.0.5 (28 January 2018)
 	- Use set_array_print_style(x) to set behaviour of <<Array;
 	available are x=PRINT_STYLE_[PLAIN|CSV|CURLY|MATLAB]
+	- Fix use of _mm_undefined_ps intrinsic: only use on GCC>=4.9.1 as
+	can't guarantee its presence with other compilers
 
 version 2.0.4 (8 January 2018)
 	- Packet.h copes with undefined _mm_undefined_ps in GCC<4.9.1

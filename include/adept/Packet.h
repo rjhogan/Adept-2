@@ -1,6 +1,6 @@
 /* Packet.h -- Vectorization support
 
-    Copyright (C) 2016-2017 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2016-2018 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -24,14 +24,17 @@
 #ifdef __SSE2__
 #include <xmmintrin.h> // SSE
 #include <emmintrin.h> // SSE2
-// GCC < 4.9.1 does not define _mm_undefined_ps in xmmintrin.h so we
-// use _mm_setzero_ps instead
+// Numerous platforms don't define _mm_undefined_ps in xmmintrin.h, so
+// we assume none except GCC >= 4.9.1 do.  Those that don't use an
+// equivalent function that sets the elements to zero.
+#define ADEPT_MM_UNDEFINED_PS _mm_setzero_ps
 #ifndef __clang__
 #define GCC_VERSION (__GNUC__ * 10000 \
                      + __GNUC_MINOR__ * 100 \
                      + __GNUC_PATCHLEVEL__)
-#if GCC_VERSION < 40901
-#define _mm_undefined_ps _mm_setzero_ps
+#if GCC_VERSION >= 40901
+#undef ADEPT_MM_UNDEFINED_PS
+#define ADEPT_MM_UNDEFINED_PS _mm_undefined_ps
 #endif
 #endif // __clang__
 #endif // __SSE2__
@@ -277,32 +280,30 @@ namespace adept {
 
     // Functions for an SSE2 packed vector of 2 doubles
     inline double mm_hsum_pd(__m128d vd) {
-      __m128 shuftmp= _mm_movehl_ps(_mm_undefined_ps(),
+      __m128 shuftmp= _mm_movehl_ps(ADEPT_MM_UNDEFINED_PS(),
 				    _mm_castpd_ps(vd));
       __m128d shuf  = _mm_castps_pd(shuftmp);
       return  _mm_cvtsd_f64(_mm_add_sd(vd, shuf));
     }
     inline double mm_hprod_pd(__m128d vd) {
-      __m128 shuftmp= _mm_movehl_ps(_mm_undefined_ps(),
+      __m128 shuftmp= _mm_movehl_ps(ADEPT_MM_UNDEFINED_PS(),
 				    _mm_castpd_ps(vd));
       __m128d shuf  = _mm_castps_pd(shuftmp);
       return  _mm_cvtsd_f64(_mm_mul_sd(vd, shuf));
     }
     inline double mm_hmin_pd(__m128d vd) {
-      __m128 shuftmp= _mm_movehl_ps(_mm_undefined_ps(),
+      __m128 shuftmp= _mm_movehl_ps(ADEPT_MM_UNDEFINED_PS(),
 				    _mm_castpd_ps(vd));
       __m128d shuf  = _mm_castps_pd(shuftmp);
       return  _mm_cvtsd_f64(_mm_min_sd(vd, shuf));
     }
     inline double mm_hmax_pd(__m128d vd) {
-      __m128 shuftmp= _mm_movehl_ps(_mm_undefined_ps(),
+      __m128 shuftmp= _mm_movehl_ps(ADEPT_MM_UNDEFINED_PS(),
 				    _mm_castpd_ps(vd));
       __m128d shuf  = _mm_castps_pd(shuftmp);
       return  _mm_cvtsd_f64(_mm_max_sd(vd, shuf));
     }
-#ifdef _mm_undefined_ps
-#undef _mm_undefined_ps
-#endif
+#undef ADEPT_MM_UNDEFINED_PS
 #endif // __SSE2__
 
 #ifdef __AVX__
