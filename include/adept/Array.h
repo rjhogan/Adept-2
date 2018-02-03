@@ -2249,7 +2249,7 @@ namespace adept {
 	// Print a vector
 	os << vector_print_before << data_[0];
 	for (int i = 1; i < dimensions_[0]; ++i) {
-	  os << vector_separator << data_[i];
+	  os << vector_separator << data_[i*offset_[0]];
 	}
 	os << vector_print_after;
       }
@@ -2262,7 +2262,7 @@ namespace adept {
 	  if (array_print_indent) {
 	    if (my_rank >= 0) {
 	      os << " ";
-	      for (int r = 0; r < my_rank*array_opening_bracket.size(); r++) {
+	      for (int r = 0; r < my_rank*static_cast<int>(array_opening_bracket.size()); r++) {
 		os << " ";
 	      }
 	    }
