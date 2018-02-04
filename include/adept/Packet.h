@@ -25,18 +25,25 @@
 #include <xmmintrin.h> // SSE
 #include <emmintrin.h> // SSE2
 // Numerous platforms don't define _mm_undefined_ps in xmmintrin.h, so
-// we assume none except GCC >= 4.9.1 do.  Those that don't use an
-// equivalent function that sets the elements to zero.
+// we assume none do, except GCC >= 4.9.1 and CLANG >= 3.8.0.  Those
+// that don't use an equivalent function that sets the elements to
+// zero.
 #define ADEPT_MM_UNDEFINED_PS _mm_setzero_ps
-#ifndef __clang__
-#define GCC_VERSION (__GNUC__ * 10000 \
-                     + __GNUC_MINOR__ * 100 \
-                     + __GNUC_PATCHLEVEL__)
-#if GCC_VERSION >= 40901
-#undef ADEPT_MM_UNDEFINED_PS
-#define ADEPT_MM_UNDEFINED_PS _mm_undefined_ps
-#endif
-#endif // __clang__
+#ifdef __clang__
+  #if __has_builtin(__builtin_ia32_undef128)
+    #undef ADEPT_MM_UNDEFINED_PS
+    #define ADEPT_MM_UNDEFINED_PS _mm_undefined_ps
+  #endif
+#elif defined(__GNUC__)
+  #define GCC_VERSION (__GNUC__ * 10000 \
+		       + __GNUC_MINOR__ * 100	\
+		       + __GNUC_PATCHLEVEL__)
+  #if GCC_VERSION >= 40901
+    #undef ADEPT_MM_UNDEFINED_PS
+    #define ADEPT_MM_UNDEFINED_PS _mm_undefined_ps
+  #endif
+  #undef GCC_VERSION
+#endif // __clang__/__GNUC__
 #endif // __SSE2__
 
 #ifdef __AVX__
