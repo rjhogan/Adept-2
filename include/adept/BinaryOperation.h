@@ -1,6 +1,6 @@
 /* BinaryOperation.h -- Binary operations on Adept expressions
 
-    Copyright (C) 2014-2017 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014-2018 European Centre for Medium-Range Weather Forecasts
 
     Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -1300,14 +1300,13 @@ namespace adept {
       L, NAME, RType>(l.cast(), r);		\
   };
 
-
+  // The following define Expr*Expr and Scalar*Expr
   ADEPT_DEFINE_OPERATION(Add, operator+);
   ADEPT_DEFINE_OPERATION(Subtract, operator-);
   ADEPT_DEFINE_OPERATION(Multiply, operator*);
   ADEPT_DEFINE_OPERATION(Divide, operator/);
   ADEPT_DEFINE_OPERATION(Pow, pow);
   ADEPT_DEFINE_OPERATION(Atan2, atan2);
-
   ADEPT_DEFINE_OPERATION(Max, max);
   ADEPT_DEFINE_OPERATION(Min, min);
   // If std::max has been brought into scope via a "using" directive
@@ -1322,12 +1321,16 @@ namespace adept {
   ADEPT_DEFINE_OPERATION(Max, fmax);
   ADEPT_DEFINE_OPERATION(Min, fmin);
 
+  // The following define Expr*Scalar; those in the list above but not
+  // below (e.g. Divide) use a custom implementation of Expr*Scalar
   ADEPT_DEFINE_SCALAR_RHS_OPERATION(Add, operator+);
   ADEPT_DEFINE_SCALAR_RHS_OPERATION(Subtract, operator-);
   ADEPT_DEFINE_SCALAR_RHS_OPERATION(Multiply, operator*);
   ADEPT_DEFINE_SCALAR_RHS_OPERATION(Pow, pow);
   ADEPT_DEFINE_SCALAR_RHS_OPERATION(Max, max);
   ADEPT_DEFINE_SCALAR_RHS_OPERATION(Min, min);
+  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Max, fmax);
+  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Min, fmin);
 
 #undef ADEPT_DEFINE_OPERATION
 #undef ADEPT_DEFINE_SCALAR_RHS_OPERATION

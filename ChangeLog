@@ -5,6 +5,7 @@ version 2.0.5 (6 February 2018)
 	and Clang if appropriate built-in is present; can't guarantee its
 	presence with other compilers
 	- Fix writing of active scalar expressions to a stream
+	- Added missing fmin/fmax(Expr,Scalar)
 
 version 2.0.4 (8 January 2018)
 	- Packet.h copes with undefined _mm_undefined_ps in GCC<4.9.1
