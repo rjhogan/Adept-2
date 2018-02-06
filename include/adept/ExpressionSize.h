@@ -178,7 +178,7 @@ namespace adept {
     ExpressionSize() { }
     ExpressionSize(Index j) { }
     bool invalid_expression() const { return false; }
-    std::string str() { return ""; }
+    std::string str() const { return ""; }
     void set_all(Index) const { }
     bool operator==(const ExpressionSize<0>&) const { return true; }
     bool operator!=(const ExpressionSize<0>&) const { return false; }
