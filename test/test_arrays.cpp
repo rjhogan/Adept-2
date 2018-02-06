@@ -720,6 +720,8 @@ main(int argc, const char** argv) {
   HEADING("EXPRESSION PRINTING");
   EVAL("Send expression to standard output", myMatrix, M, true,
        std::cout << M(0,__) + M(1,__) << '\n');
+  EVAL("Send scalar expression to standard output", myVector, v, true,
+       std::cout << v(0) + v(1) << '\n');
 
 #ifdef ADEPT_BOUNDS_CHECKING
   HEADING("BOUNDS CHECKING");

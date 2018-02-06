@@ -1,6 +1,6 @@
 /* ActiveReference.h -- Reference to an active element of an array
 
-    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2018 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -155,7 +155,7 @@ namespace adept {
     
     // Assignment operator with an expression on the rhs
     template <typename AType, class E>
-    typename enable_if<E::is_active && !(E::rank>0), ActiveReference&>::type
+    typename enable_if<E::is_active && E::rank==0, ActiveReference&>::type
     operator=(const Expression<AType, E>& rhs) {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (ADEPT_ACTIVE_STACK->is_recording()) {
@@ -177,22 +177,22 @@ namespace adept {
     // All the compound assignment operators are unpacked, i.e. a+=b
     // becomes a=a+b; first for an Expression on the rhs
     template<typename AType, class E>
-    typename enable_if<!(E::rank>0), ActiveReference&>::type
+    typename enable_if<E::rank==0, ActiveReference&>::type
     operator+=(const Expression<AType,E>& rhs) {
       return *this = (*this + rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!(E::rank>0), ActiveReference&>::type
+    typename enable_if<E::rank==0, ActiveReference&>::type
     operator-=(const Expression<AType,E>& rhs) {
       return *this = (*this - rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!(E::rank>0), ActiveReference&>::type
+    typename enable_if<E::rank==0, ActiveReference&>::type
     operator*=(const Expression<AType,E>& rhs) {
       return *this = (*this * rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!(E::rank>0), ActiveReference&>::type
+    typename enable_if<E::rank==0, ActiveReference&>::type
     operator/=(const Expression<AType,E>& rhs) {
       return *this = (*this / rhs);
     }

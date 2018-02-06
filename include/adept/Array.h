@@ -315,7 +315,7 @@ namespace adept {
     // implicit conversion, use the "explicit" keyword.
     template<typename EType, class E>
     Array(const Expression<EType, E>& rhs,
-	  typename enable_if<E::rank == Rank,int>::type = 0)
+	  typename enable_if<E::rank == Rank && (Rank > 0),int>::type = 0)
       : data_(0), storage_(0), dimensions_(0)
     {
 #ifdef ADEPT_VERBOSE_FUNCTIONS
@@ -3318,10 +3318,10 @@ namespace adept {
     return expr.inactive_link();
   }
 
-  // Print an expression on a stream
+  // Print an array expression on a stream
   template <typename Type, class E>
   inline
-  std::ostream&
+  typename enable_if<(E::rank > 0), std::ostream&>::type
   operator<<(std::ostream& os, const Expression<Type,E>& expr) {
     Array<E::rank,Type,false> A;
     A.assign_inactive(expr);

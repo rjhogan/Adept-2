@@ -1,7 +1,7 @@
 /* Active.h -- Active scalar type for automatic differentiation
 
     Copyright (C) 2012-2014 University of Reading
-    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2018 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -135,7 +135,7 @@ namespace adept {
     template<typename AType, class E>
     //          explicit
     Active(const Expression<AType, E>& rhs,
-	   typename enable_if<!(E::rank>0)
+	   typename enable_if<E::rank==0
 			      && E::is_active>::type* dummy = 0)
       : gradient_index_(ADEPT_ACTIVE_STACK->register_gradient())
     {
@@ -248,7 +248,7 @@ namespace adept {
     // Assignment operator with an expression on the rhs: very similar
     // to construction with an expression (defined above)
     template <typename AType, class E>
-    typename enable_if<E::is_active && !(E::rank>0), Active&>::type
+    typename enable_if<E::is_active && E::rank==0, Active&>::type
     operator=(const Expression<AType, E>& rhs) {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (ADEPT_ACTIVE_STACK->is_recording()) {
@@ -270,22 +270,22 @@ namespace adept {
     // All the compound assignment operators are unpacked, i.e. a+=b
     // becomes a=a+b; first for an Expression on the rhs
     template<typename AType, class E>
-    typename enable_if<!(E::rank>0), Active&>::type
+    typename enable_if<E::rank==0, Active&>::type
     operator+=(const Expression<AType,E>& rhs) {
       return *this = (*this + rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!(E::rank>0), Active&>::type
+    typename enable_if<E::rank==0, Active&>::type
     operator-=(const Expression<AType,E>& rhs) {
       return *this = (*this - rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!(E::rank>0), Active&>::type
+    typename enable_if<E::rank==0, Active&>::type
     operator*=(const Expression<AType,E>& rhs) {
       return *this = (*this * rhs);
     }
     template<typename AType, class E>
-    typename enable_if<!(E::rank>0), Active&>::type
+    typename enable_if<E::rank==0, Active&>::type
     operator/=(const Expression<AType,E>& rhs) {
       return *this = (*this / rhs);
     }
@@ -607,12 +607,22 @@ namespace adept {
     }
   }
 
+  // Print an active scalar to a stream
   template<typename Type>
   inline
   std::ostream&
   operator<<(std::ostream& os, const Active<Type>& v)
   {
     os << v.value();
+    return os;
+  }
+
+  // Print an active scalar expression to a stream
+  template <typename Type, class E>
+  inline
+  typename enable_if<E::rank == 0 && E::is_active, std::ostream&>::type
+  operator<<(std::ostream& os, const Expression<Type,E>& expr) {
+    os << expr.scalar_value();
     return os;
   }
 
