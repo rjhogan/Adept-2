@@ -27,7 +27,8 @@
      {<->sub*lmttc/m/sl}{}
 \DeclareFontShape{T1}{lmttc}{m}{sl}
      {<-> ec-lmtlco10}{}
-\def\myfont{\fontfamily{cmss}\fontseries{lmtt}\selectfont}
+%\def\myfont{\fontfamily{cmss}\fontseries{lmtt}\selectfont}
+\def\myfont{\fontfamily{cmss}\selectfont}
 \def\mysize{\footnotesize}
 \def\mysize{\small}
 \def\codeindent{\hspace{\tabcolsep}}
@@ -136,7 +137,7 @@ Member functions:\\
 \code{active\_stack()} & Return pointer to currently active \code{Stack} object\\
 \code{version()} & Return \code{std::string} with Adept version number\\
 \code{configuration()} & Return \code{std::string} describing Adept configuration\\
-\code{have\_matrix\_multiplication()} & Adept compiled with matrix mult.\ (BLAS)?\\
+\code{have\_matrix\_multiplication()} & Adept compiled with matrix multiplication (BLAS)?\\
 \code{have\_linear\_algebra()} & Adept compiled with linear-algebra (LAPACK)?\\
 \code{set\_max\_blas\_threads(n)} & Set maximum threads for matrix operations\\
 \code{max\_blas\_threads()} & Get maximum threads for matrix operations\\
@@ -208,7 +209,7 @@ Define new fixed array types as follows:\\
 \code{::rank} & Number of array dimensions\\
 \code{.empty()} & Return \code{true} if array is empty, \code{false} otherwise\\
 \code{.dimensions()} & Return an object that can be used to resize other arrays\\
-\code{.dimension(i)} & Return length of dimension \code{i}\\
+\code{.dimension(i)} & Return length of dimension \code{i} (0 based)\\
 \code{.size()} & Return total number of elements\\
 \code{.data()} & Return pointer to underlying passive data\\
 \code{.const\_data()} & Return \code{const} pointer to underlying data\\
@@ -222,12 +223,12 @@ Define new fixed array types as follows:\\
 \subsection*{Array indexing and slicing}
 Dense arrays can be indexed/sliced using the function-call operator
 with as many arguments as there are dimensions (e.g.\ index a matrix
-with \code{M(i,j)}). In all cases slice can be used as an lvalue or
+with \code{M(i,j)}). In all cases a slice can be used as an lvalue or
 rvalue. If all arguments are scalars then a single element of the
 array is extracted. The following special values are available:\\
 \begin{tabular}{ll}
 \code{end} & The last element of the dimension being indexed\\
-\code{end-1} & The penultimate element of the dimension being indexed (any integer arithmetic is possible)\\
+\code{end-1} & Penultimate element of indexed dimension (any integer arithmetic possible)\\
 \end{tabular}
 
 If one or more argument is a \textit{regular index range} then the return
@@ -337,7 +338,8 @@ rank-1 arguments\\
 \subsection*{Matrix multiplication and linear algebra}
 \begin{tabular}{ll}
 \code{matmul(M,N)} & Matrix multiply, where at least one argument must
-be a matrix, and orientation of any vector arguments is inferred\\
+be a matrix, and \\
+&orientation of any vector arguments is inferred\\
 \code{M ** N} & Shortcut for \code{matmul}; precedence is the same as normal
   multiply\\
 \code{inv(M)} & Inverse of square matrix\\
