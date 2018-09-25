@@ -208,7 +208,7 @@ namespace adept {
 	}
 	
 	// Set the initial gradients all to zero
-	for (std::size_t i = 0; i < gradient_multipass_size; i++) {
+	for (uIndex i = 0; i < gradient_multipass_size; i++) {
 	  gradient_multipass_b[i] = 0.0;
 	}
 	// Each seed vector has one non-zero entry of 1.0
@@ -276,7 +276,7 @@ namespace adept {
 
       // Set the initial gradients all to zero
       ///zero_gradient_multipass();
-      for (std::size_t i = 0; i < gradient_multipass_size; i++) {
+      for (uIndex i = 0; i < gradient_multipass_size; i++) {
 	gradient_multipass_b[i] = 0.0;
       }
 
@@ -302,7 +302,7 @@ namespace adept {
     if (n_extra > 0) {
       uIndex i_independent =  MULTIPASS_SIZE * n_block;
       ///zero_gradient_multipass();
-      for (std::size_t i = 0; i < gradient_multipass_size; i++) {
+      for (uIndex i = 0; i < gradient_multipass_size; i++) {
 	gradient_multipass_b[i] = 0.0;
       }
 
