@@ -282,7 +282,7 @@ namespace adept {
     void unregister_gradient_not_top(const uIndex& gradient_index);
   public:
 
-    // Set the gradients in the list with indexs between start and
+    // Set the gradients in the list with indices between start and
     // end_plus_one-1 to the values pointed to by "gradient"
     template <typename MyReal>
     typename internal::enable_if<internal::is_floating_point<MyReal>::value,
@@ -301,7 +301,7 @@ namespace adept {
       }
     }
 
-    // Get the gradients in the list with indexs between start and
+    // Get the gradients in the list with indices between start and
     // end_plus_one-1 and put them in the location pointed to by
     // "gradient"
     template <typename MyReal>
