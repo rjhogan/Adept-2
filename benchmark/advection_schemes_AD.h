@@ -1,6 +1,7 @@
 /* advection_schemes_AD.h - Header for the hand-coded adjoints
 
   Copyright (C) 2014 The University of Reading
+  Copyright (C) 2018 European Centre for Medium-Range Weather Forecasts
 
   Copying and distribution of this file, with or without modification,
   are permitted in any medium without royalty provided the copyright
@@ -106,7 +107,12 @@ void toon_AD(int nt, real c, const real q_init[NX], real q_out[NX],
       real factor = exp(c*log(q[i]/q[i+1]));
       real one_over_q_i = 1.0/q[i];
       real one_over_q_i_plus_one = 1.0/q[i+1];
-      real one_over_denominator = 1.0/(one_over_q_i+one_over_q_i_plus_one);
+
+      // Up to and including Adept 2.0.5 this was the incorrect line:
+      //      real one_over_denominator = 1.0/(one_over_q_i+one_over_q_i_plus_one);
+      // This is the corrected line:
+      real one_over_denominator = 1.0/(one_over_q_i_plus_one-one_over_q_i);
+
       q_AD[i] += one_over_denominator*one_over_q_i
 	* (c*factor - (factor-1.0)*one_over_denominator*one_over_q_i)
 	* flux_AD[i];
