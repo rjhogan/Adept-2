@@ -276,7 +276,7 @@ public:
 
     adept::set_gradients(&q[0], NX, &y_AD[0]);
     stack_.compute_adjoint();
-    adept::set_gradients(&q_init[0], NX, &x_AD[0]);
+    adept::get_gradients(&q_init[0], NX, &x_AD[0]);
 
     timer_.stop();
 
