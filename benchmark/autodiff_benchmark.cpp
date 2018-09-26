@@ -375,7 +375,7 @@ main(int argc, char** argv)
       }
       
       if (print_adjoint) {
-	std::cout << "adjoint = [" << q[0];
+	std::cout << "adjoint = [" << q_init_AD_reference[0];
 	for (int i = 1; i < NX; i++) {
 	  std::cout << ", " << q_init_AD_reference[i];
 	}
@@ -437,7 +437,7 @@ main(int argc, char** argv)
 	  if (rms_verify > tolerance) {
 	    std::cout << "      *** Adjoint RMS difference with hand-coded of " << rms_verify << " is greater than tolerance of " << tolerance << " ***\n";
 	    if (print_adjoint) {
-	      std::cout << "adjoint_auto = [" << q[0];
+	      std::cout << "adjoint_auto = [" << q_init_AD[0];
 	      for (int i = 1; i < NX; i++) {
 		std::cout << ", " << q_init_AD[i];
 	      }
