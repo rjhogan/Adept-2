@@ -292,7 +292,7 @@ main(int argc, char** argv)
   }
 
   for (int i = 0; i < NX; i++) q_init[i] = (0.5+0.5*sin((i*2.0*pi)/(NX-1.5)))+1;
-  for (int i = 0; i < NX; i++) q_AD[i] = 0.0;
+  for (int i = 0; i < NX; i++) q_AD[i] = 0.1;
 
   bool verify_error = false;
 
@@ -377,7 +377,7 @@ main(int argc, char** argv)
       if (print_adjoint) {
 	std::cout << "adjoint = [" << q[0];
 	for (int i = 1; i < NX; i++) {
-	  std::cout << ", " << q[i];
+	  std::cout << ", " << q_init_AD_reference[i];
 	}
 	std::cout << "]\n";
       }
@@ -436,6 +436,14 @@ main(int argc, char** argv)
 	  Real rms_verify = rms(q_init_AD, q_init_AD_reference);
 	  if (rms_verify > tolerance) {
 	    std::cout << "      *** Adjoint RMS difference with hand-coded of " << rms_verify << " is greater than tolerance of " << tolerance << " ***\n";
+	    if (print_adjoint) {
+	      std::cout << "adjoint_auto = [" << q[0];
+	      for (int i = 1; i < NX; i++) {
+		std::cout << ", " << q_init_AD[i];
+	      }
+	      std::cout << "]\n";
+	    }
+
 	    verify_error = true;
 	  }
 	  else {
