@@ -3,6 +3,8 @@ version 2.0.6
 	(benchmark/advection_schemes_AD.h), as well as other bugs that
 	would have prevented the Adjoint and hand-coded adjoints from
 	being correct compared to each other
+	- Fixed memory leak in Packet.h by ensuring memory is freed in the
+	case that neither _POSIX_VERSION nor _MSC_VER are defined
 
 version 2.0.5 (6 February 2018)
 	- Use set_array_print_style(x) to set behaviour of <<Array;

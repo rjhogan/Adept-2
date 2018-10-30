@@ -529,6 +529,8 @@ namespace adept {
 #endif
 #elif defined(_MSC_VER)
 	_aligned_free(data);
+#else
+	delete[] data;
 #endif
       }
     }
