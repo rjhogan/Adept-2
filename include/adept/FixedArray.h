@@ -180,8 +180,8 @@ namespace adept {
 #ifdef ADEPT_CXX11_FEATURES
     // Initialize from initializer list
     template <typename T>
-    FixedArray(std::initializer_list<T> list) : GradientIndex<IsActive>(length_,0)
-    { *this = list; }
+    FixedArray(std::initializer_list<T> list) 
+      : GradientIndex<IsActive>(length_,false) { *this = list; }
 
     // The unfortunate restrictions on initializer_list constructors
     // mean that each possible Array rank needs explicit treatment
