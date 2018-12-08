@@ -806,7 +806,7 @@ following function would return the full Jacobian matrix:
    adept::Stack stack;                      // Where the derivative information is stored
    std::vector<adouble> x(n);               // Vector of active input variables
    adept::set_values(&x[0], n, x_val);      // Initialize adouble inputs
-   adept.new_recording();                   // Start recording
+   stack.new_recording();                   // Start recording
    std::vector<adouble> y(m);               // Create vector of active output variables
    algorithm2(n, &x[0], m, &y[0]);          // Run algorithm
    stack.independent(&x[0], n);             // Identify independent variables
