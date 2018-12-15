@@ -3544,8 +3544,24 @@ convert the outcomes to \code{adouble}:
   may wish to compile without debugging symbols, or if you use the GNU
   compiler use instead the \code{-g1} option which stores a reduced
   amount of debugging information.
+\item[Why do I get incorrect behaviour when I use the ``\code{auto}''
+  keyword?] Since C++11, many programmers make widespread use of
+  \code{auto} as the type of a local object that can be inferred from
+  its initializer. This is problematic for most expression-template
+  libraries, including \Adept, because expressions are not evaluated
+  immediately.  For example, dividing one \code{aReal} object by
+  another returns an
+  \code{adept::internal::BinaryOperation<Real,aReal,Divide,aReal>}
+  object, and the division is only performed (and differentiated) when
+  this object is assigned to an \code{aReal} object. The \code{auto}
+  keyword will be interpreted as the type of the internal object, but
+  this internal object may contain references to temporary objects
+  that make up the other parts of the expression, and which go out of
+  scope after the semi-colon at the end of the \code{auto} statement.
+  In this example the correct behaviour is obtained by replacing
+  \code{auto} with \code{aReal}.  Never to use the \code{auto} keyword
+  when initializing an object from an \Adept\ expression.
 \end{description}
-
 \section{Copyright and license for \Adept\ software}
 \label{sec:license}
 Versions 1.9 of \Adept\ and later are owned and copyrighted jointly by
