@@ -3,6 +3,8 @@ project(Adept2)
 
 set(CMAKE_CXX_STANDARD 14)
 
+include(CTest)
+
 set(ADEPT_HEADERS
         adept/cpplapack.h
         include/adept/Active.h
@@ -82,3 +84,4 @@ install(EXPORT adept
         NAMESPACE adept::
         DESTINATION cmake)
 
+add_subdirectory(test)
