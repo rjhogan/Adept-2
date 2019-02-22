@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD 14)
 include(CTest)
 
 set(ADEPT_HEADERS
-        adept/cpplapack.h
         include/adept/Active.h
         include/adept/ActiveConstReference.h
         include/adept/ActiveReference.h
@@ -78,7 +77,10 @@ install(TARGETS adept
         ARCHIVE DESTINATION lib
         )
 
-install(FILES ${HEADER_FILES} DESTINATION include/adept)
+install(FILES ${ADEPT_HEADERS} DESTINATION include/adept)
+install(FILES include/adept.h include/adept_arrays.h DESTINATION include)
+
+install(FILES Adept2Config.cmake DESTINATION cmake)
 
 install(EXPORT adept
         NAMESPACE adept::
