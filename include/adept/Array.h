@@ -1953,7 +1953,7 @@ namespace adept {
 
     // Resize an array
     void
-    resize(const Index* dim) {
+    resize(const Index* dim, bool force_contiguous = false) {
 
       ADEPT_STATIC_ASSERT(!(std::numeric_limits<Type>::is_integer
 	    && IsActive), CANNOT_CREATE_ACTIVE_ARRAY_OF_INTEGERS);
@@ -1976,7 +1976,12 @@ namespace adept {
 	}
       }
       dimensions_.copy(dim); // Copy dimensions
-      pack_();
+      if (force_contiguous) {
+	pack_contiguous_();
+      }
+      else {
+	pack_();
+      }
       Index data_vol;
       if (array_row_major_order) {
 	data_vol = offset_[0]*dimensions_[0];
@@ -1994,16 +1999,26 @@ namespace adept {
       resize(&dim[0]);
     }
 
+    // Resize using contiguous storage with an ExpressionSize object
+    void resize_contiguous(const ExpressionSize<Rank>& dim) {
+      resize(&dim[0], true);
+    }
+
     // Resize specifying order
     void resize_row_major(const ExpressionSize<Rank>& dim) {
       resize(&dim[0]);
       pack_row_major_();
+    }
+    void resize_row_major_contiguous(const ExpressionSize<Rank>& dim) {
+      resize(&dim[0], true);
+      pack_row_major_contiguous_();
     }
     void resize_column_major(const ExpressionSize<Rank>& dim) {
       resize(&dim[0]);
       pack_column_major_();
     }
 
+    // Resize with integer arguments
     void
     resize(Index m0, Index m1=-1, Index m2=-1, Index m3=-1,
 	   Index m4=-1, Index m5=-1, Index m6=-1) {
@@ -2045,6 +2060,22 @@ namespace adept {
       }
       resize_column_major(dim);
     }
+
+    // Resize with contiguous storage and integer arguments
+    void
+    resize_contiguous(Index m0, Index m1=-1, Index m2=-1, Index m3=-1,
+	   Index m4=-1, Index m5=-1, Index m6=-1) {
+      Index dim[7] = {m0, m1, m2, m3, m4, m5, m6};
+      // Check invalid dimensions
+      for (int i = 0; i < Rank; ++i) {
+	if (dim[i] < 0) {
+	  throw invalid_dimension("Invalid dimensions in array resize"
+				  ADEPT_EXCEPTION_LOCATION);
+	}
+      }
+      resize(dim, true);
+    }
+
 
   protected:
     // Initialize with "MyRank" explicit dimensions, the function

@@ -11,6 +11,7 @@ version 2.0.6
 	- Fixed missing "template" directives in UnaryOperation.h that
 	prevented isfinite, isnan and isinf from working correctly on
 	arrays
+	- Added Array::resize_contigous functions
 
 version 2.0.5 (6 February 2018)
 	- Use set_array_print_style(x) to set behaviour of <<Array;
