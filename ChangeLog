@@ -5,6 +5,12 @@ version 2.0.6
 	being correct compared to each other
 	- Fixed memory leak in Packet.h by ensuring memory is freed in the
 	case that neither _POSIX_VERSION nor _MSC_VER are defined
+	- Fixed bug in FixedArray.h that prevented active fixed arrays
+	from registering themselves with the stack when initialized using
+	an initializer list
+	- Fixed missing "template" directives in UnaryOperation.h that
+	prevented isfinite, isnan and isinf from working correctly on
+	arrays
 
 version 2.0.5 (6 February 2018)
 	- Use set_array_print_style(x) to set behaviour of <<Array;

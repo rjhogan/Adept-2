@@ -378,7 +378,7 @@ namespace adept {
       
       template <int MyArrayNum, int NArrays>
       void advance_location_(ExpressionSize<NArrays>& loc) const {
-	arg.advance_location_<MyArrayNum>(loc);
+	arg.template advance_location_<MyArrayNum>(loc);
       }
 
       template <int MyArrayNum, int NArrays>
@@ -442,7 +442,7 @@ namespace adept {
       template <int MyArrayNum, int Rank, int NArrays>
       void set_location_(const ExpressionSize<Rank>& i, 
 			 ExpressionSize<NArrays>& index) const {
-	arg.set_location_<MyArrayNum>(i, index);
+	arg.template set_location_<MyArrayNum>(i, index);
       }
 
     };
