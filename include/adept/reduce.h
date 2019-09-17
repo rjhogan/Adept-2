@@ -36,6 +36,7 @@
 #ifndef AdeptReduce_H
 #define AdeptReduce_H
 
+#include <limits>
 #include <algorithm>
 
 #include <adept/Array.h>
@@ -98,8 +99,24 @@ namespace adept {
 
   namespace internal {
 
+    // For minval and maxval to work we need starting values for the accumulation
+    template <typename T, class Enable = void>
+    struct numeric_limits { };
+
+    template <typename T>
+    struct numeric_limits<T, typename enable_if<!std::numeric_limits<T>::has_infinity>::type> {
+      static T min_inf() { return std::numeric_limits<T>::min(); }
+      static T max_inf() { return std::numeric_limits<T>::max(); }
+    };
+    template <typename T>
+    struct numeric_limits<T, typename enable_if<std::numeric_limits<T>::has_infinity>::type> {
+      static T min_inf() { return -std::numeric_limits<T>::infinity(); }
+      static T max_inf() { return  std::numeric_limits<T>::infinity(); }
+    };
+
+
     // -------------------------------------------------------------------
-    // 1. Policy classes to enable the generic "reduce" function
+    // Section 2. Policy classes to enable the generic "reduce" function
     // -------------------------------------------------------------------
 
     // Sum enables the "sum" function that sums its arguments.
@@ -214,7 +231,7 @@ namespace adept {
       static const bool active_finish_needed = false;
       const char* name() { return "maxval"; }
       // Initiate the total with the minimum possible value
-      T first_value() { return std::numeric_limits<T>::min(); }
+      T first_value() { return internal::numeric_limits<T>::min_inf(); }
 #ifdef ADEPT_CXX11_FEATURES
       void accumulate(T& total, const T& rhs) { total = std::fmax(total,rhs); }
 #else
@@ -250,7 +267,7 @@ namespace adept {
       static const bool finish_needed = false;
       static const bool active_finish_needed = false;
       const char* name() { return "minval"; }
-      T first_value() { return std::numeric_limits<T>::max(); }
+      T first_value() { return internal::numeric_limits<T>::max_inf(); }
 #ifdef ADEPT_CXX11_FEATURES
       void accumulate(T& total, const T& rhs) { total = std::fmin(total,rhs); }
 #else
@@ -363,7 +380,7 @@ namespace adept {
     };
 
     // -------------------------------------------------------------------
-    // Section 2. Various versions of the "reduce" function
+    // Section 3. Various versions of the "reduce" function
     // -------------------------------------------------------------------
 
     // Reduce an entire inactive array, unvectorized
@@ -787,7 +804,7 @@ namespace adept {
 
 
   // -------------------------------------------------------------------
-  // Section 3. Implement the functions
+  // Section 4. Implement the functions
   // -------------------------------------------------------------------
 
   // Implement sum(x), sum(x,dim), mean(x), mean(x,dim) etc.
@@ -902,7 +919,7 @@ namespace adept {
 
 
   // -------------------------------------------------------------------
-  // Section 4. diag_vector
+  // Section 5. diag_vector
   // -------------------------------------------------------------------
 
   // diag_vector(A,offdiag), where A is a 2D array, returns the
@@ -1021,7 +1038,7 @@ namespace adept {
   }
 
   // -------------------------------------------------------------------
-  // dot_product
+  // Section 6. dot_product
   // -------------------------------------------------------------------
   template <typename LType, typename RType, class L, class R>
   typename enable_if<L::rank == 1 && R::rank == 1,

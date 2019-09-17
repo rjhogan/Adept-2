@@ -12,6 +12,9 @@ version 2.0.6
 	prevented isfinite, isnan and isinf from working correctly on
 	arrays
 	- Added Array::resize_contigous functions
+	- minval and maxval now work correctly with negative and +/-Inf
+	arguments; previously minval gave incorrect results even for
+	negative arguments
 
 version 2.0.5 (6 February 2018)
 	- Use set_array_print_style(x) to set behaviour of <<Array;

@@ -24,6 +24,11 @@
 
 #include <adept_arrays.h>
 
+//#define TRAP_FLOATING_POINT_EXCEPTIONS 1
+#ifdef TRAP_FLOATING_POINT_EXCEPTIONS
+#include <fenv.h>
+#endif
+
 
 // The following controls whether to use active variables or not
 //#define ALL_ACTIVE 1
@@ -36,6 +41,11 @@ using namespace adept;
 int
 main(int argc, const char** argv) {
   using namespace adept;
+
+#ifdef TRAP_FLOATING_POINT_EXCEPTIONS
+  feenableexcept(FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
+#endif
+
 #ifdef ALL_ACTIVE
 #define IsActive true
   Stack stack;
@@ -496,8 +506,8 @@ main(int argc, const char** argv) {
   EVAL2("full sum", myReal, x, true, myMatrix, M, x = sum(M));
   EVAL2("full product", myReal, x, true, myMatrix, M, x = product(M));
 #ifndef ALL_COMPLEX
-  EVAL2("full maxval", myReal, x, true, myMatrix, M, x = maxval(M));
-  EVAL2("full minval", myReal, x, true, myMatrix, M, x = minval(M));
+  EVAL2("full maxval", myReal, x, true, myMatrix, M, x = maxval(-M));
+  EVAL2("full minval", myReal, x, true, myMatrix, M, x = minval(-M));
 #endif
   EVAL2("full norm2", myReal, x, true, myMatrix, M, x = norm2(M));
   EVAL2("1-dimension mean", myVector, v, false, myMatrix, M, v = 0.5 * mean(M,0));
