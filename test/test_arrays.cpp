@@ -74,7 +74,7 @@ main(int argc, const char** argv) {
     if (should_fail) { std::cout << "*** INCORRECT OUTCOME\n";	\
       anomalous_results++;						\
     }									\
-  } catch (adept::exception e) {					\
+  } catch (const adept::exception& e) {					\
     std::cout << "*** Failed with: " << e.what() << "\n";		\
     if (!should_fail) { std::cout << "*** INCORRECT OUTCOME\n";	\
       anomalous_results++;						\
@@ -103,7 +103,7 @@ main(int argc, const char** argv) {
     if (should_fail) { std::cout << "*** INCORRECT OUTCOME\n";	\
       anomalous_results++;						\
     }									\
-  } catch (adept::exception e) {					\
+  } catch (const adept::exception& e) {					\
     std::cout << "*** Failed with: " << e.what() << "\n";		\
     if (!should_fail) { std::cout << "*** INCORRECT OUTCOME\n";	\
       anomalous_results++;						\
@@ -134,7 +134,7 @@ main(int argc, const char** argv) {
     if (should_fail) { std::cout << "*** INCORRECT OUTCOME\n";	        \
       anomalous_results++;						\
     }									\
-  } catch (adept::exception e) {					\
+  } catch (const adept::exception& e) {					\
     std::cout << "*** Failed with: " << e.what() << "\n";		\
     if (!should_fail) { std::cout << "*** INCORRECT OUTCOME\n";		\
       anomalous_results++;						\
@@ -168,7 +168,7 @@ main(int argc, const char** argv) {
     if (should_fail) { std::cout << "*** INCORRECT OUTCOME\n";	        \
       anomalous_results++;						\
     }									\
-  } catch (adept::exception e) {					\
+  } catch (const adept::exception& e) {					\
     std::cout << "*** Failed with: " << e.what() << "\n";		\
     if (!should_fail) { std::cout << "*** INCORRECT OUTCOME\n";		\
       anomalous_results++;						\
