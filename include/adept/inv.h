@@ -41,7 +41,7 @@ namespace adept {
   inv(const Expression<Type,E>& A) {
     Array<2,Type,false> array = A.cast();
     return inv(array);
-  };
+  }
  
 }
 

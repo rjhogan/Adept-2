@@ -12,6 +12,6 @@ adept_reference.pdf: adept_reference.tex
 	pdflatex adept_reference.tex
 
 clean:
-	rm adept_documentation.pdf adept_reference.pdf
+	rm -f adept_documentation.pdf adept_reference.pdf
 
 .PHONY: documentation clean

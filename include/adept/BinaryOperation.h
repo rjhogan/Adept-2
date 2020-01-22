@@ -1273,7 +1273,7 @@ namespace adept {
     return BinaryOperation<typename promote<typename L::type,		\
 					    typename R::type>::type,	\
 			   L, NAME, R>(l.cast(), r.cast());		\
-  };									\
+  }									\
 									\
   template<typename LType, class R>					\
   inline								\
@@ -1285,7 +1285,7 @@ namespace adept {
     using namespace adept::internal;					\
     return BinaryOpScalarLeft<typename promote<LType, typename R::type>::type, \
       LType, NAME, R>(l, r.cast());					\
-  };
+  }
 
 #define ADEPT_DEFINE_SCALAR_RHS_OPERATION(NAME, OPERATOR)		\
   template<class L, typename RType>					\
@@ -1298,17 +1298,17 @@ namespace adept {
     using namespace adept::internal;					\
     return BinaryOpScalarRight<typename promote<typename L::type, RType>::type, \
       L, NAME, RType>(l.cast(), r);		\
-  };
+  }
 
   // The following define Expr*Expr and Scalar*Expr
-  ADEPT_DEFINE_OPERATION(Add, operator+);
-  ADEPT_DEFINE_OPERATION(Subtract, operator-);
-  ADEPT_DEFINE_OPERATION(Multiply, operator*);
-  ADEPT_DEFINE_OPERATION(Divide, operator/);
-  ADEPT_DEFINE_OPERATION(Pow, pow);
-  ADEPT_DEFINE_OPERATION(Atan2, atan2);
-  ADEPT_DEFINE_OPERATION(Max, max);
-  ADEPT_DEFINE_OPERATION(Min, min);
+  ADEPT_DEFINE_OPERATION(Add, operator+)
+  ADEPT_DEFINE_OPERATION(Subtract, operator-)
+  ADEPT_DEFINE_OPERATION(Multiply, operator*)
+  ADEPT_DEFINE_OPERATION(Divide, operator/)
+  ADEPT_DEFINE_OPERATION(Pow, pow)
+  ADEPT_DEFINE_OPERATION(Atan2, atan2)
+  ADEPT_DEFINE_OPERATION(Max, max)
+  ADEPT_DEFINE_OPERATION(Min, min)
   // If std::max has been brought into scope via a "using" directive
   // then calling "max" with two arguments of the same type will call
   // the std::max rather than adept::max function, even if these
@@ -1318,19 +1318,19 @@ namespace adept {
   // functions, which do the same thing but match the C++11 functions
   // std::fmax and std::fmin for floating-point types.  Note that you
   // can use these Adept functions even if you are not using C++11.
-  ADEPT_DEFINE_OPERATION(Max, fmax);
-  ADEPT_DEFINE_OPERATION(Min, fmin);
+  ADEPT_DEFINE_OPERATION(Max, fmax)
+  ADEPT_DEFINE_OPERATION(Min, fmin)
 
   // The following define Expr*Scalar; those in the list above but not
   // below (e.g. Divide) use a custom implementation of Expr*Scalar
-  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Add, operator+);
-  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Subtract, operator-);
-  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Multiply, operator*);
-  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Pow, pow);
-  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Max, max);
-  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Min, min);
-  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Max, fmax);
-  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Min, fmin);
+  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Add, operator+)
+  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Subtract, operator-)
+  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Multiply, operator*)
+  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Pow, pow)
+  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Max, max)
+  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Min, min)
+  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Max, fmax)
+  ADEPT_DEFINE_SCALAR_RHS_OPERATION(Min, fmin)
 
 #undef ADEPT_DEFINE_OPERATION
 #undef ADEPT_DEFINE_SCALAR_RHS_OPERATION
@@ -1349,7 +1349,7 @@ namespace adept {
     using namespace adept::internal;
     typedef typename promote<typename L::type, RType>::type PType;
     return BinaryOpScalarRight<PType, L, Multiply, PType>(l.cast(), 1.0/static_cast<PType>(r));
-  };
+  }
 
   // Treat expression divided by any other type of scalar as division
   template<class L, typename RType>
@@ -1364,7 +1364,7 @@ namespace adept {
     using namespace adept::internal;
     typedef typename promote<typename L::type, RType>::type PType;
     return BinaryOpScalarRight<PType, L, Divide, PType>(l.cast(), static_cast<PType>(r));
-  };
+  }
 
 // Now the operators returning boolean results
 
@@ -1391,7 +1391,7 @@ namespace adept {
 	   const Expression<typename R::type, R>& r)	{		\
     using namespace adept::internal;					\
     return BinaryOperation<bool, L, NAME, R>(l.cast(), r.cast());	\
-  };									\
+  }									\
   									\
   template<typename LType, class R>					\
   inline								\
@@ -1401,7 +1401,7 @@ namespace adept {
   OPERATOR(const LType& l, const Expression<typename R::type, R>& r) {	\
     using namespace adept::internal;					\
     return BinaryOpScalarLeft<bool, LType, NAME, R>(l, r.cast());	\
-  };									\
+  }									\
   									\
   template<class L, typename RType>					\
   inline								\
@@ -1411,7 +1411,7 @@ namespace adept {
   OPERATOR(const Expression<typename L::type, L>& l, const RType& r) {	\
     using namespace adept::internal;					\
     return BinaryOpScalarRight<bool, L, NAME, RType>(l.cast(), r);	\
-  };									\
+  }									\
 									\
   template<class L, class R>						\
   inline								\
@@ -1420,7 +1420,7 @@ namespace adept {
   OPERATOR(const Expression<typename L::type, L>& l,			\
 	   const Expression<typename R::type, R>& r) {			\
     return l.scalar_value() OPSYMBOL r.scalar_value();			\
-  };									\
+  }									\
   									\
   template<typename LType, class R>					\
   inline								\
@@ -1428,7 +1428,7 @@ namespace adept {
 			       && R::rank == 0, bool>::type		\
   OPERATOR(const LType& l, const Expression<typename R::type, R>& r) {	\
     return l OPSYMBOL r.scalar_value();					\
-  };									\
+  }									\
   									\
   template<class L, typename RType>					\
   inline								\
@@ -1436,7 +1436,7 @@ namespace adept {
 			       && L::rank == 0, bool>::type		\
   OPERATOR(const Expression<typename L::type, L>& l, const RType& r) {	\
     return l.scalar_value() OPSYMBOL r;					\
-  };
+  }
 
 
 // These return bool expressions when applied to expressions of rank

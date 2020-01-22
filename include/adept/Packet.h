@@ -387,7 +387,7 @@ namespace adept {
 			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps,
 			  _mm_min_ps, _mm_max_ps,
 			  mm_hsum_ps, mm_hprod_ps,
-			  mm_hmin_ps, mm_hmax_ps); 
+			  mm_hmin_ps, mm_hmax_ps)
 #elif ADEPT_FLOAT_PACKET_SIZE == 8
     // Use AVX
     ADEPT_DEF_PACKET_TYPE(float, __m256, _mm256_setzero_ps,
@@ -397,7 +397,7 @@ namespace adept {
 			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps,
 			  _mm256_min_ps, _mm256_max_ps,
 			  mm256_hsum_ps, mm256_hprod_ps,
-			  mm256_hmin_ps, mm256_hmax_ps);
+			  mm256_hmin_ps, mm256_hmax_ps)
 #elif ADEPT_FLOAT_PACKET_SIZE != 1
 #error With AVX, ADEPT_FLOAT_PACKET_SIZE must be 1, 4 or 8
 #endif
@@ -412,7 +412,7 @@ namespace adept {
 			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps,
 			  _mm_min_ps, _mm_max_ps,
 			  mm_hsum_ps, mm_hprod_ps,
-			  mm_hmin_ps, mm_hmax_ps); 
+			  mm_hmin_ps, mm_hmax_ps)
 #elif ADEPT_FLOAT_PACKET_SIZE != 1
 #error With SSE2, ADEPT_FLOAT_PACKET_SIZE must be 1 or 4
 #endif
@@ -437,7 +437,7 @@ namespace adept {
 			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd,
 			  _mm_min_pd, _mm_max_pd,
 			  mm_hsum_pd, mm_hprod_pd,
-			  mm_hmin_pd, mm_hmax_pd);
+			  mm_hmin_pd, mm_hmax_pd)
 #elif ADEPT_DOUBLE_PACKET_SIZE == 4
     ADEPT_DEF_PACKET_TYPE(double, __m256d, _mm256_setzero_pd, 
 			  _mm256_load_pd, _mm256_loadu_pd, _mm256_set1_pd,
@@ -446,7 +446,7 @@ namespace adept {
 			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd,
 			  _mm256_min_pd, _mm256_max_pd,
 			  mm256_hsum_pd, mm256_hprod_pd,
-			  mm256_hmin_pd, mm256_hmax_pd);
+			  mm256_hmin_pd, mm256_hmax_pd)
 #elif ADEPT_DOUBLE_PACKET_SIZE != 1
 #error With AVX, ADEPT_DOUBLE_PACKET_SIZE must be 1, 2 or 4
 #endif
@@ -461,7 +461,7 @@ namespace adept {
 			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd,
 			  _mm_min_pd, _mm_max_pd,
 			  mm_hsum_pd, mm_hprod_pd,
-			  mm_hmin_pd, mm_hmax_pd);
+			  mm_hmin_pd, mm_hmax_pd)
 #elif ADEPT_DOUBLE_PACKET_SIZE != 1
 #error With SSE2, ADEPT_DOUBLE_PACKET_SIZE must be 1 or 2
 #endif

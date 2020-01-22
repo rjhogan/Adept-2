@@ -872,12 +872,12 @@ namespace adept {
     return result;					\
   }
 
-  DEFINE_REDUCE_FUNCTION(sum, Sum);
-  DEFINE_REDUCE_FUNCTION(mean, Mean);
-  DEFINE_REDUCE_FUNCTION(product, Product);
-  DEFINE_REDUCE_FUNCTION(maxval, MaxVal);
-  DEFINE_REDUCE_FUNCTION(minval, MinVal);
-  DEFINE_REDUCE_FUNCTION(norm2, Norm2);
+  DEFINE_REDUCE_FUNCTION(sum, Sum)
+  DEFINE_REDUCE_FUNCTION(mean, Mean)
+  DEFINE_REDUCE_FUNCTION(product, Product)
+  DEFINE_REDUCE_FUNCTION(maxval, MaxVal)
+  DEFINE_REDUCE_FUNCTION(minval, MinVal)
+  DEFINE_REDUCE_FUNCTION(norm2, Norm2)
 
 #undef DEFINE_REDUCE_FUNCTION
 
@@ -899,8 +899,8 @@ namespace adept {
     return result;					 \
   }
 
-  DEFINE_BOOL_REDUCE_FUNCTION(all, All);
-  DEFINE_BOOL_REDUCE_FUNCTION(any, Any);
+  DEFINE_BOOL_REDUCE_FUNCTION(all, All)
+  DEFINE_BOOL_REDUCE_FUNCTION(any, Any)
 #undef DEFINE_BOOL_REDUCE_FUNCTION
 
   // count(x) and count(x,dim) is slightly different as it returns

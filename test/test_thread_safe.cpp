@@ -140,9 +140,9 @@ main(int argc, char** argv)
   const double pi = 4.0*atan(1.0);
 
   // Edit these variables to change properties of simulation
-  const int nt = 2000;        // Number of timesteps
+  const int nt = 200;        // Number of timesteps
   const double dt = 0.125;   // Timestep (actually a Courant number)
-  const int ncomputations = 16;
+  const int ncomputations = 8;
 
   // Initial values of field as a double array
   double q_init_save[NX];

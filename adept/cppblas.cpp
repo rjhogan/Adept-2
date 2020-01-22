@@ -56,7 +56,7 @@ extern "C" {
 	      const int* ku, const double* alpha, const double* A, const int* lda,
 	      const double* X, const int* incX, const double* beta, 
 	      const double* Y, const int* incY);
-};
+}
 
 namespace adept {
 
@@ -80,8 +80,8 @@ namespace adept {
 	     A, &lda, &beta, C, &ldc);				\
       }								\
     }
-    ADEPT_DEFINE_GEMM(double, dgemm_, zgemm_);
-    ADEPT_DEFINE_GEMM(float,  sgemm_, cgemm_);
+    ADEPT_DEFINE_GEMM(double, dgemm_, zgemm_)
+    ADEPT_DEFINE_GEMM(float,  sgemm_, cgemm_)
 #undef ADEPT_DEFINE_GEMM
     
     // Matrix-vector multiplication for a general dense matrix
@@ -103,8 +103,8 @@ namespace adept {
 	     &beta, Y, &incY);					\
       }								\
     }
-    ADEPT_DEFINE_GEMV(double, dgemv_, zgemv_);
-    ADEPT_DEFINE_GEMV(float,  sgemv_, cgemv_);
+    ADEPT_DEFINE_GEMV(double, dgemv_, zgemv_)
+    ADEPT_DEFINE_GEMV(float,  sgemv_, cgemv_)
 #undef ADEPT_DEFINE_GEMV
     
     // Matrix-matrix multiplication where matrix A is symmetric
@@ -128,8 +128,8 @@ namespace adept {
 	     B, &ldb, &beta, C, &ldc);					\
       }									\
     }
-    ADEPT_DEFINE_SYMM(double, dsymm_, zsymm_);
-    ADEPT_DEFINE_SYMM(float,  ssymm_, csymm_);
+    ADEPT_DEFINE_SYMM(double, dsymm_, zsymm_)
+    ADEPT_DEFINE_SYMM(float,  ssymm_, csymm_)
 #undef ADEPT_DEFINE_SYMM
     
     // Matrix-vector multiplication where the matrix is symmetric
@@ -147,8 +147,8 @@ namespace adept {
         FUNC(&UploNew, &N, &alpha, A, &lda, X, &incX, &beta, Y, &incY);	\
       }									\
     }
-    ADEPT_DEFINE_SYMV(double, dsymv_, zsymv_);
-    ADEPT_DEFINE_SYMV(float,  ssymv_, csymv_);
+    ADEPT_DEFINE_SYMV(double, dsymv_, zsymv_)
+    ADEPT_DEFINE_SYMV(float,  ssymv_, csymv_)
 #undef ADEPT_DEFINE_SYMV
     
     // Matrix-vector multiplication for a general band matrix
@@ -171,8 +171,8 @@ namespace adept {
 	     X, &incX, &beta, Y, &incY);			\
       }								\
     }
-    ADEPT_DEFINE_GBMV(double, dgbmv_, zgbmv_);
-    ADEPT_DEFINE_GBMV(float,  sgbmv_, cgbmv_);
+    ADEPT_DEFINE_GBMV(double, dgbmv_, zgbmv_)
+    ADEPT_DEFINE_GBMV(float,  sgbmv_, cgbmv_)
 #undef ADEPT_DEFINE_GBMV
   
   } // End namespace internal
@@ -198,8 +198,8 @@ namespace adept {
 		      T beta, T *C, int ldc) {			\
       throw feature_not_available("Cannot perform matrix-matrix multiplication because compiled without BLAS"); \
     }
-    ADEPT_DEFINE_GEMM(double, dgemm_, zgemm_);
-    ADEPT_DEFINE_GEMM(float,  sgemm_, cgemm_);
+    ADEPT_DEFINE_GEMM(double, dgemm_, zgemm_)
+    ADEPT_DEFINE_GEMM(float,  sgemm_, cgemm_)
 #undef ADEPT_DEFINE_GEMM
     
     // Matrix-vector multiplication for a general dense matrix
@@ -212,8 +212,8 @@ namespace adept {
 		      T *Y, const int incY) {			\
       throw feature_not_available("Cannot perform matrix-vector multiplication because compiled without BLAS"); \
     }
-    ADEPT_DEFINE_GEMV(double, dgemv_, zgemv_);
-    ADEPT_DEFINE_GEMV(float,  sgemv_, cgemv_);
+    ADEPT_DEFINE_GEMV(double, dgemv_, zgemv_)
+    ADEPT_DEFINE_GEMV(float,  sgemv_, cgemv_)
 #undef ADEPT_DEFINE_GEMV
     
     // Matrix-matrix multiplication where matrix A is symmetric
@@ -228,8 +228,8 @@ namespace adept {
 		      T *C, const int ldc) {				\
       throw feature_not_available("Cannot perform symmetric matrix-matrix multiplication because compiled without BLAS"); \
     }
-    ADEPT_DEFINE_SYMM(double, dsymm_, zsymm_);
-    ADEPT_DEFINE_SYMM(float,  ssymm_, csymm_);
+    ADEPT_DEFINE_SYMM(double, dsymm_, zsymm_)
+    ADEPT_DEFINE_SYMM(float,  ssymm_, csymm_)
 #undef ADEPT_DEFINE_SYMM
     
     // Matrix-vector multiplication where the matrix is symmetric
@@ -241,8 +241,8 @@ namespace adept {
 		      const T beta, T *Y, const int incY) {		\
       throw feature_not_available("Cannot perform symmetric matrix-vector multiplication because compiled without BLAS"); \
     }
-    ADEPT_DEFINE_SYMV(double, dsymv_, zsymv_);
-    ADEPT_DEFINE_SYMV(float,  ssymv_, csymv_);
+    ADEPT_DEFINE_SYMV(double, dsymv_, zsymv_)
+    ADEPT_DEFINE_SYMV(float,  ssymv_, csymv_)
 #undef ADEPT_DEFINE_SYMV
     
     // Matrix-vector multiplication for a general band matrix
@@ -256,8 +256,8 @@ namespace adept {
 		      const int incY) {				\
       throw feature_not_available("Cannot perform band matrix-vector multiplication because compiled without BLAS"); \
     }
-    ADEPT_DEFINE_GBMV(double, dgbmv_, zgbmv_);
-    ADEPT_DEFINE_GBMV(float,  sgbmv_, cgbmv_);
+    ADEPT_DEFINE_GBMV(double, dgbmv_, zgbmv_)
+    ADEPT_DEFINE_GBMV(float,  sgbmv_, cgbmv_)
 #undef ADEPT_DEFINE_GBMV
 
   }

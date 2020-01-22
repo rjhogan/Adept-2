@@ -326,10 +326,10 @@ namespace adept {
     FixedArray& OPERATOR(const RType& rhs) {			\
       return *this = noalias(*this OPSYMBOL rhs);		\
     }
-    ADEPT_DEFINE_OPERATOR(operator+=, +);
-    ADEPT_DEFINE_OPERATOR(operator-=, -);
-    ADEPT_DEFINE_OPERATOR(operator*=, *);
-    ADEPT_DEFINE_OPERATOR(operator/=, /);
+    ADEPT_DEFINE_OPERATOR(operator+=, +)
+    ADEPT_DEFINE_OPERATOR(operator-=, -)
+    ADEPT_DEFINE_OPERATOR(operator*=, *)
+    ADEPT_DEFINE_OPERATOR(operator/=, /)
   //    ADEPT_DEFINE_OPERATOR(operator&=, &);
   //    ADEPT_DEFINE_OPERATOR(operator|=, |);
 #undef ADEPT_DEFINE_OPERATOR

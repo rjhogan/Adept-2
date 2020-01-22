@@ -156,6 +156,13 @@ namespace adept {
     { message_ = message; }
   };
 
+  class fortran_interoperability_error : public array_exception {
+  public:
+    fortran_interoperability_error(const std::string& message
+				   = "Fortran interoperability error")
+    { message_ = message; }
+  };
+  
 
   // -------------------------------------------------------------------
   // Provide location of where exception was thrown

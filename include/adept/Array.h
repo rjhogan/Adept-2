@@ -43,7 +43,7 @@ namespace adept {
     PRINT_STYLE_PLAIN,
     PRINT_STYLE_CSV,
     PRINT_STYLE_CURLY,
-    PRINT_STYLE_MATLAB,
+    PRINT_STYLE_MATLAB
   };
 
   namespace internal {
@@ -626,10 +626,10 @@ namespace adept {
     Array& OPERATOR(const RType& rhs) {			\
       return *this = noalias(*this OPSYMBOL rhs);	\
     }
-    ADEPT_DEFINE_OPERATOR(operator+=, +);
-    ADEPT_DEFINE_OPERATOR(operator-=, -);
-    ADEPT_DEFINE_OPERATOR(operator*=, *);
-    ADEPT_DEFINE_OPERATOR(operator/=, /);
+    ADEPT_DEFINE_OPERATOR(operator+=, +)
+    ADEPT_DEFINE_OPERATOR(operator-=, -)
+    ADEPT_DEFINE_OPERATOR(operator*=, *)
+    ADEPT_DEFINE_OPERATOR(operator/=, /)
   //    ADEPT_DEFINE_OPERATOR(operator&=, &);
   //    ADEPT_DEFINE_OPERATOR(operator|=, |);
 #undef ADEPT_DEFINE_OPERATOR
