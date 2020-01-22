@@ -145,7 +145,7 @@ namespace adept {
       }
       void unregister(Index n) { ADEPT_ACTIVE_STACK->unregister_gradients(value_, n); }
 #ifdef ADEPT_MOVE_SEMANTICS
-      void swap(GradientIndex& rhs) noexcept {
+      void swap_value(GradientIndex& rhs) noexcept {
 	Index tmp_value = rhs.get();
 	rhs.set(value_);
 	value_ = tmp_value;
@@ -168,7 +168,7 @@ namespace adept {
       void assert_inactive() { }
       void unregister(Index) { }
 #ifdef ADEPT_MOVE_SEMANTICS
-      void swap(GradientIndex& rhs) noexcept { }
+      void swap_value(GradientIndex& rhs) noexcept { }
 #endif
     };
 
@@ -450,7 +450,7 @@ namespace adept {
       r.storage_ = tmp_storage;
       swap(l.dimensions_, r.dimensions_);
       swap(l.offset_, r.offset_);
-      static_cast<GradientIndex<IsActive>&>(l).swap(static_cast<GradientIndex<IsActive>&>(r));
+      static_cast<GradientIndex<IsActive>&>(l).swap_value(static_cast<GradientIndex<IsActive>&>(r));
     }
 
 #endif

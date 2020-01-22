@@ -1,3 +1,6 @@
+BUGS
+spread<DIM> function does not use the right DIM
+
 DESIRABLE BUT NEEDS NEW STACK
 Differentiated BLAS operations on symmetric matrices etc
 Implement general OpenMP for forward pass
