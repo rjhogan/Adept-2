@@ -210,11 +210,6 @@ namespace adept {
 	throw fortran_interoperability_error(
            "Type of Fortran array does not match expected type");
       }
-      std::cout << "lower_bound =";
-      for (int irank = 0; irank < Rank; ++irank) {
-	std::cout << " " << ad.dim[irank].lower_bound;
-      }
-      std::cout << "\n";
     }
 
     // Return a pointer to the underlying data casting to the
