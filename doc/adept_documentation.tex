@@ -113,9 +113,9 @@
     Mathematical, Physical and Computational Sciences, University of
     Reading, UK,}}
 
-\date{Document version 2.0.5 (February 2018) applicable to \Adept\ version
-  2.0.5 \thanks{This document is copyright \copyright\ Robin J. Hogan
-    2013--2018.  Permission is granted to copy, distribute and/or
+\date{Document version 2.0.6 (January 2020) applicable to \Adept\ version
+  2.0.6 \thanks{This document is copyright \copyright\ Robin J. Hogan
+    2013--2020.  Permission is granted to copy, distribute and/or
     modify this document under the terms of the GNU Free Documentation
     License, Version 1.3 or any later version published by the Free
     Software Foundation. This license may be found at
@@ -1792,9 +1792,12 @@ choice if you have Fortran code that you wish to convert to C++.
   left-hand-side of the statement, making a temporary copy of the
   right-hand-side if they do. This can be overridden with the
   \code{noalias} function. See section \ref{sec:bounds}.
+\item[Interoperability with Fortran arrays.] The Fortran 2018 standard
+  enables Fortran's assumed-shape arrays to be passed to and from
+  C/C++. Section \ref{sec:fortran} describes how they can be treated
+  as \Adept\ arrays within C++.
 \end{description}% 
 %
-
 
 \section{The \codestyle{Array} class}
 \label{sec:array}
@@ -2937,6 +2940,149 @@ are \code{PRINT\_STYLE\_PLAIN} (default), \code{PRINT\_STYLE\_CURLY},
 \code{PRINT\_STYLE\_MATLAB} (matrix ordering indicated by Matlab-style
 semi-colons and square brackets).
 
+\section{Fortran interoperability}
+\label{sec:fortran}
+The traditional way to pass arrays between Fortran and C/C++ makes use
+of the fact that Fortran passes its ``explicit-shape'' arrays (the
+type used since Fortran-77) to and from routines simply as a pointer
+to the first element of the array. It is then up to the receiving
+routine to declare the size of the array correctly.  \Adept\ arrays
+can therefore be passed to Fortran routines using their \code{data()}
+and \code{const\_data()} member functions, which return pointers to
+the first element of the array.
+
+Since Fortran-90, the language also supports ``assumed-shape'' arrays,
+which are very much like \Adept's \code{Array} objects: they contain
+within them the extent of each array dimension, and may refer to data
+that are strided (non-contiguous) in memory.  Fortran passes an
+assumed-shape array to subroutines and functions in the form of a
+pointer to its \emph{array descriptor} (sometimes known as a
+\emph{dope vector}), which contains a pointer to the first element of
+the array and information on the rank, type, and the extent and
+stride-in-memory of each dimension.
+
+The Fortran 2018 standard defines an interface to allow assumed-shape
+arrays to be passed to and from C or C++ functions.  Fortran compilers
+supporting this standard provide a C/C++ header file
+\code{ISO\_Fortran\_binding.h} that defines the array descriptor as a
+structure \code{CFI\_cdesc\_t}.  The \Adept\ header file
+\code{adept\_fortran.h} provides a class \code{adept::FortranArray}, a
+thin wrapper to this structure, that enables an \Adept\ \code{Array}
+object to share its data with a Fortran array. This is very efficient
+as only the array descriptor information is copied, not the actual
+data in the array.  At the time of writing, support for this
+capability in Fortran compilers is limited.
+
+An crucial point to be aware of in all the examples that follow is
+that \Adept\ indexes its arrays in row-major order starting at 0,
+while Fortran indexes its arrays in column-major order starting (by
+default) at 1. When arrays are passed between the two languages, the
+native array convention is adopted. Therefore, matrix element
+\code{A(0,10)} in \Adept\ would be indexed as \code{A(11,1)} in
+Fortran.
+
+\subsection{Passing arrays from C++/Adept to Fortran}
+Suppose we have a Fortran subroutine that takes an integer array and a
+single-precision array as arguments:
+\begin{lstlisting}[language=Fortran]
+ ! Define a routine callable with same name in C/C++
+ subroutine fortran_routine(int_array, flt_array) bind(c)
+   implicit none
+   integer(kind=4), intent(inout) :: int_array(:,:) ! Matrix of 4-byte integers
+   real(kind=4),    intent(inout) :: flt_array(:,:) ! Matrix of 4-byte real numbers
+   ! --- Body of routine here ---
+ end subroutine fortran_routine
+\end{lstlisting}
+The following C++ program demonstrates how \Adept\ arrays can be
+passed this routine:
+\begin{lstlisting}
+ #include <adept_fortran.h>
+ // Declare interface to the routine, turning off C++ name mangling so that it can be linked
+ // to Fortran 
+ extern "C" void fortran_routine(adept::FortranArray* int_array,
+                                 adept::FortranArray* flt_array);
+ int main() {
+   // Initialize Adept matrices, using shortcuts to the types Array<2,int> and Array<2,float>
+   adept::intMatrix   int_arr = {{2, 3, 5}, {7, 11, 13}};
+   adept::floatMatrix flt_arr = {{2.0, 3.0, 5.0}, {7.0, 11.0, 13.0}};
+   // Convert Adept arrays to Fortran arrays pointing to the same data, and call the routine;
+   // the conversion to FortranArray pointers is done automatically
+   fortran_routine(adept::FortranArray(int_arr),
+                   adept::FortranArray(flt_arr));
+   return 0;
+ }
+\end{lstlisting}
+This will fail to compile if \code{ISO\_Fortran\_binding.h} file is
+not found. To link the two object files into an executable you will
+need to use your C++ compiler, but include the relevant Fortran
+library on the command line (e.g.\ \code{-lgfortran} if you compiled
+\code{fortran\_routine} with the GNU Fortran compiler, or
+\code{-lifcore} if you used the Intel Fortran compiler).
+
+\subsection{Passing arrays from Fortran to C++/Adept}
+We can also pass arrays the other way. Consider the following Fortran
+program:
+\begin{lstlisting}[language=Fortran]
+ program test_interoperability
+   implicit none
+   ! Define interface to a function implemented in C++
+   interface
+     subroutine adept_routine(int_array, flt_array) bind(c)
+       integer(kind=4), intent(inout) :: int_array(:,:) ! Matrix of 4-byte integers
+       real(kind=4),    intent(inout) :: flt_array(:,:) ! Matrix of 4-byte real numbers
+     end subroutine adept_routine 
+   end interface
+   ! Body of program starts here
+   integer(kind=4), allocatable :: imat(:,:)
+   real(kind=4),    allocatable :: fmat(:,:)  
+   ! --- Code to allocate and populate imat and fmat here ---
+   ! Now call the C++ function
+   call adept_routine(imat, fmat)
+ end program test_interoperability
+\end{lstlisting}
+The routine could be implemented in C++ as follows:
+\begin{lstlisting}
+ #include <adept_fortran.h>
+ extern "C" void adept_routine(adept::FortranArray* int_array,
+                               adept::FortranArray* flt_array) {
+   // Declare Adept arrays
+   adept::intMatrix   int_arr;
+   adept::floatMatrix flt_arr;
+   // Associate Adept arrays with Fortran data, or throw a fortran_interoperability_error
+   // exception if the rank or type do not match
+   int_arr >>= int_array;
+   flt_arr >>= flt_array;
+   // --- Operations on int_arr and flt_arr now modify the Fortran arrays ---
+ }
+\end{lstlisting}
+Since the executable now contains a Fortran source file with a
+\code{program} statement, rather than a C++ source file defining a
+\code{main} function, the linking step of the compilation must be
+carried out using the Fortran compiler, but passing it the C++
+standard library, i.e.\ \code{-lstdc++}.
+
+In the example above, the \Adept\ arrays \code{int\_arr} and
+\code{flt\_arr} behave in the same way as ``linked'' arrays described
+in section \ref{sec:array}: they know that they do not ``own'' the
+original data, so if the user then calls their \code{clear} or
+\code{resize} member functions, they will unlink themselves from the
+Fortran arrays.  The \code{FortranArray} class provides no array
+features itself, so must be linked to an \code{Array} object before
+any work can be done on it, but it does provide a handful of member
+functions for querying its properties:
+\begin{description}
+ \citem{int rank()} Return the number of dimensions of the array.
+ \citem{int dimension(int i)} Return the extent of dimension \code{i}
+ in memory, counting dimensions from 0 but using the Fortran ordering.
+ \citem{int offset(int i)} Return the stride in memory of dimension
+ \code{i}.
+ \citem{bool is\_type<Type>()} Return \code{true} if the element type
+ of the array is the same as \code{Type} (which must be a known type at
+ compile time).
+ \citem{Type* data<Type>()} Return a pointer to the first element of
+ the data, cast to the specified type.
+\end{description}
+
 \chapter{General considerations}
 \label{chap:gen}
 
@@ -3223,6 +3369,9 @@ that can only be detected at run-time, for example, calling the
 \code{Array}.
 \citem{matrix\_ill\_conditioned} An attempt has been made to factorize
 an ill-conditioned matrix (either via \code{solve} or \code{inv}).
+\citem{fortran\_interoperability\_error} An attempt has been made to
+associate an \Adept\ \code{Array} with a \code{FortranArray} of the
+wrong rank or type.
 \end{description}
 
 \section{Configuring the behaviour of \Adept}
