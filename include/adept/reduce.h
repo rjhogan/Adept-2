@@ -456,7 +456,7 @@ namespace adept {
 	// array
 	total = 0;
       }
-      else if (dims[E::rank-1] > Packet<Type>::size*2
+      else if (dims[E::rank-1] >= Packet<Type>::size*2
 	       && rhs.all_arrays_contiguous()) {
 	// Vectorization is possible
 	Packet<Type> ptotal(f.first_value());

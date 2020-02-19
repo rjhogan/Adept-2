@@ -26,7 +26,7 @@ OBJECTS = algorithm.o algorithm_noad.o test_checkpoint.o \
 	test_fixed_arrays_active.o test_radiances_array.o \
 	test_fixed_arrays.o test_constructors.o test_derivatives.o \
 	test_array_derivatives.o test_thread_safe_arrays.o \
-	test_complex_arrays.o
+	test_complex_arrays.o test_packet_operations.o
 GSL_OBJECTS = test_gsl_interface.o state.o rosenbrock_banana_function.o
 
 GSL_LIBS = -lgsl
@@ -54,7 +54,8 @@ PROGRAMS = test_adept test_adept_with_and_without_ad test_radiances \
 	test_array_speed test_no_lib test_radiances_array test_constructors \
 	test_arrays test_arrays_active test_arrays_active_pausable \
 	test_fixed_arrays test_fixed_arrays_active test_derivatives \
-	test_array_derivatives test_thread_safe_arrays test_complex_arrays
+	test_array_derivatives test_thread_safe_arrays test_complex_arrays \
+	test_packet_operations
 
 all:
 	@echo "********************************************************"
@@ -153,6 +154,10 @@ test_array_derivatives: test_array_derivatives.o $(LIBADEPT)
 # Test program 16
 test_thread_safe_arrays: test_thread_safe_arrays.o $(LIBADEPT)
 	$(CXXLINK) test_thread_safe_arrays.o $(MYLIBS)
+
+# Test program 17
+test_packet_operations: test_packet_operations.o $(LIBADEPT)
+	$(CXXLINK) test_packet_operations.o $(MYLIBS)
 
 # The no-automatic-differentiation version of the algorithm: uses the
 # -DADEPT_NO_AUTOMATIC_DIFFERENTIATION to produce a version of the

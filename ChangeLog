@@ -18,6 +18,10 @@ version 2.0.6
 	- Added array_fortran.h to provide the ability to exchange arrays
 	between C++/Adept and Fortran, for those Fortran compilers that
 	support the 2018 standard
+	- Added support for AVX512 vectorization: operations on 16 floats
+	and 8 doubles at a time;
+	- Added test_packet_operations to check Intel vector intrinsics
+	correctly implemented
 
 version 2.0.5 (6 February 2018)
 	- Use set_array_print_style(x) to set behaviour of <<Array;
