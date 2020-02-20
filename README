@@ -1,5 +1,5 @@
 Adept: Automatic Differentiation using Expression Templates
-Version: 2.0, September 2017
+Version: 2.0.6, February 2020
 By Robin Hogan <r.j.hogan@ecmwf.int>
 
 
@@ -17,15 +17,11 @@ functionalities:
   optimization. It is backwards compatible with and as fast as Adept
   1.1.
 
-Adept 2 uses a single expression template framework under the hood to
+Adept 2 uses a single expression-template framework under the hood to
 get good performance for both of these aspects. The web site is at
 http://www.met.reading.ac.uk/clouds/adept/ where you can find the
-latest version of the code.
-
-The web site for Adept version
-1.1. (http://www.met.reading.ac.uk/clouds/adept/) includes a link to
-the paper describing how the automatic differentiation capability
-works:
+latest version of the code. The web site includes a link to the paper
+describing how the automatic differentiation capability works:
 
 Hogan, R. J., 2014: Fast reverse-mode automatic differentiation using
 expression templates in C++. ACM Trans. Math. Soft., 40, 26:1-26:16.
@@ -56,8 +52,8 @@ C++ compiler options, type this instead:
 
 Note that by default the compiler flags are "-O2 -g", but you may find
 measurable speed-up in using the "-O3" optimization flag (the "-g"
-option stores debugging information in the library, which shouldn't
-affect execution speed).
+option stores debugging information in the library; it will make the
+executable larger, but shouldn't affect execution speed).
 
 In addition to BLAS and LAPACK, the configure script also looks for
 the other automatic-differentiation libraries ADOL-C, CppAD and
