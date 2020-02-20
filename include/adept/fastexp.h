@@ -16,15 +16,62 @@ namespace adept {
 
   namespace internal {
 
+    // Functions to return 2^n
+#ifdef __AVX512F__
+    // Was Vec8d
+    inline __m512d vm_pow2n(__m512d n) {
+      const double pow2_52 = 4503599627370496.0;   // 2^52
+      const double bias = 1023.0;                  // bias in exponent
+      __m512d a = n + _mm512_set1_pd(bias+pow2_52);// put n + bias in least significant bits
+      __m512i b = _mm512_castpd_si512(a);          // bit-cast to integer
+      // shift left 52 places to get value into exponent field
+      __m512i c = _mm512_sll_epi64(b, _mm_cvtsi32_si128(52));
+      __m512d d = _mm512_castsi512_pd(c);          // bit-cast back to double
+      return d;
+    }
+
+#endif
+    
 #ifdef __AVX__
     // Was Vec4d
     inline __m256d vm_pow2n(__m256d n) {
       const double pow2_52 = 4503599627370496.0;   // 2^52
       const double bias = 1023.0;                  // bias in exponent
-      __m256d a = n + _mm256_set1_pd(bias + pow2_52);            // put n + bias in least significant bits
+      __m256d a = n + _mm256_set1_pd(bias+pow2_52);// put n + bias in least significant bits
+#ifdef __AVX2__
       __m256i b = _mm256_castpd_si256(a);          // bit-cast to integer
-      __m256i c = _mm256_sll_epi64(b, _mm_cvtsi32_si128(52));                           // shift left 52 places to get value into exponent field
+      // shift left 52 places to get value into exponent field
+      __m256i c = _mm256_sll_epi64(b, _mm_cvtsi32_si128(52));
+#else
+      // This is completely unoptimized but it works
+      union {
+	__m256i b;
+	int64_t b_data[4];
+      };
+      b = _mm256_castpd_si256(a);          // bit-cast to integer
+      union {
+	__m256i c;
+	int64_t c_data[4];
+      };
+      for (int i = 0; i < 4; ++i) {
+	c_data[i] = b_data[i] << 52;
+      }
+#endif      
       __m256d d = _mm256_castsi256_pd(c);          // bit-cast back to double
+      return d;
+    }
+#endif
+
+#ifdef __SSE2__
+    // Was Vec2d
+    inline __m128d vm_pow2n(__m128d n) {
+      const double pow2_52 = 4503599627370496.0;   // 2^52
+      const double bias = 1023.0;                  // bias in exponent
+      __m128d a = n + _mm_set1_pd(bias+pow2_52);// put n + bias in least significant bits
+      __m128i b = _mm_castpd_si128(a);          // bit-cast to integer
+      // shift left 52 places to get value into exponent field
+      __m128i c = _mm_sll_epi64(b, _mm_cvtsi32_si128(52));
+      __m128d d = _mm_castsi128_pd(c);          // bit-cast back to double
       return d;
     }
 #endif

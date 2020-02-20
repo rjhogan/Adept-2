@@ -85,6 +85,11 @@ main(int argc, const char** argv)
   test_packet_operations<float>();
   test_packet_operations<double>();
 
+  Packet<double> d(2.0);
+  Packet<double> e = fastexp(d);
+  std::cout << "e=" << e << "\n";
+  
+  
   test_vector_operations<float>(N);
   test_vector_operations<double>(N);
 

@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <cmath>
 
 // Headers needed for x86 vector intrinsics
 #ifdef __SSE2__
@@ -134,6 +135,8 @@ namespace adept {
       void operator*=(const Packet& d) { data*=d.data; }
       void operator/=(const Packet& d) { data/=d.data; }
       T value() const { return data; }
+      T& operator[](int) { return data; }
+      const T& operator[](int) const { return data; }
       T data;
     };
 
@@ -184,6 +187,23 @@ namespace adept {
     T hmin(const Packet<T>& __restrict x) { return x.data; }
     template <typename T>
     T hmax(const Packet<T>& __restrict x) { return x.data; }
+    template <typename T>
+    Packet<T> fma(Packet<T> a, Packet<T> b, Packet<T> c)
+    { return (a*b) + c; }
+    template <typename T>
+    Packet<T> fma(T a, Packet<T> b, T c)
+    { return (Packet<T>(a)*b) + Packet<T>(c); }
+    template <typename T>
+    Packet<T> fnma(Packet<T> a, Packet<T> b, Packet<T> c)
+    { return - (a*b) + c; }
+    template <typename T>
+    Packet<T> round(const Packet<T> a) {
+      Packet<T> r;
+      for (int i = 0; i < Packet<T>::size; ++i) {
+	r[i] = std::round(a[i]);
+      }
+      return r;
+    }
     
     // -------------------------------------------------------------------
     // Define a specialization, and the basic mathematical operators
@@ -226,10 +246,12 @@ namespace adept {
       { data = MUL(data, d.data); }				\
       void operator/=(const Packet<TYPE>& __restrict d)		\
       { data = DIV(data, d.data); }				\
-      TYPE value() const { return value_; }			\
+      TYPE value() const { return value_[0]; }			\
+      TYPE& operator[](int i) { return value_[i]; }	        \
+      const TYPE& operator[](int i) const { return value_[i]; }	\
       union {							\
 	INTRINSIC_TYPE data;					\
-	TYPE value_;						\
+	TYPE value_[size];					\
       };							\
     };								\
     inline							\
@@ -290,7 +312,7 @@ namespace adept {
     Packet<TYPE> operator+(const Packet<TYPE>& __restrict x)	\
     { return x; }
 
-#define ADEPT_DEF_PACKET_FUNCTIONS(TYPE, FMA, FNMA, ROUND) \
+#define ADEPT_DEF_PACKET_FMA(TYPE, FMA, FNMA)		   \
     inline						   \
     Packet<TYPE> fma(Packet<TYPE> a, Packet<TYPE> b,	   \
 		     Packet<TYPE> c)			   \
@@ -298,13 +320,8 @@ namespace adept {
     inline						   \
     Packet<TYPE> fnma(Packet<TYPE> a, Packet<TYPE> b,	   \
 		     Packet<TYPE> c)			   \
-    { return FNMA(a.data,b.data,c.data); }		   \
-    inline						   \
-    Packet<TYPE> round(Packet<TYPE> x)			   \
-    { return ROUND(x.data, (_MM_FROUND_TO_NEAREST_INT	   \
-			    |_MM_FROUND_NO_EXC)); }
-
-
+    { return FNMA(a.data,b.data,c.data); }
+    
     // -------------------------------------------------------------------
     // Define horizontal sum, product, min and max functions (found on
     // Stack Overflow and Intel Forum...)
@@ -427,9 +444,9 @@ namespace adept {
     // -------------------------------------------------------------------
     // Define single-precision Packet
     // -------------------------------------------------------------------
-#ifdef __AVX512F__
-
 #if ADEPT_FLOAT_PACKET_SIZE == 16
+
+  #ifdef __AVX512F__
     ADEPT_DEF_PACKET_TYPE(float, __m512, _mm512_setzero_ps,
 			  _mm512_load_ps, _mm512_loadu_ps, _mm512_set1_ps,
 			  _mm512_store_ps, _mm512_storeu_ps,
@@ -438,8 +455,13 @@ namespace adept {
 			  _mm512_min_ps, _mm512_max_ps,
 			  _mm512_reduce_add_ps, _mm512_reduce_mul_ps,
 			  _mm512_reduce_min_ps, _mm512_reduce_max_ps)
+  #else
+    #error ADEPT_FLOAT_PACKET_SIZE=16 requires AVX512F intrinsics
+  #endif
+
 #elif ADEPT_FLOAT_PACKET_SIZE == 8
-    // Need to use standard AVX
+
+  #ifdef __AVX__
     ADEPT_DEF_PACKET_TYPE(float, __m256, _mm256_setzero_ps,
 			  _mm256_load_ps, _mm256_loadu_ps, _mm256_set1_ps,
 			  _mm256_store_ps, _mm256_storeu_ps,
@@ -448,49 +470,13 @@ namespace adept {
 			  _mm256_min_ps, _mm256_max_ps,
 			  mm256_hsum_ps, mm256_hprod_ps,
 			  mm256_hmin_ps, mm256_hmax_ps)
-#elif ADEPT_FLOAT_PACKET_SIZE == 4
-    // Need to use SSE2
-    ADEPT_DEF_PACKET_TYPE(float, __m128, _mm_setzero_ps, 
-			  _mm_load_ps, _mm_loadu_ps, _mm_set1_ps,
-			  _mm_store_ps, _mm_storeu_ps,
-			  _mm_add_ps, _mm_sub_ps,
-			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps,
-			  _mm_min_ps, _mm_max_ps,
-			  mm_hsum_ps, mm_hprod_ps,
-			  mm_hmin_ps, mm_hmax_ps)
-#elif ADEPT_FLOAT_PACKET_SIZE != 1
-#error With AVX512, ADEPT_FLOAT_PACKET_SIZE must be 1, 4, 8 or 16
-#endif
-
-#elif defined(__AVX__)
-
-#if ADEPT_FLOAT_PACKET_SIZE == 8
-    // Use standard AVX
-    ADEPT_DEF_PACKET_TYPE(float, __m256, _mm256_setzero_ps,
-			  _mm256_load_ps, _mm256_loadu_ps, _mm256_set1_ps,
-			  _mm256_store_ps, _mm256_storeu_ps,
-			  _mm256_add_ps, _mm256_sub_ps,
-			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps,
-			  _mm256_min_ps, _mm256_max_ps,
-			  mm256_hsum_ps, mm256_hprod_ps,
-			  mm256_hmin_ps, mm256_hmax_ps)
-#elif ADEPT_FLOAT_PACKET_SIZE == 4
-    // Need to use SSE2
-    ADEPT_DEF_PACKET_TYPE(float, __m128, _mm_setzero_ps, 
-			  _mm_load_ps, _mm_loadu_ps, _mm_set1_ps,
-			  _mm_store_ps, _mm_storeu_ps,
-			  _mm_add_ps, _mm_sub_ps,
-			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps,
-			  _mm_min_ps, _mm_max_ps,
-			  mm_hsum_ps, mm_hprod_ps,
-			  mm_hmin_ps, mm_hmax_ps)
-#elif ADEPT_FLOAT_PACKET_SIZE != 1
-#error With AVX, ADEPT_FLOAT_PACKET_SIZE must be 1, 4 or 8
-#endif
+  #else
+    #error ADEPT_FLOAT_PACKET_SIZE=8 requires AVX intrinsics
+  #endif
     
-#elif defined(__SSE2__)
+#elif ADEPT_FLOAT_PACKET_SIZE == 4
 
-#if ADEPT_FLOAT_PACKET_SIZE == 4
+  #ifdef __SSE2__  
     ADEPT_DEF_PACKET_TYPE(float, __m128, _mm_setzero_ps, 
 			  _mm_load_ps, _mm_loadu_ps, _mm_set1_ps,
 			  _mm_store_ps, _mm_storeu_ps,
@@ -499,22 +485,20 @@ namespace adept {
 			  _mm_min_ps, _mm_max_ps,
 			  mm_hsum_ps, mm_hprod_ps,
 			  mm_hmin_ps, mm_hmax_ps)
+  #else
+    #error ADEPT_FLOAT_PACKET_SIZE=4 requires SSE2 intrinsics
+  #endif
+    
 #elif ADEPT_FLOAT_PACKET_SIZE != 1
-#error With SSE2, ADEPT_FLOAT_PACKET_SIZE must be 1 or 4
-#endif
-
-#elif ADEPT_FLOAT_PACKET_SIZE > 1
-
-#error ADEPT_FLOAT_PACKET_SIZE > 1 requires SSE2 or AVX
-
+  #error ADEPT_FLOAT_PACKET_SIZE must be 1, 4, 8 or 16
 #endif
 
     // -------------------------------------------------------------------
     // Define double-precision Packet
     // -------------------------------------------------------------------
-#ifdef __AVX512F__
-
 #if ADEPT_DOUBLE_PACKET_SIZE == 8
+
+  #ifdef __AVX512F__
     ADEPT_DEF_PACKET_TYPE(double, __m512d, _mm512_setzero_pd, 
 			  _mm512_load_pd, _mm512_loadu_pd, _mm512_set1_pd,
 			  _mm512_store_pd, _mm512_storeu_pd,
@@ -522,44 +506,19 @@ namespace adept {
 			  _mm512_mul_pd, _mm512_div_pd, _mm512_sqrt_pd,
 			  _mm512_min_pd, _mm512_max_pd,
 			  _mm512_reduce_add_pd, _mm512_reduce_mul_pd,
-			  _mm512_reduce_min_pd, _mm512_reduce_max_pd) 
-#elif ADEPT_DOUBLE_PACKET_SIZE == 4
-    // Need to use standard AVX
-    ADEPT_DEF_PACKET_TYPE(double, __m256d, _mm256_setzero_pd, 
-			  _mm256_load_pd, _mm256_loadu_pd, _mm256_set1_pd,
-			  _mm256_store_pd, _mm256_storeu_pd,
-			  _mm256_add_pd, _mm256_sub_pd,
-			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd,
-			  _mm256_min_pd, _mm256_max_pd,
-			  mm256_hsum_pd, mm256_hprod_pd,
-			  mm256_hmin_pd, mm256_hmax_pd)
-#elif ADEPT_DOUBLE_PACKET_SIZE == 2
-    // Need to use SSE2
-    ADEPT_DEF_PACKET_TYPE(double, __m128d, _mm_setzero_pd, 
-			  _mm_load_pd, _mm_loadu_pd, _mm_set1_pd,
-			  _mm_store_pd, _mm_storeu_pd,
-			  _mm_add_pd, _mm_sub_pd,
-			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd,
-			  _mm_min_pd, _mm_max_pd,
-			  mm_hsum_pd, mm_hprod_pd,
-			  mm_hmin_pd, mm_hmax_pd)
-#elif ADEPT_DOUBLE_PACKET_SIZE != 1
-#error With AVX512, ADEPT_DOUBLE_PACKET_SIZE must be 1, 2, 4 or 8
-#endif
+			  _mm512_reduce_min_pd, _mm512_reduce_max_pd)
+    ADEPT_DEF_PACKET_FMA(double, _mm512_fmadd_pd, _mm512_fnmadd_pd)
+    inline Packet<double> round(Packet<double> x)
+    { return _mm512_roundscale_pd(x.data, 0); }
     
-#elif defined(__AVX__)
-
-#if ADEPT_DOUBLE_PACKET_SIZE == 2
-    // Need to use SSE2
-    ADEPT_DEF_PACKET_TYPE(double, __m128d, _mm_setzero_pd, 
-			  _mm_load_pd, _mm_loadu_pd, _mm_set1_pd,
-			  _mm_store_pd, _mm_storeu_pd,
-			  _mm_add_pd, _mm_sub_pd,
-			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd,
-			  _mm_min_pd, _mm_max_pd,
-			  mm_hsum_pd, mm_hprod_pd,
-			  mm_hmin_pd, mm_hmax_pd)
+  #else
+    #error ADEPT_DOUBLE_PACKET_SIZE=8 requires AVX512F intrinsics
+  #endif
+    
 #elif ADEPT_DOUBLE_PACKET_SIZE == 4
+
+  #ifdef __AVX__
+    
     ADEPT_DEF_PACKET_TYPE(double, __m256d, _mm256_setzero_pd, 
 			  _mm256_load_pd, _mm256_loadu_pd, _mm256_set1_pd,
 			  _mm256_store_pd, _mm256_storeu_pd,
@@ -568,15 +527,20 @@ namespace adept {
 			  _mm256_min_pd, _mm256_max_pd,
 			  mm256_hsum_pd, mm256_hprod_pd,
 			  mm256_hmin_pd, mm256_hmax_pd)
-    ADEPT_DEF_PACKET_FUNCTIONS(double, _mm256_fmadd_pd, _mm256_fnmadd_pd, _mm256_round_pd);
+    #ifdef __FMA__
+      ADEPT_DEF_PACKET_FMA(double, _mm256_fmadd_pd, _mm256_fnmadd_pd)
+    #endif
+    inline Packet<double> round(Packet<double> x)
+    { return _mm256_round_pd(x.data,
+			     (_MM_FROUND_TO_NEAREST_INT|_MM_FROUND_NO_EXC)); }
+    
+  #else
+    #error ADEPT_DOUBLE_PACKET_SIZE=4 requires AVX intrinsics
+  #endif
+    
+#elif ADEPT_DOUBLE_PACKET_SIZE == 2
 
-#elif ADEPT_DOUBLE_PACKET_SIZE != 1
-#error With AVX, ADEPT_DOUBLE_PACKET_SIZE must be 1, 2 or 4
-#endif
-
-#elif defined(__SSE2__)
-
-#if ADEPT_DOUBLE_PACKET_SIZE == 2
+  #ifdef __SSE2__
     ADEPT_DEF_PACKET_TYPE(double, __m128d, _mm_setzero_pd, 
 			  _mm_load_pd, _mm_loadu_pd, _mm_set1_pd,
 			  _mm_store_pd, _mm_storeu_pd,
@@ -585,17 +549,25 @@ namespace adept {
 			  _mm_min_pd, _mm_max_pd,
 			  mm_hsum_pd, mm_hprod_pd,
 			  mm_hmin_pd, mm_hmax_pd)
+    #ifdef __FMA__
+      ADEPT_DEF_PACKET_FMA(double, _mm_fmadd_pd, _mm_fnmadd_pd)
+    #endif
+    #ifdef __SSE4_1__
+      inline Packet<double> round(Packet<double> x)
+      { return _mm_round_pd(x.data,
+			    (_MM_FROUND_TO_NEAREST_INT|_MM_FROUND_NO_EXC)); }
+    #endif  
+  #else
+    #error ADEPT_PACKET_SIZE=2 requires SSE2 intrinsics
+  #endif
+
 #elif ADEPT_DOUBLE_PACKET_SIZE != 1
-#error With SSE2, ADEPT_DOUBLE_PACKET_SIZE must be 1 or 2
-#endif
-
-#elif ADEPT_DOUBLE_PACKET_SIZE > 1
-
-#error ADEPT_DOUBLE_PACKET_SIZE > 1 requires SSE2 or AVX
-
+  #error ADEPT_DOUBLE_PACKET_SIZE must be 1, 2, 4 or 8
 #endif
     
 #undef ADEPT_DEF_PACKET_TYPE
+#undef ADEPT_DEF_PACKET_FMA
+#undef ADEPT_DEF_PACKET_ROUND
 
 
     // -------------------------------------------------------------------
