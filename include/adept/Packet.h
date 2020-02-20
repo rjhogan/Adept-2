@@ -290,6 +290,20 @@ namespace adept {
     Packet<TYPE> operator+(const Packet<TYPE>& __restrict x)	\
     { return x; }
 
+#define ADEPT_DEF_PACKET_FUNCTIONS(TYPE, FMA, FNMA, ROUND) \
+    inline						   \
+    Packet<TYPE> fma(Packet<TYPE> a, Packet<TYPE> b,	   \
+		     Packet<TYPE> c)			   \
+    { return FMA(a.data,b.data,c.data); }		   \
+    inline						   \
+    Packet<TYPE> fnma(Packet<TYPE> a, Packet<TYPE> b,	   \
+		     Packet<TYPE> c)			   \
+    { return FNMA(a.data,b.data,c.data); }		   \
+    inline						   \
+    Packet<TYPE> round(Packet<TYPE> x)			   \
+    { return ROUND(x.data, (_MM_FROUND_TO_NEAREST_INT	   \
+			    |_MM_FROUND_NO_EXC)); }
+
 
     // -------------------------------------------------------------------
     // Define horizontal sum, product, min and max functions (found on
@@ -554,6 +568,8 @@ namespace adept {
 			  _mm256_min_pd, _mm256_max_pd,
 			  mm256_hsum_pd, mm256_hprod_pd,
 			  mm256_hmin_pd, mm256_hmax_pd)
+    ADEPT_DEF_PACKET_FUNCTIONS(double, _mm256_fmadd_pd, _mm256_fnmadd_pd, _mm256_round_pd);
+
 #elif ADEPT_DOUBLE_PACKET_SIZE != 1
 #error With AVX, ADEPT_DOUBLE_PACKET_SIZE must be 1, 2 or 4
 #endif
@@ -659,5 +675,7 @@ namespace adept {
   } // End namespace internal
 
 } // End namespace adept
+
+#include "fastexp.h"
 
 #endif
