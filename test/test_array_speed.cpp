@@ -5,7 +5,7 @@
 #include "Timer.h"
 
 #define ASSIGN   =
-#define OPERATOR /
+#define OPERATOR * fastexp
 
 using namespace adept;
 

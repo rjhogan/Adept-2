@@ -160,6 +160,8 @@ namespace adept {
       return z;
     }
   }
+  inline float fastexp(float x) { return std::exp(x); }
+  inline double fastexp(double x) { return std::exp(x); }
 }
 
 
