@@ -88,22 +88,43 @@ namespace adept {
     }
     */
 
-    template <typename Type>
-    Packet<Type> polynomial_13m(Packet<Type> const x,
+    inline float fma(float a, float b, float c) { return (a*b)+c; };
+    inline double fma(double a, double b, double c) { return (a*b)+c; };
+    inline float fnma(float a, float b, float c) { return -(a*b)+c; };
+    inline double fnma(double a, double b, double c) { return -(a*b)+c; };
+
+    template <typename PType>
+    inline PType pow2n(PType n) { return n.data; }
+    template <>
+    inline double pow2n<double>(double n) {
+      union {
+	double ans;
+	__m128d d;
+      };
+      d = vm_pow2n(_mm_loadu_pd(&n));
+      return ans;
+    }      
+
+    template <typename Type, typename PType>
+    PType polynomial_13m(PType const x,
 	        Type c2, Type c3, Type c4, Type c5, Type c6, Type c7,
 		Type c8, Type c9, Type c10, Type c11, Type c12, Type c13) {
       // calculates polynomial c13*x^13 + c12*x^12 + ... + x + 0
-      Packet<Type> x2 = x  * x;
-      Packet<Type> x4 = x2 * x2;
-      Packet<Type> x8 = x4 * x4;
+      PType x2 = x  * x;
+      PType x4 = x2 * x2;
+      PType x8 = x4 * x4;
       return fma(fma(fma(c13, x, c12), x4,
 		     fma(fma(c11, x, c10), x2, fma(c9, x, c8))), x8,
 		 fma(fma(fma(c7, x, c6), x2, fma(c5, x, c4)), x4,
 		     fma(fma(c3, x, c2), x2, x)));
     }
 
+    // PType can either be Packet<double> or double
+    template <typename PType>
     inline
-    Packet<double> fastexp(Packet<double> initial_x) {
+    PType fastexp_double(PType initial_x) {
+      using std::round;
+
       const double p2  = 1./2.;
       const double p3  = 1./6.;
       const double p4  = 1./24.;
@@ -122,22 +143,23 @@ namespace adept {
       //      double max_x = 708.39;
 
       // data vectors
-      Packet<double>  x, r, z, n2;
+      PType  x, r, z, n2;
 
       const double ln2d_hi = 0.693145751953125;
       const double ln2d_lo = 1.42860682030941723212E-6;
       x = initial_x;
-      r = round(initial_x*Packet<double>(VM_LOG2E));
+      r = round(initial_x*PType(VM_LOG2E));
       // subtraction in two steps for higher precision
-      x = fnma(r, Packet<double>(ln2d_hi), x);             //  x -= r * ln2d_hi;
-      x = fnma(r, Packet<double>(ln2d_lo), x);             //  x -= r * ln2d_lo;
+      x = fnma(r, PType(ln2d_hi), x);             //  x -= r * ln2d_hi;
+      x = fnma(r, PType(ln2d_lo), x);             //  x -= r * ln2d_lo;
 
       z = polynomial_13m(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13);
 
       // multiply by power of 2 
-      n2.data = vm_pow2n(r.data);
+      //n2.data = vm_pow2n(r.data);
+      n2 = pow2n(r);
 
-      z = (z + Packet<double>(1.0)) * n2;
+      z = (z + PType(1.0)) * n2;
 
       /*
       // check for overflow
@@ -159,9 +181,11 @@ namespace adept {
       */
       return z;
     }
+    inline
+    Packet<double> fastexp(Packet<double> x) { return fastexp_double(x); }
   }
   inline float fastexp(float x) { return std::exp(x); }
-  inline double fastexp(double x) { return std::exp(x); }
+  inline double fastexp(double x) { return internal::fastexp_double(x); }
 }
 
 
