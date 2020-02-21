@@ -1,4 +1,4 @@
-/* test_fastexp.cpp - Test Adept's fast exponential for correctness and speed
+/* test_fastexp.cpp - Test Adept's fast exponential for correctness 
 
   Copyright (C) 2020 European Centre for Medium-Range Weather Forecasts
 
