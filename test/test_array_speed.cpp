@@ -5,6 +5,7 @@
 #include "Timer.h"
 
 #define ASSIGN   =
+#define WARMUP_OPERATOR + exp
 #define OPERATOR + fastexp
 //#define SUFFIX_OP + 0.5
 #define SUFFIX_OP
@@ -52,7 +53,7 @@ int main()
   for (int irep = 0; irep < rep; ++irep) {
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-	Mc[i][j] ASSIGN Pc[i][j] OPERATOR (Qc[i][j] SUFFIX_OP);
+	Mc[i][j] ASSIGN Pc[i][j] WARMUP_OPERATOR (Qc[i][j] SUFFIX_OP);
       }
     }
   }
@@ -103,8 +104,8 @@ int main()
   stack.new_recording();
   timer.start(t_adept_w);
   for (int irep = 0; irep < rep; ++irep) {
-    //    M ASSIGN noalias(P OPERATOR (Q SUFFIX_OP));
-    M ASSIGN P OPERATOR (Q SUFFIX_OP);
+    //    M ASSIGN noalias(P WARMUP_OPERATOR (Q SUFFIX_OP));
+    M ASSIGN P WARMUP_OPERATOR (Q SUFFIX_OP);
   }
   timer.stop();
   //  std::cout << stack;
@@ -156,7 +157,7 @@ int main()
   for (int irep = 0; irep < rep; ++irep) {
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-	M(i,j) ASSIGN P(i,j) OPERATOR (Q(i,j) SUFFIX_OP);
+	M(i,j) ASSIGN P(i,j) WARMUP_OPERATOR (Q(i,j) SUFFIX_OP);
       }
     }
   }
