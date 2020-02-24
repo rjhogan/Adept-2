@@ -294,8 +294,10 @@ namespace quick_e {
 #undef QE_DEFINE_HORIZ_SSE2
   
 #ifdef __FMA__
+  QE_DEFINE_FMA(float, __m128, _mm_fmadd_ps, _mm_fnmadd_ps)
   QE_DEFINE_FMA(double, __m128d, _mm_fmadd_pd, _mm_fnmadd_pd)
 #else
+  QE_EMULATE_FMA(float, __m128)
   QE_EMULATE_FMA(double, __m128d)
 #endif
 #ifdef __SSE4_1__
@@ -441,6 +443,75 @@ namespace quick_e {
   // Implementation of fast exponential
   // -------------------------------------------------------------------
 
+  template<typename Type, typename Vec>
+  static inline
+  Vec polynomial_5(Vec const x, Type c0, Type c1, Type c2, Type c3, Type c4, Type c5) {
+    // calculates polynomial c5*x^5 + c4*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
+    using quick_e::fma;
+    using std::fma;
+    Vec x2 = mul(x, x);
+    Vec x4 = mul(x2, x2);
+    //return (c2+c3*x)*x2 + ((c4+c5*x)*x4 + (c0+c1*x));
+    return fma(fma(c3, x, c2), x2, fma(fma(c5, x, c4), x4, fma(c1, x, c0)));
+  }
+
+  template<typename Vec>
+  inline
+  Vec fastexp_float(Vec x) {
+
+    // Taylor coefficients
+    const float P0expf   =  1.f/2.f;
+    const float P1expf   =  1.f/6.f;
+    const float P2expf   =  1.f/24.f;
+    const float P3expf   =  1.f/120.f; 
+    const float P4expf   =  1.f/720.f; 
+    const float P5expf   =  1.f/5040.f; 
+    const float VM_LOG2E = 1.44269504088896340736;  // 1/log(2)
+
+    // maximum abs(x), value depends on BA, defined below
+    // The lower limit of x is slightly more restrictive than the upper limit.
+    // We are specifying the lower limit, except for BA = 1 because it is not used for negative x
+    //    float max_x;
+    //        max_x = (BA == 0) ? 87.3f : 89.0f;
+
+    const float ln2f_hi  =  0.693359375f;
+    const float ln2f_lo  = -2.12194440e-4f;
+
+    Vec r = round(mul(x,set1<Vec>(VM_LOG2E)));
+    x = fnma(r, set1<Vec>(ln2f_hi), x);      //  x -= r * ln2f_hi;
+    x = fnma(r, set1<Vec>(ln2f_lo), x);      //  x -= r * ln2f_lo;
+ 
+    Vec z = polynomial_5(x,P0expf,P1expf,P2expf,P3expf,P4expf,P5expf);    
+    Vec x2 = mul(x, x);
+    z = fma(z, x2, x);                       // z *= x2;  z += x;
+
+    // multiply by power of 2 
+    Vec n2 = pow2n(r);
+
+    //z = (z + 1.0f) * n2;
+    z = fma(z,n2,n2);
+    return z;
+    /*
+    // check for overflow
+    auto inrange  = abs(initial_x) < max_x;      // boolean vector
+    // check for INF and NAN
+    inrange &= is_finite(initial_x);
+
+    if (horizontal_and(inrange)) {
+        // fast normal path
+        return z;
+    }
+    else {
+        // overflow, underflow and NAN
+        r = select(sign_bit(initial_x), 0.f-(M1&1), infinite_vec<Vec>()); // value in case of +/- overflow or INF
+        z = select(inrange, z, r);                         // +/- underflow
+        z = select(is_nan(initial_x), initial_x, z);       // NAN goes through
+        return z;
+    }
+    */
+  }
+
+
   template <typename Type, typename Vec>
   Vec polynomial_13m(Vec const x,
 		     Type c2, Type c3, Type c4, Type c5, Type c6, Type c7,
@@ -466,7 +537,7 @@ namespace quick_e {
   // can be double, __m128d, __m256d or __m512d
   template <typename Vec>
   inline
-  Vec fastexp_double(Vec initial_x) {
+  Vec fastexp_double(Vec x) {
 #ifndef __SSE4_1__
     using std::round;
 #endif // Otherwise use quick_e::round(double)
@@ -492,22 +563,18 @@ namespace quick_e {
     // maximum abs(x)
     //      double max_x = 708.39;
     
-    // data vectors
-    Vec  x, r, z, n2;
-    
     const double ln2d_hi = 0.693145751953125;
     const double ln2d_lo = 1.42860682030941723212E-6;
-    x = initial_x;
-    r = round(mul(initial_x,set1<Vec>(VM_LOG2E)));
+    Vec r = round(mul(x,set1<Vec>(VM_LOG2E)));
     // subtraction in two steps for higher precision
     x = fnma(r, set1<Vec>(ln2d_hi), x);   //  x -= r * ln2d_hi;
     x = fnma(r, set1<Vec>(ln2d_lo), x);   //  x -= r * ln2d_lo;
 
-    z = polynomial_13m(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13);
-    
     // multiply by power of 2 
     //n2.data = vm_pow2n(r.data);
-    n2 = pow2n(r);
+    Vec n2 = pow2n(r);
+    
+    Vec z = polynomial_13m(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13);
     
     //z = (z + set1<Vec>(1.0)) * n2;
     z = fma(z,n2,n2);
@@ -534,22 +601,31 @@ namespace quick_e {
   }
 
 #ifdef __SSE2__
+  inline __m128 exp(__m128 x) { return fastexp_float(x); }
+  inline __m128 fastexp(__m128 x) { return fastexp_float(x); }
   inline __m128d exp(__m128d x) { return fastexp_double(x); }
   inline __m128d fastexp(__m128d x) { return fastexp_double(x); }
 #endif
 
 #ifdef __AVX__
+  inline __m256 exp(__m256 x) { return fastexp_float(x); }
+  inline __m256 fastexp(__m256 x) { return fastexp_float(x); }
   inline __m256d exp(__m256d x) { return fastexp_double(x); }
   inline __m256d fastexp(__m256d x) { return fastexp_double(x); }
 #endif
 
 #ifdef __AVX512F__
+  inline __m512 exp(__m512 x) { return fastexp_float(x); }
+  inline __m512 fastexp(__m512 x) { return fastexp_float(x); }
   inline __m512d exp(__m512d x) { return fastexp_double(x); }
   inline __m512d fastexp(__m512d x) { return fastexp_double(x); }
 #endif
 
 
   //  inline double exp(double x) { return quick_e::fastexp_double(x); }
+  inline float fastexp(float x) { 
+    return quick_e::fastexp_float(x); 
+  }
   inline double fastexp(double x) { 
     //asm("### FASTEXP START");
     double ans = quick_e::fastexp_double(x); 

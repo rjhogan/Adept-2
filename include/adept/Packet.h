@@ -114,7 +114,7 @@ namespace adept {
     };
 
     //#define QE_PACKET_ARG Packet<T>
-#define QE_PACKET_ARG const Packet<T>& __restrict
+    #define QE_PACKET_ARG const Packet<T>& __restrict
         
     // Default functions
     template <typename T> Packet<T> operator+(QE_PACKET_ARG x, QE_PACKET_ARG y)
