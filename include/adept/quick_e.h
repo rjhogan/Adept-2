@@ -224,6 +224,8 @@ namespace quick_e {
   { return FMA(x,set1<VEC>(y),z); }				\
   inline VEC fma(TYPE x, VEC y, TYPE z)				\
   { return FMA(set1<VEC>(x),y,set1<VEC>(z)); }			\
+  inline VEC fma(VEC x, VEC y, TYPE z)				\
+  { return FMA(x,y,set1<VEC>(z)); }				\
   inline VEC fnma(VEC x,VEC y,VEC z) { return FNMA(x,y,z);}
   
   // Emulate fused multiply-add if instruction not available
@@ -233,6 +235,8 @@ namespace quick_e {
   { return add(mul(x,set1<VEC>(y)),z); }			\
   inline VEC fma(TYPE x, VEC y, TYPE z)				\
   { return add(mul(set1<VEC>(x),y),set1<VEC>(z)); }		\
+  inline VEC fma(VEC x, VEC y, TYPE z)				\
+  { return add(mul(x,y),set1<VEC>(z)); }		\
   inline VEC fnma(VEC x,VEC y,VEC z) { return sub(z,mul(x,y));}
 
 #define QE_DEFINE_POW2N(VEC, VECI, CASTTO, CASTBACK, SHIFTLEFT)	\
@@ -301,6 +305,7 @@ namespace quick_e {
   inline __m128d round(__m128d x)
   { return _mm_round_pd(x, (_MM_FROUND_TO_NEAREST_INT
 			      |_MM_FROUND_NO_EXC)); }
+  inline double round(double x) { return low(round(quick_e::set1<__m128d>(x))); }
 #else
   inline __m128 round(__m128 x) {
     __m128i y1 = _mm_cvtps_epi32(x);  // Convert to integer
@@ -326,7 +331,7 @@ namespace quick_e {
   QE_DEFINE_POW2N(__m128d, __m128i, _mm_castpd_si128, _mm_castsi128_pd,
 		  _mm_sll_epi64)
   inline double pow2n(double x) { return low(pow2n(quick_e::set1<__m128d>(x))); }
-  
+
 #endif
 
   // -------------------------------------------------------------------
@@ -443,13 +448,17 @@ namespace quick_e {
     // calculates polynomial c13*x^13 + c12*x^12 + ... + x + 0
     using quick_e::fma;
     using std::fma;
-    Vec x2 = x  * x;
-    Vec x4 = x2 * x2;
-    Vec x8 = x4 * x4;
+    
+    Vec x2 = mul(x, x);
+    Vec x4 = mul(x2, x2);
+    //    Vec x8 = mul(x4, x4);
     return fma(fma(fma(c13, x, c12), x4,
-		   fma(fma(c11, x, c10), x2, fma(c9, x, c8))), x8,
+		   fma(fma(c11, x, c10), x2, fma(c9, x, c8))), mul(x4, x4),
 	       fma(fma(fma(c7, x, c6), x2, fma(c5, x, c4)), x4,
 		   fma(fma(c3, x, c2), x2, x)));
+    // Slower...
+    //return fma(fma(fma(fma(fma(fma(fma(fma(fma(fma(fma(fma(c13, x, c12), x, c11), x, c10), x, c9), x, c8), x, c7), x, c6), x, c5), x, c4), x, c3), x, c2), mul(x,x), x);
+    
   }
 
   
@@ -458,7 +467,9 @@ namespace quick_e {
   template <typename Vec>
   inline
   Vec fastexp_double(Vec initial_x) {
+#ifndef __SSE4_1__
     using std::round;
+#endif // Otherwise use quick_e::round(double)
     using std::fma;
     using namespace quick_e;
     using quick_e::round;
@@ -539,7 +550,12 @@ namespace quick_e {
 
 
   //  inline double exp(double x) { return quick_e::fastexp_double(x); }
-  inline double fastexp(double x) { return quick_e::fastexp_double(x); }
+  inline double fastexp(double x) { 
+    //asm("### FASTEXP START");
+    double ans = quick_e::fastexp_double(x); 
+    //asm("### FASTEXP END");
+    return ans;
+  }
 }
 
 #endif

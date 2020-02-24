@@ -75,7 +75,7 @@ namespace adept {
     struct Packet {
       // Static definitions
       typedef typename quick_e::longest_packet<T>::type intrinsic_type;
-      static const std::size_t size = quick_e::longest_packet<T>::size;
+      static const int size = quick_e::longest_packet<T>::size;
       //      static const int intrinsic_size = 1; // What is this for?
       static const std::size_t alignment_bytes = sizeof(intrinsic_type);
        // T=float/double -> all bits = 1
