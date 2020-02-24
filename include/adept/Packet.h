@@ -65,6 +65,14 @@ namespace adept {
 
   namespace internal {
 
+    // Trait to define packet size
+    template <typename T> struct packet_traits
+    { static const int size = 1; };
+    template <> struct packet_traits<float>
+    { static const int size = ADEPT_FLOAT_PACKET_SIZE; };
+    template <> struct packet_traits<double>
+    { static const int size = ADEPT_DOUBLE_PACKET_SIZE; };
+    
     using namespace quick_e;
     
     // -------------------------------------------------------------------
@@ -74,8 +82,8 @@ namespace adept {
     template <typename T>
     struct Packet {
       // Static definitions
-      typedef typename quick_e::longest_packet<T>::type intrinsic_type;
-      static const int size = quick_e::longest_packet<T>::size;
+      static const int size = packet_traits<T>::size;
+      typedef typename quick_e::packet<T,size>::type intrinsic_type;
       //      static const int intrinsic_size = 1; // What is this for?
       static const std::size_t alignment_bytes = sizeof(intrinsic_type);
        // T=float/double -> all bits = 1
@@ -89,17 +97,19 @@ namespace adept {
       // Constructors
       Packet() : data(set0<intrinsic_type>()) { }
       Packet(const Packet& d) : data(d.data) { }
-      template <typename TT, typename enable_if<is_same<TT,intrinsic_type>::value,int>::type = 0>
-      Packet(TT d) : data(d) { }
+      template <typename TT>
+      Packet(TT d, typename enable_if<is_same<TT,intrinsic_type>::value,int>::type = 0)
+	: data(d) { }
       explicit Packet(const T* d) : data(load<intrinsic_type>(d)) { }
       //      explicit Packet(T d) : data(set1<intrinsic_type>(d)) { }
-      template <typename TT, typename enable_if<is_same<TT,T>::value&&is_vectorized,int>::type = 0>
-      explicit Packet(TT d) : data(set1<intrinsic_type>(d)) { }
+      template <typename TT>
+      explicit Packet(TT d, typename enable_if<is_same<TT,T>::value&&is_vectorized,int>::type = 0)
+	: data(set1<intrinsic_type>(d)) { }
       // Member functions
       void put(T* __restrict d) const { store(d, data); }
       void put_unaligned(T* __restrict d) const { storeu(d, data); }
       //      void operator=(T d)              { data = set1<intrinsic_type>(d); }
-      template <typename TT, typename enable_if<is_same<T,TT>::value||is_same<T,intrinsic_type>::value,int>::type = 0>
+      template <typename TT> //, typename enable_if<is_same<T,TT>::value||is_same<T,intrinsic_type>::value,int>::type = 0>
       void operator=(TT d)              { data = set1<intrinsic_type>(d); }
       //      void operator=(intrinsic_type d) { data = d;       }
       void operator=(const Packet& d)  { data = d.data;  }

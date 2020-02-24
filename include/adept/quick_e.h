@@ -77,6 +77,10 @@
   #endif // __clang__/__GNUC__
 #endif // __SSE2__
 
+#ifdef __SSE4_1__
+#include <smmintrin.h>
+#endif
+
 #ifdef __AVX__
   #include <tmmintrin.h> // SSE3
   #include <immintrin.h> // AVX
@@ -93,8 +97,10 @@ namespace quick_e {
   // Traits
   // -------------------------------------------------------------------
 
-  template <typename Type> struct traits {
+  template <typename Type, int Size> struct packet {
     static const bool is_available = false;
+    static const int  size         = 1;
+    typedef Type type;
   };
   template <typename Type> struct longest_packet {
     typedef Type type;
@@ -103,12 +109,12 @@ namespace quick_e {
 
   // g++ issues ugly warnings if VEC is an Intel intrinsic, disabled
   // with -Wno-ignored-attributes
-#define QE_DEFINE_TRAITS(TYPE, VEC, LEN, HALF_TYPE) \
-  template <> struct traits<VEC> {		    \
-    static const bool is_available = true;	    \
-    static const int  length = LEN;		    \
-    typedef TYPE underlying_type;		    \
-    typedef HALF_TYPE half_type;		    \
+#define QE_DEFINE_TRAITS(TYPE, SIZE, VEC, HALF_TYPE)   \
+  template <> struct packet<TYPE,SIZE> {	       \
+    static const bool is_available = true;	       \
+    static const int  size = SIZE;		       \
+    typedef VEC type;				       \
+    typedef HALF_TYPE half_type;		       \
   };
 
 #define QE_DEFINE_LONGEST(VECS, VECD)			\
@@ -122,14 +128,14 @@ namespace quick_e {
   };
   
 #ifdef __SSE2__
-  //  QE_DEFINE_TRAITS(float, __m128, 4, __m128)
-  //  QE_DEFINE_TRAITS(double, __m128d, 2, double)
+  QE_DEFINE_TRAITS(float, 4, __m128, __m128)
+  QE_DEFINE_TRAITS(double, 2, __m128d, double)
   #ifdef __AVX__
-  //    QE_DEFINE_TRAITS(float, __m256, 8, __m128)
-  //    QE_DEFINE_TRAITS(double, __m256d, 4, __m128d)
+    QE_DEFINE_TRAITS(float, 8, __m256, __m128)
+    QE_DEFINE_TRAITS(double, 4, __m256d, __m128d)
     #ifdef __AVX512F__
-  //      QE_DEFINE_TRAITS(float, __m512, 16, __m256)
-  //      QE_DEFINE_TRAITS(double, __m512d, 8, __m256d)
+      QE_DEFINE_TRAITS(float, 16, __m512, __m256)
+      QE_DEFINE_TRAITS(double, 8, __m512d, __m256d)
       QE_DEFINE_LONGEST(__m512, __m512d)
       #define QE_LONGEST_FLOAT_PACKET 16
       #define QE_LONGEST_DOUBLE_PACKET 8
@@ -173,10 +179,8 @@ namespace quick_e {
   template <typename T> T fnma(T x, T y, T z)  { return z-(x*y); }
   template <typename T> T fmin(T x, T y)  { return std::min(x,y); }
   template <typename T> T fmax(T x, T y)  { return std::min(x,y); }
-  
+ 
 #if __cplusplus > 199711L
-  template <> inline float  fma(float x, float y, float z)  { return std::fma(x,y,z); }
-  template <> inline double fma(double x, double y, double z)  { return std::fma(x,y,z); }
   template <> inline float fmin(float x, float y)  { return std::fmin(x,y); }
   template <> inline double fmin(double x, double y)  { return std::fmin(x,y); }
   template <> inline float fmax(float x, float y)  { return std::fmax(x,y); }
@@ -198,17 +202,26 @@ namespace quick_e {
   inline VEC neg(VEC x)              { return SUB(SET0(), x); }	\
   template <> inline VEC set0<VEC>()        { return SET0();    }	\
   template <> inline VEC set1<VEC>(TYPE x)  { return SET1(x);   }		\
-  inline VEC sqrt(VEC x)             { return SQRT(x);   }	\
-  inline VEC fmin(VEC x, VEC y)      { return FMIN(x,y); }	\
-  inline VEC fmax(VEC x, VEC y)      { return FMAX(x,y); }	\
-  template <> inline VEC load<VEC,TYPE>(const TYPE* d){ return LOAD(d);   }	\
+  inline VEC sqrt(VEC x)             { return SQRT(x);   }		\
+  inline VEC fmin(VEC x, VEC y)      { return FMIN(x,y); }		\
+  inline VEC fmax(VEC x, VEC y)      { return FMAX(x,y); }		\
+  template <> inline VEC load<VEC,TYPE>(const TYPE* d){ return LOAD(d);   } \
   template <> inline VEC loadu<VEC,TYPE>(const TYPE* d){ return LOADU(d); }	\
   inline void store(TYPE* d, VEC x)  { STORE(d, x);      }	\
-  inline void storeu(TYPE* d, VEC x) { STORE(d, x);      }
-
-#define QE_DEFINE_MOVE(VEC, HALF_TYPE, LOW, HIGH)	\
-  inline HALF_TYPE low(VEC x)   { return LOW;       }	\
-  inline HALF_TYPE high(VEC x)  { return HIGH;      } 
+  inline void storeu(TYPE* d, VEC x) { STORE(d, x);      }	\
+  inline std::ostream& operator<<(std::ostream& os, VEC x) {	\
+    static const int size = sizeof(VEC)/sizeof(TYPE);		\
+    union { VEC v; TYPE d[size]; };				\
+    v = x; os << "{";						\
+    for (int i = 0; i < sizeof(VEC)/sizeof(TYPE); ++i)		\
+      { os << " " << d[i]; }					\
+    os << "}"; return os;					\
+  }
+  
+#define QE_DEFINE_CHOP(VEC, HALF_TYPE, LOW, HIGH, PACK)		\
+  inline HALF_TYPE low(VEC x)   { return LOW;       }		\
+  inline HALF_TYPE high(VEC x)  { return HIGH;      }		\
+  inline VEC pack(HALF_TYPE x, HALF_TYPE y) { return PACK; }
   
   // Reduction operations: horizontal sum, product, min and max
 #define QE_DEFINE_HORIZ(TYPE, VEC, HSUM, HMUL, HMIN, HMAX)	\
@@ -231,21 +244,31 @@ namespace quick_e {
   // Emulate fused multiply-add if instruction not available
 #define QE_EMULATE_FMA(TYPE, VEC)				\
   inline VEC fma(VEC x,VEC y,VEC z)  { return add(mul(x,y),z);}	\
-  inline VEC fma(VEC x,TYPE y y,VEC z)				\
+  inline VEC fma(VEC x,TYPE y,VEC z)				\
   { return add(mul(x,set1<VEC>(y)),z); }			\
   inline VEC fma(TYPE x, VEC y, TYPE z)				\
   { return add(mul(set1<VEC>(x),y),set1<VEC>(z)); }		\
   inline VEC fma(VEC x, VEC y, TYPE z)				\
-  { return add(mul(x,y),set1<VEC>(z)); }		\
+  { return add(mul(x,y),set1<VEC>(z)); }			\
   inline VEC fnma(VEC x,VEC y,VEC z) { return sub(z,mul(x,y));}
 
-#define QE_DEFINE_POW2N(VEC, VECI, CASTTO, CASTBACK, SHIFTLEFT)	\
+#define QE_DEFINE_POW2N_S(VEC, VECI, CASTTO, CASTBACK, SHIFTL)	\
+  inline VEC pow2n(VEC n) {					\
+    const float pow2_23 = 8388608.0;				\
+    const float bias = 127.0;					\
+    VEC  a = add(n, set1<VEC>(bias+pow2_23));			\
+    VECI b = CASTTO(a);						\
+    VECI c = SHIFTL(b, _mm_cvtsi32_si128(23));			\
+    VEC  d = CASTBACK(c);					\
+    return d;							\
+  }
+#define QE_DEFINE_POW2N_D(VEC, VECI, CASTTO, CASTBACK, SHIFTL)	\
   inline VEC pow2n(VEC n) {					\
     const double pow2_52 = 4503599627370496.0;			\
     const double bias = 1023.0;					\
     VEC  a = add(n, set1<VEC>(bias+pow2_52));			\
     VECI b = CASTTO(a);						\
-    VECI c = SHIFTLEFT(b, _mm_cvtsi32_si128(52));		\
+    VECI c = SHIFTL(b, _mm_cvtsi32_si128(52));			\
     VEC  d = CASTBACK(c);					\
     return d;							\
   }
@@ -265,10 +288,10 @@ namespace quick_e {
 		  _mm_setzero_pd, _mm_set1_pd, _mm_store_pd, _mm_storeu_pd,
 		  _mm_add_pd, _mm_sub_pd, _mm_mul_pd, _mm_div_pd,
 		  _mm_sqrt_pd, _mm_min_pd, _mm_max_pd)
-  // Don't define move operations for __m128
-  QE_DEFINE_MOVE(__m128d, double,_mm_cvtsd_f64(x),
-		 _mm_cvtsd_f64(_mm_unpackhi_pd(x,x)))
-
+  // Don't define chop operations for __m128
+  QE_DEFINE_CHOP(__m128d, double, _mm_cvtsd_f64(x),
+		 _mm_cvtsd_f64(_mm_unpackhi_pd(x,x)),
+		 _mm_set_pd(y,x))
 		 
   // No built-in horizontal operations for SSE2, so need to implement
   // by hand
@@ -301,37 +324,31 @@ namespace quick_e {
   QE_EMULATE_FMA(double, __m128d)
 #endif
 #ifdef __SSE4_1__
-  inline __m128 round(__m128 x)
+  inline __m128 unchecked_round(__m128 x)
   { return _mm_round_ps(x, (_MM_FROUND_TO_NEAREST_INT
 			      |_MM_FROUND_NO_EXC)); }
-  inline __m128d round(__m128d x)
+  inline __m128d unchecked_round(__m128d x)
   { return _mm_round_pd(x, (_MM_FROUND_TO_NEAREST_INT
 			      |_MM_FROUND_NO_EXC)); }
-  inline double round(double x) { return low(round(quick_e::set1<__m128d>(x))); }
 #else
-  inline __m128 round(__m128 x) {
-    __m128i y1 = _mm_cvtps_epi32(x);  // Convert to integer
-    __m128  y2 = _mm_cvtepi32_ps(y1); // Convert bacl to float
-    // use original value if integer overflows
-    __m128 sel = _mm_xor_ps(_mm_castsi128_ps(y1),
-			    _mm_castsi128_ps(_mm_set1_epi32(0x80000000)));
-    return _mm_or_ps(_mm_and_ps(sel, y2),
-		     _mm_andnot_ps(sel, x));
+  // No native function available, but since the arguments are limited
+  // to +/- 700, we don't need to check for going out of bounds
+  inline __m128 unchecked_round(__m128 x) {
+    return _mm_cvtepi32_ps(_mm_cvtps_epi32(x));
   }
-  inline __m128d round(__m128d x) {
-    // Give up doing this with intrinsics
-    union {
-      __m128d ans;
-      double val[2];
-    };
-    val[0] = std::round(low(x));
-    val[1] = std::round(high(x));
-    return ans;
+  inline __m128d unchecked_round(__m128d x) {
+    return _mm_cvtepi32_pd(_mm_cvtpd_epi32(x));
   }
-#endif
 
-  QE_DEFINE_POW2N(__m128d, __m128i, _mm_castpd_si128, _mm_castsi128_pd,
-		  _mm_sll_epi64)
+#endif
+  inline float unchecked_round(float x) { return _mm_cvtss_f32(unchecked_round(_mm_set_ss(x))); }
+  inline double unchecked_round(double x) { return low(unchecked_round(_mm_set_sd(x))); }
+
+  QE_DEFINE_POW2N_S(__m128, __m128i, _mm_castps_si128,
+		    _mm_castsi128_ps, _mm_sll_epi32)
+  QE_DEFINE_POW2N_D(__m128d, __m128i, _mm_castpd_si128,
+		    _mm_castsi128_pd, _mm_sll_epi64)
+  inline float pow2n(float x) { return _mm_cvtss_f32(pow2n(quick_e::set1<__m128>(x))); }
   inline double pow2n(double x) { return low(pow2n(quick_e::set1<__m128d>(x))); }
 
 #endif
@@ -352,10 +369,14 @@ namespace quick_e {
 		  _mm256_add_pd, _mm256_sub_pd,
 		  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd,
 		  _mm256_min_pd, _mm256_max_pd)
-  QE_DEFINE_MOVE(__m256, __m128,
-		 _mm256_castps256_ps128(x), _mm256_extractf128_ps(x,1))
-  QE_DEFINE_MOVE(__m256d, __m128d, _mm256_castpd256_pd128(x),
-		 _mm256_extractf128_pd(x,1)); //, _mm256_permute2f128(x,x,0x1))
+  QE_DEFINE_CHOP(__m256, __m128,
+		 _mm256_castps256_ps128(x), _mm256_extractf128_ps(x,1),
+		 _mm256_permute2f128_ps(_mm256_castps128_ps256(x),
+					_mm256_castps128_ps256(y), 0x20))
+  QE_DEFINE_CHOP(__m256d, __m128d, _mm256_castpd256_pd128(x),
+		 _mm256_extractf128_pd(x,1),
+		 _mm256_permute2f128_pd(_mm256_castpd128_pd256(x),
+					_mm256_castpd128_pd256(y), 0x20));
 
   // Implement by calling SSE2 h* functions
   inline float  hsum(__m256 x)  { return hsum(add(low(x), high(x))); }
@@ -368,40 +389,34 @@ namespace quick_e {
   inline double hmax(__m256d x) { return hmax(add(low(x), high(x))); }
   
   // Define extras
+#ifdef __FMA__
   QE_DEFINE_FMA(float, __m256,  _mm256_fmadd_ps, _mm256_fnmadd_ps)
   QE_DEFINE_FMA(double, __m256d, _mm256_fmadd_pd, _mm256_fnmadd_pd)
+#else
+  QE_EMULATE_FMA(float, __m256)
+  QE_EMULATE_FMA(double, __m256d)
+#endif
   
-  inline __m256 round(__m256 x)
+  inline __m256 unchecked_round(__m256 x)
   { return _mm256_round_ps(x, (_MM_FROUND_TO_NEAREST_INT
 			       |_MM_FROUND_NO_EXC)); }
-  inline __m256d round(__m256d x)
+  inline __m256d unchecked_round(__m256d x)
   { return _mm256_round_pd(x, (_MM_FROUND_TO_NEAREST_INT
 			       |_MM_FROUND_NO_EXC)); }
   #ifdef __AVX2__
-    QE_DEFINE_POW2N(__m256d, __m256i, _mm256_castpd_si256, _mm256_castsi256_pd,
-		    _mm256_sll_epi64)
+    QE_DEFINE_POW2N_S(__m256, __m256i, _mm256_castps_si256,
+		      _mm256_castsi256_ps, _mm256_sll_epi32)
+    QE_DEFINE_POW2N_D(__m256d, __m256i, _mm256_castpd_si256,
+		      _mm256_castsi256_pd, _mm256_sll_epi64)
   #else
-  // Raise 2 to the power of n
-  inline __m256d pow2n(__m256d n) {
-    const double pow2_52 = 4503599627370496.0;
-    const double bias = 1023.0;
-    __m256d a = n + _mm256_set1_pd(bias+pow2_52);
-    // Completely unoptimized alternative
-    union {
-      __m256i b;
-      int64_t b_data[4];
-    };
-    b = _mm256_castpd_si256(a);
-    union {
-      __m256i c;
-      int64_t c_data[4];
-    };
-    for (int i = 0; i < 4; ++i) {
-      c_data[i] = b_data[i] << 52;
+    // Suboptimized versions call the SSE2 functions on the upper and
+    // lower parts
+    inline __m256 pow2n(__m256 n) {
+      return pack(pow2n(low(n)), pow2n(high(n)));
     }
-    __m256d d = _mm256_castsi256_pd(c);
-    return d;
-  }
+    inline __m256d pow2n(__m256d n) {
+      return pack(pow2n(low(n)), pow2n(high(n)));
+    }
   #endif
 #endif
   
@@ -429,16 +444,20 @@ namespace quick_e {
 		  _mm512_reduce_add_pd, _mm512_reduce_mul_pd,
 		  _mm512_reduce_min_pd, _mm512_reduce_max_pd)
   
-  inline __m512 round(__m512 x)   { return _mm512_roundscale_ps(x, 0); }
-  inline __m512d round(__m512d x) { return _mm512_roundscale_pd(x, 0); }
+  inline __m512 unchecked_round(__m512 x)   { return _mm512_roundscale_ps(x, 0); }
+  inline __m512d unchecked_round(__m512d x) { return _mm512_roundscale_pd(x, 0); }
 
   QE_DEFINE_FMA(float, __m512,  _mm512_fmadd_ps, _mm512_fnmadd_ps)
   QE_DEFINE_FMA(double, __m512d, _mm512_fmadd_pd, _mm512_fnmadd_pd)
   
-  QE_DEFINE_POW2N(__m512d, __m512i, _mm512_castpd_si512, _mm512_castsi512_pd,
-		  _mm512_sll_epi64)
+  QE_DEFINE_POW2N_S(__m512, __m512i, _mm512_castps_si512,
+		    _mm512_castsi512_ps, _mm512_sll_epi32)
+  QE_DEFINE_POW2N_D(__m512d, __m512i, _mm512_castpd_si512,
+		    _mm512_castsi512_pd, _mm512_sll_epi64)
 #endif
 
+#ifdef __SSE2__
+  
   // -------------------------------------------------------------------
   // Implementation of fast exponential
   // -------------------------------------------------------------------
@@ -448,7 +467,6 @@ namespace quick_e {
   Vec polynomial_5(Vec const x, Type c0, Type c1, Type c2, Type c3, Type c4, Type c5) {
     // calculates polynomial c5*x^5 + c4*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
     using quick_e::fma;
-    using std::fma;
     Vec x2 = mul(x, x);
     Vec x4 = mul(x2, x2);
     //return (c2+c3*x)*x2 + ((c4+c5*x)*x4 + (c0+c1*x));
@@ -458,7 +476,10 @@ namespace quick_e {
   template<typename Vec>
   inline
   Vec fastexp_float(Vec x) {
-
+    using namespace quick_e;
+    using quick_e::unchecked_round;
+    using quick_e::fma;
+    
     // Taylor coefficients
     const float P0expf   =  1.f/2.f;
     const float P1expf   =  1.f/6.f;
@@ -477,7 +498,7 @@ namespace quick_e {
     const float ln2f_hi  =  0.693359375f;
     const float ln2f_lo  = -2.12194440e-4f;
 
-    Vec r = round(mul(x,set1<Vec>(VM_LOG2E)));
+    Vec r = unchecked_round(mul(x,set1<Vec>(VM_LOG2E)));
     x = fnma(r, set1<Vec>(ln2f_hi), x);      //  x -= r * ln2f_hi;
     x = fnma(r, set1<Vec>(ln2f_lo), x);      //  x -= r * ln2f_lo;
  
@@ -518,7 +539,6 @@ namespace quick_e {
 		     Type c8, Type c9, Type c10, Type c11, Type c12, Type c13) {
     // calculates polynomial c13*x^13 + c12*x^12 + ... + x + 0
     using quick_e::fma;
-    using std::fma;
     
     Vec x2 = mul(x, x);
     Vec x4 = mul(x2, x2);
@@ -538,12 +558,8 @@ namespace quick_e {
   template <typename Vec>
   inline
   Vec fastexp_double(Vec x) {
-#ifndef __SSE4_1__
-    using std::round;
-#endif // Otherwise use quick_e::round(double)
-    using std::fma;
     using namespace quick_e;
-    using quick_e::round;
+    using quick_e::unchecked_round;
     using quick_e::fma;
     
     const double p2  = 1./2.;
@@ -565,7 +581,7 @@ namespace quick_e {
     
     const double ln2d_hi = 0.693145751953125;
     const double ln2d_lo = 1.42860682030941723212E-6;
-    Vec r = round(mul(x,set1<Vec>(VM_LOG2E)));
+    Vec r = unchecked_round(mul(x,set1<Vec>(VM_LOG2E)));
     // subtraction in two steps for higher precision
     x = fnma(r, set1<Vec>(ln2d_hi), x);   //  x -= r * ln2d_hi;
     x = fnma(r, set1<Vec>(ln2d_lo), x);   //  x -= r * ln2d_lo;
@@ -599,7 +615,8 @@ namespace quick_e {
     */
     return z;
   }
-
+#endif
+  
 #ifdef __SSE2__
   inline __m128 exp(__m128 x) { return fastexp_float(x); }
   inline __m128 fastexp(__m128 x) { return fastexp_float(x); }
@@ -621,17 +638,30 @@ namespace quick_e {
   inline __m512d fastexp(__m512d x) { return fastexp_double(x); }
 #endif
 
-
+#ifdef __SSE2__
   //  inline double exp(double x) { return quick_e::fastexp_double(x); }
   inline float fastexp(float x) { 
     return quick_e::fastexp_float(x); 
   }
   inline double fastexp(double x) { 
     //asm("### FASTEXP START");
-    double ans = quick_e::fastexp_double(x); 
+    return quick_e::fastexp_double(x); 
     //asm("### FASTEXP END");
-    return ans;
+    //    return ans;
   }
+#else
+  // If no vectorization available then we fall back to the standard
+  // library scalar version
+
+  //  inline double exp(double x) { return quick_e::fastexp_double(x); }
+  inline float fastexp(float x) { 
+    return std::exp(x); 
+  }
+  inline double fastexp(double x) { 
+    return std::exp(x);
+  }
+#endif
+  
 }
 
 #endif

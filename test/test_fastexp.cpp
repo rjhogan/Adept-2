@@ -18,10 +18,27 @@ using namespace adept;
 
 int main(int argc, const char** argv)
 {
-  Vector x = linspace(-700.0,700.0,2801);
-  Vector exponential = exp(x);
-  Vector fast_exponential = fastexp(x);
-  Vector fractional_error = (fast_exponential - exponential) / exponential;
-  std::cout << fractional_error;
+  {
+    std::cout << "DOUBLE PRECISION\n";
+    std::cout << "Packet<double>::size = " << internal::Packet<double>::size << "\n";
+    Vector x = linspace(-700.0,700.0,128);
+    Vector exponential = exp(x);
+    Vector fast_exponential = fastexp(x);
+    Vector fractional_error = (fast_exponential - exponential) / exponential;
+    std::cout << fractional_error << "\n";
+    //std::cout << (fastexp(x(stride(0,end,2))) - exponential(stride(0,end,2)))
+    //  / exponential(stride(0,end,2)) << "\n";
+  }
+  {
+    std::cout << "SINGLE PRECISION\n";
+    std::cout << "Packet<float>::size = " << internal::Packet<float>::size << "\n";
+    floatVector x = linspace(-87.0,87.0,128);
+    floatVector exponential = exp(x);
+    floatVector fast_exponential = fastexp(x);
+    floatVector fractional_error = (fast_exponential - exponential) / exponential;
+    std::cout << fractional_error << "\n";
+    //    std::cout << (fastexp(x(stride(0,end,2))) - exponential(stride(0,end,2)))
+    //  / exponential(stride(0,end,2)) << "\n";
+  }
   return 0;
 }
