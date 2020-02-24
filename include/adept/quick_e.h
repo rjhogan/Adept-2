@@ -100,7 +100,9 @@ namespace quick_e {
     typedef Type type;
     static const int size = 1;
   };
-  
+
+  // g++ issues ugly warnings if VEC is an Intel intrinsic, disabled
+  // with -Wno-ignored-attributes
 #define QE_DEFINE_TRAITS(TYPE, VEC, LEN, HALF_TYPE) \
   template <> struct traits<VEC> {		    \
     static const bool is_available = true;	    \
@@ -120,14 +122,14 @@ namespace quick_e {
   };
   
 #ifdef __SSE2__
-  QE_DEFINE_TRAITS(float, __m128, 4, __m128)
-  QE_DEFINE_TRAITS(double, __m128d, 2, double)
+  //  QE_DEFINE_TRAITS(float, __m128, 4, __m128)
+  //  QE_DEFINE_TRAITS(double, __m128d, 2, double)
   #ifdef __AVX__
-    QE_DEFINE_TRAITS(float, __m256, 8, __m128)
-    QE_DEFINE_TRAITS(double, __m256d, 4, __m128d)
+  //    QE_DEFINE_TRAITS(float, __m256, 8, __m128)
+  //    QE_DEFINE_TRAITS(double, __m256d, 4, __m128d)
     #ifdef __AVX512F__
-      QE_DEFINE_TRAITS(float, __m512, 16, __m256)
-      QE_DEFINE_TRAITS(double, __m512d, 8, __m256d)
+  //      QE_DEFINE_TRAITS(float, __m512, 16, __m256)
+  //      QE_DEFINE_TRAITS(double, __m512d, 8, __m256d)
       QE_DEFINE_LONGEST(__m512, __m512d)
       #define QE_LONGEST_FLOAT_PACKET 16
       #define QE_LONGEST_DOUBLE_PACKET 8
@@ -148,44 +150,39 @@ namespace quick_e {
   
   
   // -------------------------------------------------------------------
-  // Scalars: float and double
+  // Scalars
   // -------------------------------------------------------------------
   
   // Define a few functions for scalars in order that the same
   // implementation of "exp" can be used for both scalars and SIMD
   // vectors
-#define QE_DEFINE_SCALAR_OPS(TYPE)				\
-  inline TYPE add(TYPE x, TYPE y)          { return x+y; }	\
-  inline TYPE sub(TYPE x, TYPE y)          { return x-y; }	\
-  inline TYPE mul(TYPE x, TYPE y)          { return x*y; }	\
-  inline TYPE div(TYPE x, TYPE y)          { return x/y; }	\
-  inline TYPE neg(TYPE x)                  { return -x;  }	\
-  inline void store(TYPE* d, TYPE x)       { *d = x;     } 	\
-  inline void storeu(TYPE* d, TYPE x)      { *d = x;     }	\
-  template <typename Vec> Vec load(const TYPE* d) { return *d;  } \
-  template <typename Vec> Vec loadu(const TYPE* d){ return *d;  } \
-  template <typename Vec> Vec set1(TYPE x) { return x;   }
+  template <typename T> T add(T x, T y) { return x+y; }
+  template <typename T> T sub(T x, T y) { return x-y; }
+  template <typename T> T mul(T x, T y) { return x*y; }
+  template <typename T> T div(T x, T y) { return x/y; }
+  template <typename T> T neg(T x)      { return -x;  }
+  template <typename T, typename V> void store(T* d, V x) { *d = x;  }
+  template <typename T, typename V> void storeu(T* d, V x){ *d = x;  }
+  template <typename V, typename T> V load(const T* d) { return *d;  }
+  template <typename V, typename T> V loadu(const T* d){ return *d;  }
+  template <typename V, typename T> V set1(T x) { return x;   }
+  template <typename V> inline V set0() { return 0.0; };
+  template <typename T> T sqrt(T x) { return std::sqrt(x); }
   
-  QE_DEFINE_SCALAR_OPS(float)
-  QE_DEFINE_SCALAR_OPS(double)
-
-  template <typename Vec>
-  inline Vec set0()       { return 0.0; };
+  template <typename T> T fma(T x, T y, T z)  { return (x*y)+z; }
+  template <typename T> T fnma(T x, T y, T z)  { return z-(x*y); }
+  template <typename T> T fmin(T x, T y)  { return std::min(x,y); }
+  template <typename T> T fmax(T x, T y)  { return std::min(x,y); }
   
 #if __cplusplus > 199711L
-  using std::fma;
-  using std::fmin;
-  using std::fmax;
-#else
-  inline float  fma(float x,  float y,  float z)  { return (x*y)+z; }
-  inline double fma(double x, double y, double z) { return (x*y)+z; }
-  inline float  fmin(float x, float y)            { return std::min(x,y); }
-  inline float  fmax(float x, float y)            { return std::max(x,y); }
+  template <> inline float  fma(float x, float y, float z)  { return std::fma(x,y,z); }
+  template <> inline double fma(double x, double y, double z)  { return std::fma(x,y,z); }
+  template <> inline float fmin(float x, float y)  { return std::fmin(x,y); }
+  template <> inline double fmin(double x, double y)  { return std::fmin(x,y); }
+  template <> inline float fmax(float x, float y)  { return std::fmax(x,y); }
+  template <> inline double fmax(double x, double y)  { return std::fmax(x,y); }
 #endif
   
-  inline float  fnma(float x,  float y,  float z)  { return z-(x*y); }
-  inline double fnma(double x, double y, double z) { return z-(x*y); }
-
   // -------------------------------------------------------------------
   // Macros to define mathematical operations
   // -------------------------------------------------------------------
@@ -204,8 +201,8 @@ namespace quick_e {
   inline VEC sqrt(VEC x)             { return SQRT(x);   }	\
   inline VEC fmin(VEC x, VEC y)      { return FMIN(x,y); }	\
   inline VEC fmax(VEC x, VEC y)      { return FMAX(x,y); }	\
-  template <> inline VEC load(const TYPE* d){ return LOAD(d);   }	\
-  template <> inline VEC loadu(const TYPE* d){ return LOADU(d); }	\
+  template <> inline VEC load<VEC,TYPE>(const TYPE* d){ return LOAD(d);   }	\
+  template <> inline VEC loadu<VEC,TYPE>(const TYPE* d){ return LOADU(d); }	\
   inline void store(TYPE* d, VEC x)  { STORE(d, x);      }	\
   inline void storeu(TYPE* d, VEC x) { STORE(d, x);      }
 
@@ -221,22 +218,20 @@ namespace quick_e {
   inline TYPE hmax(VEC x)            { return HMAX(x);   }
 
   // Define fused multiply-add functions
-#define QE_DEFINE_FMA(VEC, FMA, FNMA)				\
+#define QE_DEFINE_FMA(TYPE, VEC, FMA, FNMA)			\
   inline VEC fma(VEC x,VEC y,VEC z)  { return FMA(x,y,z); }	\
-  inline VEC fma(VEC x,traits<VEC>::underlying_type y,VEC z)	\
+  inline VEC fma(VEC x,TYPE y,VEC z)				\
   { return FMA(x,set1<VEC>(y),z); }				\
-  inline VEC fma(typename traits<VEC>::underlying_type x, VEC y,		\
-		 typename traits<VEC>::underlying_type z)		\
+  inline VEC fma(TYPE x, VEC y, TYPE z)				\
   { return FMA(set1<VEC>(x),y,set1<VEC>(z)); }			\
   inline VEC fnma(VEC x,VEC y,VEC z) { return FNMA(x,y,z);}
   
   // Emulate fused multiply-add if instruction not available
-#define QE_EMULATE_FMA(VEC)					\
+#define QE_EMULATE_FMA(TYPE, VEC)				\
   inline VEC fma(VEC x,VEC y,VEC z)  { return add(mul(x,y),z);}	\
-  inline VEC fma(VEC x,typename traits<VEC>::underlying_type y,VEC z)	\
+  inline VEC fma(VEC x,TYPE y y,VEC z)				\
   { return add(mul(x,set1<VEC>(y)),z); }			\
-  inline VEC fma(typename traits<VEC>::underlying_type x, VEC y,     \
-		 typename traits<VEC>::underlying_type z)		\
+  inline VEC fma(TYPE x, VEC y, TYPE z)				\
   { return add(mul(set1<VEC>(x),y),set1<VEC>(z)); }		\
   inline VEC fnma(VEC x,VEC y,VEC z) { return sub(z,mul(x,y));}
 
@@ -295,9 +290,9 @@ namespace quick_e {
 #undef QE_DEFINE_HORIZ_SSE2
   
 #ifdef __FMA__
-  QE_DEFINE_FMA(__m128d, _mm_fmadd_pd, _mm_fnmadd_pd)
+  QE_DEFINE_FMA(double, __m128d, _mm_fmadd_pd, _mm_fnmadd_pd)
 #else
-  QE_EMULATE_FMA(__m128d)
+  QE_EMULATE_FMA(double, __m128d)
 #endif
 #ifdef __SSE4_1__
   inline __m128 round(__m128 x)
@@ -366,8 +361,8 @@ namespace quick_e {
   inline double hmax(__m256d x) { return hmax(add(low(x), high(x))); }
   
   // Define extras
-  QE_DEFINE_FMA(__m256,  _mm256_fmadd_ps, _mm256_fnmadd_ps)
-  QE_DEFINE_FMA(__m256d, _mm256_fmadd_pd, _mm256_fnmadd_pd)
+  QE_DEFINE_FMA(float, __m256,  _mm256_fmadd_ps, _mm256_fnmadd_ps)
+  QE_DEFINE_FMA(double, __m256d, _mm256_fmadd_pd, _mm256_fnmadd_pd)
   
   inline __m256 round(__m256 x)
   { return _mm256_round_ps(x, (_MM_FROUND_TO_NEAREST_INT
@@ -430,6 +425,9 @@ namespace quick_e {
   inline __m512 round(__m512 x)   { return _mm512_roundscale_ps(x, 0); }
   inline __m512d round(__m512d x) { return _mm512_roundscale_pd(x, 0); }
 
+  QE_DEFINE_FMA(float, __m512,  _mm512_fmadd_ps, _mm512_fnmadd_ps)
+  QE_DEFINE_FMA(double, __m512d, _mm512_fmadd_pd, _mm512_fnmadd_pd)
+  
   QE_DEFINE_POW2N(__m512d, __m512i, _mm512_castpd_si512, _mm512_castsi512_pd,
 		  _mm512_sll_epi64)
 #endif
@@ -500,8 +498,8 @@ namespace quick_e {
     //n2.data = vm_pow2n(r.data);
     n2 = pow2n(r);
     
-    z = (z + set1<Vec>(1.0)) * n2;
-    // z = fma(z,n2,n2);
+    //z = (z + set1<Vec>(1.0)) * n2;
+    z = fma(z,n2,n2);
     
     /*
     // check for overflow
@@ -526,19 +524,22 @@ namespace quick_e {
 
 #ifdef __SSE2__
   inline __m128d exp(__m128d x) { return fastexp_double(x); }
+  inline __m128d fastexp(__m128d x) { return fastexp_double(x); }
 #endif
 
 #ifdef __AVX__
   inline __m256d exp(__m256d x) { return fastexp_double(x); }
+  inline __m256d fastexp(__m256d x) { return fastexp_double(x); }
 #endif
 
-#ifdef __AVX512__
+#ifdef __AVX512F__
   inline __m512d exp(__m512d x) { return fastexp_double(x); }
+  inline __m512d fastexp(__m512d x) { return fastexp_double(x); }
 #endif
 
 
-  inline double exp(double x) { return quick_e::fastexp_double(x); }
-  //  inline double fastexp(double x) { return quick_e::fastexp_double(x); }
+  //  inline double exp(double x) { return quick_e::fastexp_double(x); }
+  inline double fastexp(double x) { return quick_e::fastexp_double(x); }
 }
 
 #endif

@@ -248,7 +248,7 @@ namespace adept {
   ADEPT_DEF_UNARY_FUNC(Tanh,  tanh,  std::tanh,  "tanh",  1.0 - result*result, false)
 
   // Adept's vectorizable exponential function
-  ADEPT_DEF_UNARY_FUNC(Fastexp,  fastexp,  adept::fastexp,  "fastexp",  result, true)
+  ADEPT_DEF_UNARY_FUNC(Fastexp,  fastexp,  quick_e::fastexp,  "fastexp",  result, true)
 
   // Functions with zero derivative
   ADEPT_DEF_UNARY_FUNC(Ceil,  ceil,  std::ceil,  "ceil",  0.0, false)

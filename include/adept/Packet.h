@@ -89,14 +89,19 @@ namespace adept {
       // Constructors
       Packet() : data(set0<intrinsic_type>()) { }
       Packet(const Packet& d) : data(d.data) { }
-      Packet(intrinsic_type d) : data(d) { }
+      template <typename TT, typename enable_if<is_same<TT,intrinsic_type>::value,int>::type = 0>
+      Packet(TT d) : data(d) { }
       explicit Packet(const T* d) : data(load<intrinsic_type>(d)) { }
-      explicit Packet(T d) : data(set1<intrinsic_type>(d)) { }
+      //      explicit Packet(T d) : data(set1<intrinsic_type>(d)) { }
+      template <typename TT, typename enable_if<is_same<TT,T>::value&&is_vectorized,int>::type = 0>
+      explicit Packet(TT d) : data(set1<intrinsic_type>(d)) { }
       // Member functions
       void put(T* __restrict d) const { store(d, data); }
       void put_unaligned(T* __restrict d) const { storeu(d, data); }
-      void operator=(T d)              { data = set1<intrinsic_type>(d); }
-      void operator=(intrinsic_type d) { data = d;       }
+      //      void operator=(T d)              { data = set1<intrinsic_type>(d); }
+      template <typename TT, typename enable_if<is_same<T,TT>::value||is_same<T,intrinsic_type>::value,int>::type = 0>
+      void operator=(TT d)              { data = set1<intrinsic_type>(d); }
+      //      void operator=(intrinsic_type d) { data = d;       }
       void operator=(const Packet& d)  { data = d.data;  }
       void operator+=(const Packet& d) { data = add(data, d.data); }
       void operator-=(const Packet& d) { data = sub(data, d.data); }
@@ -129,7 +134,7 @@ namespace adept {
       return sqrt(x.data);
     }
     template <typename T> Packet<T> fastexp(QE_PACKET_ARG x) {
-      return quick_e::exp(x.data);
+      return quick_e::fastexp(x.data);
     }
     template <typename T> T hsum(QE_PACKET_ARG x)  { return hsum(x.data); }
     template <typename T> T hprod(QE_PACKET_ARG x) { return hmul(x.data); }
