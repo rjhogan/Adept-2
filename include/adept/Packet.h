@@ -21,40 +21,7 @@
 #include <cstdlib>
 #include <cmath>
 
-// Headers needed for x86 vector intrinsics
-#ifdef __SSE2__
-#include <xmmintrin.h> // SSE
-#include <emmintrin.h> // SSE2
-// Numerous platforms don't define _mm_undefined_ps in xmmintrin.h, so
-// we assume none do, except GCC >= 4.9.1 and CLANG >= 3.8.0.  Those
-// that don't use an equivalent function that sets the elements to
-// zero.
-#define ADEPT_MM_UNDEFINED_PS _mm_setzero_ps
-#ifdef __clang__
-  #if __has_builtin(__builtin_ia32_undef128)
-    #undef ADEPT_MM_UNDEFINED_PS
-    #define ADEPT_MM_UNDEFINED_PS _mm_undefined_ps
-  #endif
-#elif defined(__GNUC__)
-  #define GCC_VERSION (__GNUC__ * 10000 \
-		       + __GNUC_MINOR__ * 100	\
-		       + __GNUC_PATCHLEVEL__)
-  #if GCC_VERSION >= 40901
-    #undef ADEPT_MM_UNDEFINED_PS
-    #define ADEPT_MM_UNDEFINED_PS _mm_undefined_ps
-  #endif
-  #undef GCC_VERSION
-#endif // __clang__/__GNUC__
-#endif // __SSE2__
-
-#ifdef __AVX__
-#include <tmmintrin.h> // SSE3
-#include <immintrin.h> // AVX
-#endif
-
-#ifdef __AVX512F__
-#include <immintrin.h>
-#endif
+#include "quick_e.h"
 
 // Headers needed for allocation of aligned memory
 #include <new>
@@ -74,26 +41,12 @@
 // -------------------------------------------------------------------
 
 #ifndef ADEPT_FLOAT_PACKET_SIZE
-#  ifdef __AVX512F__
-#    define ADEPT_FLOAT_PACKET_SIZE 16
-#  elif defined(__AVX__)
-#    define ADEPT_FLOAT_PACKET_SIZE 8
-#  elif defined(__SSE2__)
-#    define ADEPT_FLOAT_PACKET_SIZE 4
-#  else
-#    define ADEPT_FLOAT_PACKET_SIZE 1
-#  endif
+#define ADEPT_FLOAT_PACKET_SIZE QE_LONGEST_FLOAT_PACKET
+//static const int ADEPT_FLOAT_PACKET_SIZE = quick_e::longest_packet<float>::size;
 #endif
 #ifndef ADEPT_DOUBLE_PACKET_SIZE
-#  ifdef __AVX512F__
-#    define ADEPT_DOUBLE_PACKET_SIZE 8
-#  elif defined(__AVX__)
-#    define ADEPT_DOUBLE_PACKET_SIZE 4
-#  elif defined(__SSE2__)
-#    define ADEPT_DOUBLE_PACKET_SIZE 2
-#  else
-#    define ADEPT_DOUBLE_PACKET_SIZE 1
-#  endif
+#define ADEPT_DOUBLE_PACKET_SIZE QE_LONGEST_DOUBLE_PACKET
+//static const int ADEPT_DOUBLE_PACKET_SIZE = quick_e::longest_packet<double>::size
 #endif
 
 // -------------------------------------------------------------------
@@ -112,463 +65,86 @@ namespace adept {
 
   namespace internal {
 
+    using namespace quick_e;
+    
     // -------------------------------------------------------------------
-    // Default packet types containing only one value
+    // Define packet type
     // -------------------------------------------------------------------
-
+    
     template <typename T>
     struct Packet {
-      typedef T intrinsic_type;
-      static const int size = 1;
-      static const int intrinsic_size = 1; // What is this for?
-      static const std::size_t alignment_bytes = sizeof(T);
-      static const std::size_t align_mask = -1; // all bits = 1
-      static const bool is_vectorized = false;
-      Packet() : data(0.0) { }
-      explicit Packet(const T* d) : data(*d) { }
-      explicit Packet(T d) : data(d) { }
-      void put(T* __restrict d) const { *d = data; }
-      void operator=(T d)  { data=d; }
-      void operator=(const Packet& d)  { data=d.data; }
-      void operator+=(const Packet& d) { data+=d.data; }
-      void operator-=(const Packet& d) { data-=d.data; }
-      void operator*=(const Packet& d) { data*=d.data; }
-      void operator/=(const Packet& d) { data/=d.data; }
-      T value() const { return data; }
-      T& operator[](int) { return data; }
-      const T& operator[](int) const { return data; }
-      T data;
+      // Static definitions
+      typedef typename quick_e::longest_packet<T>::type intrinsic_type;
+      static const std::size_t size = quick_e::longest_packet<T>::size;
+      //      static const int intrinsic_size = 1; // What is this for?
+      static const std::size_t alignment_bytes = sizeof(intrinsic_type);
+       // T=float/double -> all bits = 1
+      static const std::size_t align_mask = (size == 1) ? -1 : alignment_bytes-1;
+      static const bool        is_vectorized = (size > 1);
+      // Data
+      union {
+	intrinsic_type data;
+	T value_[size];
+      };
+      // Constructors
+      Packet() : data(set0<intrinsic_type>()) { }
+      Packet(const Packet& d) : data(d.data) { }
+      Packet(intrinsic_type d) : data(d) { }
+      explicit Packet(const T* d) : data(load<intrinsic_type>(d)) { }
+      explicit Packet(T d) : data(set1<intrinsic_type>(d)) { }
+      // Member functions
+      void put(T* __restrict d) const { store(d, data); }
+      void put_unaligned(T* __restrict d) const { storeu(d, data); }
+      void operator=(T d)              { data = set1<intrinsic_type>(d); }
+      void operator=(intrinsic_type d) { data = d;       }
+      void operator=(const Packet& d)  { data = d.data;  }
+      void operator+=(const Packet& d) { data = add(data, d.data); }
+      void operator-=(const Packet& d) { data = sub(data, d.data); }
+      void operator*=(const Packet& d) { data = mul(data, d.data); }
+      void operator/=(const Packet& d) { data = div(data, d.data); }
+      Packet operator-()               { return neg(data); }
+      T value() const { return value_[0]; }
+      T& operator[](int i) { return value_[i]; }
+      const T& operator[](int i) const { return value_[i]; }
     };
 
+    //#define QE_PACKET_ARG Packet<T>
+#define QE_PACKET_ARG const Packet<T>& __restrict
+        
     // Default functions
+    template <typename T> Packet<T> operator+(QE_PACKET_ARG x, QE_PACKET_ARG y)
+    { return add(x.data,y.data); }
+    template <typename T> Packet<T> operator-(QE_PACKET_ARG x, QE_PACKET_ARG y)
+    { return sub(x.data,y.data); }
+    template <typename T> Packet<T> operator*(QE_PACKET_ARG x, QE_PACKET_ARG y)
+    { return mul(x.data,y.data); }
+    template <typename T> Packet<T> operator/(QE_PACKET_ARG x, QE_PACKET_ARG y)
+    { return div(x.data,y.data); }
+    template <typename T> Packet<T> fmin(QE_PACKET_ARG x, QE_PACKET_ARG y)
+    { return fmin(x.data,y.data); }
+    template <typename T> Packet<T> fmax(QE_PACKET_ARG x, QE_PACKET_ARG y)
+    { return fmax(x.data,y.data); }
+    template <typename T> Packet<T> sqrt(QE_PACKET_ARG x) {
+      using std::sqrt;
+      return sqrt(x.data);
+    }
+    template <typename T> Packet<T> fastexp(QE_PACKET_ARG x) {
+      return quick_e::exp(x.data);
+    }
+    template <typename T> T hsum(QE_PACKET_ARG x)  { return hsum(x.data); }
+    template <typename T> T hprod(QE_PACKET_ARG x) { return hmul(x.data); }
+    template <typename T> T hmin(QE_PACKET_ARG x)  { return hmin(x.data); }
+    template <typename T> T hmax(QE_PACKET_ARG x)  { return hmax(x.data); }
+
     template <typename T>
-    Packet<T> operator+(const Packet<T>& __restrict x,
-			const Packet<T>& __restrict y)
-    { return Packet<T>(x.data+y.data); }
-    template <typename T>
-    Packet<T> operator-(const Packet<T>& __restrict x,
-			const Packet<T>& __restrict y)
-    { return Packet<T>(x.data-y.data); }
-    template <typename T>
-    Packet<T> operator*(const Packet<T>& __restrict x,
-			const Packet<T>& __restrict y)
-    { return Packet<T>(x.data*y.data); }
-    template <typename T>
-    Packet<T> operator/(const Packet<T>& __restrict x,
-			const Packet<T>& __restrict y)
-    { return Packet<T>(x.data/y.data); }
-#ifdef ADEPT_CXX11_FEATURES
-    template <typename T>
-    Packet<T> fmin(const Packet<T>& __restrict x,
-		   const Packet<T>& __restrict y)
-    { return Packet<T>(std::fmin(x.data,y.data)); }
-    template <typename T>
-    Packet<T> fmax(const Packet<T>& __restrict x,
-		   const Packet<T>& __restrict y)
-    { return Packet<T>(std::fmax(x.data,y.data)); }
-#else
-    template <typename T>
-    Packet<T> fmin(const Packet<T>& __restrict x,
-		   const Packet<T>& __restrict y)
-    { return Packet<T>(std::min(x.data,y.data)); }
-    template <typename T>
-    Packet<T> fmax(const Packet<T>& __restrict x,
-		   const Packet<T>& __restrict y)
-    { return Packet<T>(std::max(x.data,y.data)); }
-#endif
-    template <typename T>
-    Packet<T> sqrt(const Packet<T>& __restrict x)
-    { return Packet<T>(std::sqrt(x.data)); }
-    template <typename T>
-    T hsum(const Packet<T>& __restrict x) { return x.data; }
-    template <typename T>
-    T hprod(const Packet<T>& __restrict x) { return x.data; }
-    template <typename T>
-    T hmin(const Packet<T>& __restrict x) { return x.data; }
-    template <typename T>
-    T hmax(const Packet<T>& __restrict x) { return x.data; }
-    template <typename T>
-    Packet<T> fma(Packet<T> a, Packet<T> b, Packet<T> c)
-    { return (a*b) + c; }
-    template <typename T>
-    Packet<T> fma(T a, Packet<T> b, T c)
-    { return (Packet<T>(a)*b) + Packet<T>(c); }
-    template <typename T>
-    Packet<T> fnma(Packet<T> a, Packet<T> b, Packet<T> c)
-    { return - (a*b) + c; }
-    template <typename T>
-    Packet<T> round(const Packet<T> a) {
-      Packet<T> r;
+    std::ostream& operator<<(std::ostream& os, QE_PACKET_ARG x) {
+      os << "{";
       for (int i = 0; i < Packet<T>::size; ++i) {
-	r[i] = std::round(a[i]);
+	os << " " << x.value[i];
       }
-      return r;
+      os << "}";
+      return os;
     }
-    
-    // -------------------------------------------------------------------
-    // Define a specialization, and the basic mathematical operators
-    // supported in hardware, for Packet in the case that each
-    // contains a single SSE2/AVX intrinsic data object.
-    // -------------------------------------------------------------------
-
-#define ADEPT_DEF_PACKET_TYPE(TYPE, INTRINSIC_TYPE, SET0,	\
-			      LOAD, LOADU, SET1, STORE, STOREU,	\
-			      ADD, SUB, MUL, DIV, SQRT,		\
-			      MIN, MAX, HSUM, HPROD,		\
-			      HMIN, HMAX)			\
-    template <> struct Packet<TYPE> {				\
-      typedef INTRINSIC_TYPE intrinsic_type;			\
-      static const int size					\
-        = sizeof(INTRINSIC_TYPE) / sizeof(TYPE);		\
-      static const int intrinsic_size				\
-        = sizeof(INTRINSIC_TYPE) / sizeof(TYPE);		\
-      static const std::size_t					\
-	alignment_bytes = sizeof(INTRINSIC_TYPE);		\
-      static const std::size_t					\
-        align_mask = sizeof(INTRINSIC_TYPE)-1;			\
-      static const bool is_vectorized = true;			\
-      Packet()              : data(SET0())  { }			\
-      Packet(const TYPE* d) : data(LOAD(d)) { }			\
-      Packet(const TYPE* d, int) : data(LOADU(d)) { }		\
-      Packet(TYPE d)        : data(SET1(d)) { }			\
-      Packet(INTRINSIC_TYPE d)    : data(d) { }			\
-      void put(TYPE* __restrict d) const { STORE(d, data); }	\
-      void put_unaligned(TYPE* __restrict d) const		\
-      { STOREU(d, data); }					\
-      void operator=(INTRINSIC_TYPE d) { data=d; }		\
-      void operator=(const Packet<TYPE>& __restrict d)		\
-      { data=d.data; }						\
-      void operator+=(const Packet<TYPE>& __restrict d)		\
-      { data = ADD(data, d.data); }				\
-      void operator-=(const Packet<TYPE>& __restrict d)		\
-      { data = SUB(data, d.data); }				\
-      void operator*=(const Packet<TYPE>& __restrict d)		\
-      { data = MUL(data, d.data); }				\
-      void operator/=(const Packet<TYPE>& __restrict d)		\
-      { data = DIV(data, d.data); }				\
-      TYPE value() const { return value_[0]; }			\
-      TYPE& operator[](int i) { return value_[i]; }	        \
-      const TYPE& operator[](int i) const { return value_[i]; }	\
-      union {							\
-	INTRINSIC_TYPE data;					\
-	TYPE value_[size];					\
-      };							\
-    };								\
-    inline							\
-    std::ostream& operator<<(std::ostream& os,			\
-			     const Packet<TYPE>& x) {		\
-      TYPE d[Packet<TYPE>::size];				\
-      STOREU(d, x.data);					\
-      os << "(";						\
-      for (int i = 0; i < Packet<TYPE>::size; ++i) {		\
-	os << " " << d[i];					\
-      }								\
-      os << ")";						\
-      return os;						\
-    }								\
-    inline							\
-    Packet<TYPE> operator+(const Packet<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return ADD(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> operator-(const Packet<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return SUB(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> operator*(const Packet<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return MUL(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> operator/(const Packet<TYPE>& __restrict x,	\
-			   const Packet<TYPE>& __restrict y)	\
-    { return DIV(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> fmin(const Packet<TYPE>& __restrict x,		\
-		     const Packet<TYPE>& __restrict y)		\
-    { return MIN(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> fmax(const Packet<TYPE>& __restrict x,		\
-		     const Packet<TYPE>& __restrict y)		\
-    { return MAX(x.data,y.data); }				\
-    inline							\
-    Packet<TYPE> sqrt(const Packet<TYPE>& __restrict x)		\
-    { return SQRT(x.data); }			\
-    inline							\
-    TYPE hsum(const Packet<TYPE>& __restrict x)			\
-    { return HSUM(x.data); }					\
-    inline							\
-    TYPE hprod(const Packet<TYPE>& __restrict x)		\
-    { return HPROD(x.data); }					\
-    inline							\
-    TYPE hmin(const Packet<TYPE>& __restrict x)			\
-    { return HMIN(x.data); }					\
-    inline							\
-    TYPE hmax(const Packet<TYPE>& __restrict x)			\
-    { return HMAX(x.data); }					\
-    inline							\
-    Packet<TYPE> operator-(const Packet<TYPE>& __restrict x)	\
-    { return Packet<TYPE>() - x; }				\
-    inline							\
-    Packet<TYPE> operator+(const Packet<TYPE>& __restrict x)	\
-    { return x; }
-
-#define ADEPT_DEF_PACKET_FMA(TYPE, FMA, FNMA)		   \
-    inline						   \
-    Packet<TYPE> fma(Packet<TYPE> a, Packet<TYPE> b,	   \
-		     Packet<TYPE> c)			   \
-    { return FMA(a.data,b.data,c.data); }		   \
-    inline						   \
-    Packet<TYPE> fnma(Packet<TYPE> a, Packet<TYPE> b,	   \
-		     Packet<TYPE> c)			   \
-    { return FNMA(a.data,b.data,c.data); }
-    
-    // -------------------------------------------------------------------
-    // Define horizontal sum, product, min and max functions (found on
-    // Stack Overflow and Intel Forum...)
-    // -------------------------------------------------------------------
-#ifdef __SSE2__
-    // Functions for an SSE packed vector of 4 floats
-    inline float mm_hsum_ps(__m128 v) {
-      __m128 shuf   = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 3, 0, 1));
-      __m128 sums   = _mm_add_ps(v, shuf);
-      shuf          = _mm_movehl_ps(shuf, sums);
-      return    _mm_cvtss_f32(_mm_add_ss(sums, shuf));    
-    }
-    inline float mm_hprod_ps(__m128 v) {
-      __m128 shuf   = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 3, 0, 1));
-      __m128 sums   = _mm_mul_ps(v, shuf);
-      shuf          = _mm_movehl_ps(shuf, sums);
-      return    _mm_cvtss_f32(_mm_mul_ss(sums, shuf));    
-    }
-    inline float mm_hmin_ps(__m128 v) {
-      __m128 shuf   = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 3, 0, 1));
-      __m128 sums   = _mm_min_ps(v, shuf);
-      shuf          = _mm_movehl_ps(shuf, sums);
-      return    _mm_cvtss_f32(_mm_min_ss(sums, shuf));    
-    }
-    inline float mm_hmax_ps(__m128 v) {
-      __m128 shuf   = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 3, 0, 1));
-      __m128 sums   = _mm_max_ps(v, shuf);
-      shuf          = _mm_movehl_ps(shuf, sums);
-      return    _mm_cvtss_f32(_mm_max_ss(sums, shuf));    
-    }
-
-    // Functions for an SSE2 packed vector of 2 doubles
-    inline double mm_hsum_pd(__m128d vd) {
-      __m128 shuftmp= _mm_movehl_ps(ADEPT_MM_UNDEFINED_PS(),
-				    _mm_castpd_ps(vd));
-      __m128d shuf  = _mm_castps_pd(shuftmp);
-      return  _mm_cvtsd_f64(_mm_add_sd(vd, shuf));
-    }
-    inline double mm_hprod_pd(__m128d vd) {
-      __m128 shuftmp= _mm_movehl_ps(ADEPT_MM_UNDEFINED_PS(),
-				    _mm_castpd_ps(vd));
-      __m128d shuf  = _mm_castps_pd(shuftmp);
-      return  _mm_cvtsd_f64(_mm_mul_sd(vd, shuf));
-    }
-    inline double mm_hmin_pd(__m128d vd) {
-      __m128 shuftmp= _mm_movehl_ps(ADEPT_MM_UNDEFINED_PS(),
-				    _mm_castpd_ps(vd));
-      __m128d shuf  = _mm_castps_pd(shuftmp);
-      return  _mm_cvtsd_f64(_mm_min_sd(vd, shuf));
-    }
-    inline double mm_hmax_pd(__m128d vd) {
-      __m128 shuftmp= _mm_movehl_ps(ADEPT_MM_UNDEFINED_PS(),
-				    _mm_castpd_ps(vd));
-      __m128d shuf  = _mm_castps_pd(shuftmp);
-      return  _mm_cvtsd_f64(_mm_max_sd(vd, shuf));
-    }
-#undef ADEPT_MM_UNDEFINED_PS
-#endif // __SSE2__
-
-#ifdef __AVX__
-    // Functions for an AVX packed vector of 8 floats
-    inline float mm256_hsum_ps(__m256 v) {
-      __m128 vlow  = _mm256_castps256_ps128(v);
-      __m128 vhigh = _mm256_extractf128_ps(v, 1);
-      vlow  = _mm_add_ps(vlow, vhigh);
-      __m128 shuf = _mm_movehdup_ps(vlow);
-      __m128 sums = _mm_add_ps(vlow, shuf);
-      shuf        = _mm_movehl_ps(shuf, sums);
-      return        _mm_cvtss_f32(_mm_add_ss(sums, shuf));
-    }
-    inline float mm256_hprod_ps(__m256 v) {
-      __m128 vlow  = _mm256_castps256_ps128(v);
-      __m128 vhigh = _mm256_extractf128_ps(v, 1);
-      vlow  = _mm_mul_ps(vlow, vhigh);
-      __m128 shuf = _mm_movehdup_ps(vlow);
-      __m128 sums = _mm_mul_ps(vlow, shuf);
-      shuf        = _mm_movehl_ps(shuf, sums);
-      return        _mm_cvtss_f32(_mm_mul_ss(sums, shuf));
-    }
-    inline float mm256_hmin_ps(__m256 v) {
-      __m128 vlow  = _mm256_castps256_ps128(v);
-      __m128 vhigh = _mm256_extractf128_ps(v, 1);
-      vlow  = _mm_min_ps(vlow, vhigh);
-      __m128 shuf = _mm_movehdup_ps(vlow);
-      __m128 sums = _mm_min_ps(vlow, shuf);
-      shuf        = _mm_movehl_ps(shuf, sums);
-      return        _mm_cvtss_f32(_mm_min_ss(sums, shuf));
-    }
-    inline float mm256_hmax_ps(__m256 v) {
-      __m128 vlow  = _mm256_castps256_ps128(v);
-      __m128 vhigh = _mm256_extractf128_ps(v, 1);
-      vlow  = _mm_max_ps(vlow, vhigh);
-      __m128 shuf = _mm_movehdup_ps(vlow);
-      __m128 sums = _mm_max_ps(vlow, shuf);
-      shuf        = _mm_movehl_ps(shuf, sums);
-      return        _mm_cvtss_f32(_mm_max_ss(sums, shuf));
-    }
-
-    // Functions for an AVX packed vector of 4 doubles
-    inline double mm256_hsum_pd(__m256d vd) {
-      __m256d h = _mm256_add_pd(vd, _mm256_permute2f128_pd(vd, vd, 0x1));
-      return _mm_cvtsd_f64(_mm_hadd_pd(_mm256_castpd256_pd128(h),
-				       _mm256_castpd256_pd128(h) ) );
-    }
-    inline double mm256_hprod_pd(__m256d vd) {
-      __m256d h = _mm256_mul_pd(vd, _mm256_permute2f128_pd(vd, vd, 0x1));
-      return mm_hprod_pd(_mm256_castpd256_pd128(h));
-    }
-    inline double mm256_hmin_pd(__m256d vd) {
-      __m256d h = _mm256_min_pd(vd, _mm256_permute2f128_pd(vd, vd, 0x1));
-      return mm_hmin_pd(_mm256_castpd256_pd128(h));
-    }
-    inline double mm256_hmax_pd(__m256d vd) {
-      __m256d h = _mm256_max_pd(vd, _mm256_permute2f128_pd(vd, vd, 0x1));
-      return mm_hmax_pd(_mm256_castpd256_pd128(h));
-    }
-
-#endif
-
-    // -------------------------------------------------------------------
-    // Define single-precision Packet
-    // -------------------------------------------------------------------
-#if ADEPT_FLOAT_PACKET_SIZE == 16
-
-  #ifdef __AVX512F__
-    ADEPT_DEF_PACKET_TYPE(float, __m512, _mm512_setzero_ps,
-			  _mm512_load_ps, _mm512_loadu_ps, _mm512_set1_ps,
-			  _mm512_store_ps, _mm512_storeu_ps,
-			  _mm512_add_ps, _mm512_sub_ps,
-			  _mm512_mul_ps, _mm512_div_ps, _mm512_sqrt_ps,
-			  _mm512_min_ps, _mm512_max_ps,
-			  _mm512_reduce_add_ps, _mm512_reduce_mul_ps,
-			  _mm512_reduce_min_ps, _mm512_reduce_max_ps)
-  #else
-    #error ADEPT_FLOAT_PACKET_SIZE=16 requires AVX512F intrinsics
-  #endif
-
-#elif ADEPT_FLOAT_PACKET_SIZE == 8
-
-  #ifdef __AVX__
-    ADEPT_DEF_PACKET_TYPE(float, __m256, _mm256_setzero_ps,
-			  _mm256_load_ps, _mm256_loadu_ps, _mm256_set1_ps,
-			  _mm256_store_ps, _mm256_storeu_ps,
-			  _mm256_add_ps, _mm256_sub_ps,
-			  _mm256_mul_ps, _mm256_div_ps, _mm256_sqrt_ps,
-			  _mm256_min_ps, _mm256_max_ps,
-			  mm256_hsum_ps, mm256_hprod_ps,
-			  mm256_hmin_ps, mm256_hmax_ps)
-  #else
-    #error ADEPT_FLOAT_PACKET_SIZE=8 requires AVX intrinsics
-  #endif
-    
-#elif ADEPT_FLOAT_PACKET_SIZE == 4
-
-  #ifdef __SSE2__  
-    ADEPT_DEF_PACKET_TYPE(float, __m128, _mm_setzero_ps, 
-			  _mm_load_ps, _mm_loadu_ps, _mm_set1_ps,
-			  _mm_store_ps, _mm_storeu_ps,
-			  _mm_add_ps, _mm_sub_ps,
-			  _mm_mul_ps, _mm_div_ps, _mm_sqrt_ps,
-			  _mm_min_ps, _mm_max_ps,
-			  mm_hsum_ps, mm_hprod_ps,
-			  mm_hmin_ps, mm_hmax_ps)
-  #else
-    #error ADEPT_FLOAT_PACKET_SIZE=4 requires SSE2 intrinsics
-  #endif
-    
-#elif ADEPT_FLOAT_PACKET_SIZE != 1
-  #error ADEPT_FLOAT_PACKET_SIZE must be 1, 4, 8 or 16
-#endif
-
-    // -------------------------------------------------------------------
-    // Define double-precision Packet
-    // -------------------------------------------------------------------
-#if ADEPT_DOUBLE_PACKET_SIZE == 8
-
-  #ifdef __AVX512F__
-    ADEPT_DEF_PACKET_TYPE(double, __m512d, _mm512_setzero_pd, 
-			  _mm512_load_pd, _mm512_loadu_pd, _mm512_set1_pd,
-			  _mm512_store_pd, _mm512_storeu_pd,
-			  _mm512_add_pd, _mm512_sub_pd,
-			  _mm512_mul_pd, _mm512_div_pd, _mm512_sqrt_pd,
-			  _mm512_min_pd, _mm512_max_pd,
-			  _mm512_reduce_add_pd, _mm512_reduce_mul_pd,
-			  _mm512_reduce_min_pd, _mm512_reduce_max_pd)
-    ADEPT_DEF_PACKET_FMA(double, _mm512_fmadd_pd, _mm512_fnmadd_pd)
-    inline Packet<double> round(Packet<double> x)
-    { return _mm512_roundscale_pd(x.data, 0); }
-    
-  #else
-    #error ADEPT_DOUBLE_PACKET_SIZE=8 requires AVX512F intrinsics
-  #endif
-    
-#elif ADEPT_DOUBLE_PACKET_SIZE == 4
-
-  #ifdef __AVX__
-    
-    ADEPT_DEF_PACKET_TYPE(double, __m256d, _mm256_setzero_pd, 
-			  _mm256_load_pd, _mm256_loadu_pd, _mm256_set1_pd,
-			  _mm256_store_pd, _mm256_storeu_pd,
-			  _mm256_add_pd, _mm256_sub_pd,
-			  _mm256_mul_pd, _mm256_div_pd, _mm256_sqrt_pd,
-			  _mm256_min_pd, _mm256_max_pd,
-			  mm256_hsum_pd, mm256_hprod_pd,
-			  mm256_hmin_pd, mm256_hmax_pd)
-    #ifdef __FMA__
-      ADEPT_DEF_PACKET_FMA(double, _mm256_fmadd_pd, _mm256_fnmadd_pd)
-    #endif
-    inline Packet<double> round(Packet<double> x)
-    { return _mm256_round_pd(x.data,
-			     (_MM_FROUND_TO_NEAREST_INT|_MM_FROUND_NO_EXC)); }
-    
-  #else
-    #error ADEPT_DOUBLE_PACKET_SIZE=4 requires AVX intrinsics
-  #endif
-    
-#elif ADEPT_DOUBLE_PACKET_SIZE == 2
-
-  #ifdef __SSE2__
-    ADEPT_DEF_PACKET_TYPE(double, __m128d, _mm_setzero_pd, 
-			  _mm_load_pd, _mm_loadu_pd, _mm_set1_pd,
-			  _mm_store_pd, _mm_storeu_pd,
-			  _mm_add_pd, _mm_sub_pd,
-			  _mm_mul_pd, _mm_div_pd, _mm_sqrt_pd,
-			  _mm_min_pd, _mm_max_pd,
-			  mm_hsum_pd, mm_hprod_pd,
-			  mm_hmin_pd, mm_hmax_pd)
-    #ifdef __FMA__
-      ADEPT_DEF_PACKET_FMA(double, _mm_fmadd_pd, _mm_fnmadd_pd)
-    #endif
-    #ifdef __SSE4_1__
-      inline Packet<double> round(Packet<double> x)
-      { return _mm_round_pd(x.data,
-			    (_MM_FROUND_TO_NEAREST_INT|_MM_FROUND_NO_EXC)); }
-    #endif  
-  #else
-    #error ADEPT_PACKET_SIZE=2 requires SSE2 intrinsics
-  #endif
-
-#elif ADEPT_DOUBLE_PACKET_SIZE != 1
-  #error ADEPT_DOUBLE_PACKET_SIZE must be 1, 2, 4 or 8
-#endif
-    
-#undef ADEPT_DEF_PACKET_TYPE
-#undef ADEPT_DEF_PACKET_FMA
-#undef ADEPT_DEF_PACKET_ROUND
-
 
     // -------------------------------------------------------------------
     // Aligned allocation and freeing of memory
@@ -647,7 +223,5 @@ namespace adept {
   } // End namespace internal
 
 } // End namespace adept
-
-#include "fastexp.h"
 
 #endif

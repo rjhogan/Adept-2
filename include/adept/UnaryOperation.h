@@ -14,8 +14,6 @@
 
 #include <adept/ArrayWrapper.h>
 
-#include <adept/fastexp.h>
-
 namespace adept {
 
   namespace internal {
