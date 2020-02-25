@@ -86,13 +86,30 @@
 // Do we disable automatic alias checking in array operations?
 //#define ADEPT_NO_ALIAS_CHECKING 1
 
+// Does adept::exp invoke a faster vectorizable exponential function?
+// This is not bit reproducible with "exp" in the standard library,
+// but the faster function is always available as adept::fastexp.
+// Note that when applied to an Adept type, a simple "exp" selects the
+// function from the adept namespace.  To apply the same version of
+// exp to scalars you would need to specify "adept::exp".
+//#define ADEPT_FAST_EXPONENTIAL
+
 // A shortcut for faster execution that does not change the behaviour
 // of single-threaded bug-free code that uses the "eval" function in
-// case of aliasing
+// case of aliasing.  ADEPT_FAST_EXPONENTIAL changes results so is not
+// activated wtih ADEPT_FAST.
 #ifdef ADEPT_FAST
 #define ADEPT_STACK_THREAD_UNSAFE 1
 #define ADEPT_NO_DIMENSION_CHECKING 1
 #define ADEPT_NO_ALIAS_CHECKING 1
+#endif
+
+// The compiler option -ffast-math turns on __FAST_MATH__ and allows
+// for optimizations that may not be bit-reproducible or do all the
+// normal error checking - Adept's fast exponential falls into this
+// category.
+#ifdef __FAST_MATH__
+#define ADEPT_FAST_EXPONENTIAL 1
 #endif
 
 // The initial size of the stacks, which can be grown if required

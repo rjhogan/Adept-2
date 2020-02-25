@@ -21,8 +21,6 @@
 #include <cstdlib>
 #include <cmath>
 
-#include "quick_e.h"
-
 // Headers needed for allocation of aligned memory
 #include <new>
 
@@ -34,7 +32,8 @@
 #include <malloc.h> // Provides _aligned_malloc on Windows
 #endif
 
-#include "base.h"
+#include <adept/quick_e.h>
+#include <adept/base.h>
 
 // -------------------------------------------------------------------
 // Determine how many floating point values will be held in a packet
@@ -63,9 +62,6 @@
 
 namespace adept {
 
-  // Bring fastexp from into this namespace
-  using quick_e::fastexp;
-
   namespace internal {
 
     // Trait to define packet size
@@ -76,11 +72,7 @@ namespace adept {
     template <> struct packet_traits<double>
     { static const int size = ADEPT_DOUBLE_PACKET_SIZE; };
     
-    // Note that "using namespace" is not enough to pick up all
-    // quick_e functions since some are masked by templated functions
-    // in the present namespace
-    //    using namespace quick_e;
-    
+
     // -------------------------------------------------------------------
     // Define packet type
     // -------------------------------------------------------------------
@@ -152,8 +144,18 @@ namespace adept {
       return sqrt(x.data);
     }
     template <typename T> Packet<T> fastexp(QE_PACKET_ARG x) {
-      return quick_e::fastexp(x.data);
+      return quick_e::exp(x.data);
     }
+#ifdef ADEPT_FAST_EXPONENTIAL
+    template <typename T> Packet<T> exp(QE_PACKET_ARG x) {
+      return quick_e::exp(x.data);
+    }
+#else
+    template <typename T> Packet<T> exp(QE_PACKET_ARG x) {
+      return std::exp(x.data);
+    }
+#endif
+
     template <typename T> T hsum(QE_PACKET_ARG x)  { return quick_e::hsum(x.data); }
     template <typename T> T hprod(QE_PACKET_ARG x) { return quick_e::hmul(x.data); }
     template <typename T> T hmin(QE_PACKET_ARG x)  { return quick_e::hmin(x.data); }
@@ -242,8 +244,19 @@ namespace adept {
       static const bool value = true;
     };
 
-
   } // End namespace internal
+
+
+  // -------------------------------------------------------------------
+  // Fast exponential function
+  // -------------------------------------------------------------------
+
+#ifdef ADEPT_FAST_EXPONENTIAL
+  // Bring exp from quick_e into this namespace
+  using quick_e::exp;
+#endif
+  inline float  fastexp(float x)  { return quick_e::exp(x); }
+  inline double fastexp(double x) { return quick_e::exp(x); }
 
 } // End namespace adept
 

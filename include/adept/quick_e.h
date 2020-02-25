@@ -59,19 +59,19 @@
   // so we assume none do, except GCC >= 4.9.1 and CLANG >= 3.8.0.
   // Those that don't use an equivalent function that sets the
   // elements to zero.
-  #define ADEPT_MM_UNDEFINED_PS _mm_setzero_ps
+  #define QE_MM_UNDEFINED_PS _mm_setzero_ps
   #ifdef __clang__
     #if __has_builtin(__builtin_ia32_undef128)
-      #undef ADEPT_MM_UNDEFINED_PS
-      #define ADEPT_MM_UNDEFINED_PS _mm_undefined_ps
+      #undef QE_MM_UNDEFINED_PS
+      #define QE_MM_UNDEFINED_PS _mm_undefined_ps
     #endif
   #elif defined(__GNUC__)
     #define GCC_VERSION (__GNUC__ * 10000 \
 			 + __GNUC_MINOR__ * 100	\
 			 + __GNUC_PATCHLEVEL__)
     #if GCC_VERSION >= 40901
-      #undef ADEPT_MM_UNDEFINED_PS
-      #define ADEPT_MM_UNDEFINED_PS _mm_undefined_ps
+      #undef QE_MM_UNDEFINED_PS
+      #define QE_MM_UNDEFINED_PS _mm_undefined_ps
     #endif
     #undef GCC_VERSION
   #endif // __clang__/__GNUC__
@@ -149,9 +149,13 @@ namespace quick_e {
     #define QE_LONGEST_FLOAT_PACKET 4
     #define QE_LONGEST_DOUBLE_PACKET 2
   #endif
+  // If QE_AVAILABLE is defined then we can use the fast exponential
+  #define QE_AVAILABLE
 #else
   // No vectorization available: longest packet is of size 1
   QE_DEFINE_LONGEST(float, double);
+#define QE_LONGEST_FLOAT_PACKET 1
+#define QE_LONGEST_DOUBLE_PACKET 1
 #endif
   
   
@@ -200,13 +204,15 @@ namespace quick_e {
   inline VEC mul(VEC x, VEC y)       { return MUL(x, y); }	\
   inline VEC div(VEC x, VEC y)       { return DIV(x, y); }	\
   inline VEC neg(VEC x)              { return SUB(SET0(), x); }	\
-  template <> inline VEC set0<VEC>()        { return SET0();    }	\
-  template <> inline VEC set1<VEC>(TYPE x)  { return SET1(x);   }		\
-  inline VEC sqrt(VEC x)             { return SQRT(x);   }		\
-  inline VEC fmin(VEC x, VEC y)      { return FMIN(x,y); }		\
-  inline VEC fmax(VEC x, VEC y)      { return FMAX(x,y); }		\
-  template <> inline VEC load<VEC,TYPE>(const TYPE* d){ return LOAD(d);   } \
-  template <> inline VEC loadu<VEC,TYPE>(const TYPE* d){ return LOADU(d); }	\
+  template <> inline VEC set0<VEC>()        { return SET0();  }	\
+  template <> inline VEC set1<VEC>(TYPE x)  { return SET1(x); }	\
+  inline VEC sqrt(VEC x)             { return SQRT(x);   }	\
+  inline VEC fmin(VEC x, VEC y)      { return FMIN(x,y); }	\
+  inline VEC fmax(VEC x, VEC y)      { return FMAX(x,y); }	\
+  template <> inline VEC load<VEC,TYPE>(const TYPE* d)		\
+  { return LOAD(d);  }						\
+  template <> inline VEC loadu<VEC,TYPE>(const TYPE* d)         \
+  { return LOADU(d); }						\
   inline void store(TYPE* d, VEC x)  { STORE(d, x);      }	\
   inline void storeu(TYPE* d, VEC x) { STORE(d, x);      }	\
   inline std::ostream& operator<<(std::ostream& os, VEC x) {	\
@@ -303,7 +309,7 @@ namespace quick_e {
     return _mm_cvtss_f32(OP_SS(sums, shuf));				\
   }									\
   inline double FUNC(__m128d x) {					\
-    __m128 shuftmp= _mm_movehl_ps(ADEPT_MM_UNDEFINED_PS(),		\
+    __m128 shuftmp= _mm_movehl_ps(QE_MM_UNDEFINED_PS(),			\
 				  _mm_castpd_ps(x));			\
     __m128d shuf  = _mm_castps_pd(shuftmp);				\
     return  _mm_cvtsd_f64(OP_PD(x, shuf));				\
@@ -313,7 +319,7 @@ namespace quick_e {
   QE_DEFINE_HORIZ_SSE2(hmin, _mm_min_ps, _mm_min_ss, _mm_min_pd)
   QE_DEFINE_HORIZ_SSE2(hmax, _mm_max_ps, _mm_max_ss, _mm_max_pd)
 
-#undef ADEPT_MM_UNDEFINED_PS
+#undef QE_MM_UNDEFINED_PS
 #undef QE_DEFINE_HORIZ_SSE2
   
 #ifdef __FMA__
@@ -617,51 +623,46 @@ namespace quick_e {
   }
 #endif
   
+
+  // Define the various overloads for the quick_e::exp function taking
+  // Intel intrinsics as an argument
+
 #ifdef __SSE2__
-  inline __m128 exp(__m128 x) { return fastexp_float(x); }
-  inline __m128 fastexp(__m128 x) { return fastexp_float(x); }
+  inline __m128  exp(__m128 x)  { return fastexp_float(x);  }
   inline __m128d exp(__m128d x) { return fastexp_double(x); }
-  inline __m128d fastexp(__m128d x) { return fastexp_double(x); }
 #endif
 
 #ifdef __AVX__
-  inline __m256 exp(__m256 x) { return fastexp_float(x); }
-  inline __m256 fastexp(__m256 x) { return fastexp_float(x); }
+  inline __m256  exp(__m256 x)  { return fastexp_float(x);  }
   inline __m256d exp(__m256d x) { return fastexp_double(x); }
-  inline __m256d fastexp(__m256d x) { return fastexp_double(x); }
 #endif
 
 #ifdef __AVX512F__
-  inline __m512 exp(__m512 x) { return fastexp_float(x); }
-  inline __m512 fastexp(__m512 x) { return fastexp_float(x); }
+  inline __m512  exp(__m512 x)  { return fastexp_float(x);  }
   inline __m512d exp(__m512d x) { return fastexp_double(x); }
-  inline __m512d fastexp(__m512d x) { return fastexp_double(x); }
 #endif
 
+  // Define the quick_e::exp function for scalar arguments
 #ifdef __SSE2__
-  //  inline double exp(double x) { return quick_e::fastexp_double(x); }
-  inline float fastexp(float x) { 
-    return quick_e::fastexp_float(x); 
-  }
-  inline double fastexp(double x) { 
-    //asm("### FASTEXP START");
-    return quick_e::fastexp_double(x); 
-    //asm("### FASTEXP END");
-    //    return ans;
-  }
+  inline float  exp(float x)  { return quick_e::fastexp_float(x); }
+  inline double exp(double x) { return quick_e::fastexp_double(x); }
 #else
   // If no vectorization available then we fall back to the standard
   // library scalar version
-
-  //  inline double exp(double x) { return quick_e::fastexp_double(x); }
-  inline float fastexp(float x) { 
-    return std::exp(x); 
-  }
-  inline double fastexp(double x) { 
-    return std::exp(x);
-  }
+  inline float  exp(float x)  { return std::exp(x); }
+  inline double exp(double x) { return std::exp(x); }
 #endif
-  
+
+#undef QE_DEFINE_TRAITS
+#undef QE_DEFINE_LONGEST
+#undef QE_DEFINE_BASIC
+#undef QE_DEFINE_CHOP
+#undef QE_DEFINE_HORIZ
+#undef QE_DEFINE_FMA
+#undef QE_EMULATE_FMA
+#undef QE_DEFINE_POW2N_S
+#undef QE_DEFINE_POW2N_D
+
 }
 
 #endif

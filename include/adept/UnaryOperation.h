@@ -243,12 +243,16 @@ namespace adept {
 
   // Functions y(x) whose derivative depends on the result of the
   // function, i.e. dy(x)/dx = f(y)
-  ADEPT_DEF_UNARY_FUNC(Exp,   exp,   std::exp,   "exp",   result, false)
   ADEPT_DEF_UNARY_FUNC(Sqrt,  sqrt,  std::sqrt,  "sqrt",  0.5/result, true)
   ADEPT_DEF_UNARY_FUNC(Tanh,  tanh,  std::tanh,  "tanh",  1.0 - result*result, false)
 
   // Adept's vectorizable exponential function
-  ADEPT_DEF_UNARY_FUNC(Fastexp,  fastexp,  quick_e::fastexp,  "fastexp",  result, true)
+  ADEPT_DEF_UNARY_FUNC(Fastexp, fastexp, adept::fastexp, "fastexp", result, true)
+#ifdef ADEPT_FAST_EXPONENTIAL
+  ADEPT_DEF_UNARY_FUNC(Exp,   exp,   adept::exp, "fastexp", result, true)
+#else
+  ADEPT_DEF_UNARY_FUNC(Exp,   exp,   std::exp,   "exp",   result, false)
+#endif
 
   // Functions with zero derivative
   ADEPT_DEF_UNARY_FUNC(Ceil,  ceil,  std::ceil,  "ceil",  0.0, false)
