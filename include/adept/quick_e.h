@@ -213,7 +213,7 @@ namespace quick_e {
     static const int size = sizeof(VEC)/sizeof(TYPE);		\
     union { VEC v; TYPE d[size]; };				\
     v = x; os << "{";						\
-    for (int i = 0; i < sizeof(VEC)/sizeof(TYPE); ++i)		\
+    for (int i = 0; i < size; ++i)				\
       { os << " " << d[i]; }					\
     os << "}"; return os;					\
   }

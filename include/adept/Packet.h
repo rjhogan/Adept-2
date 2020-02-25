@@ -63,6 +63,9 @@
 
 namespace adept {
 
+  // Bring fastexp from into this namespace
+  using quick_e::fastexp;
+
   namespace internal {
 
     // Trait to define packet size
@@ -73,7 +76,10 @@ namespace adept {
     template <> struct packet_traits<double>
     { static const int size = ADEPT_DOUBLE_PACKET_SIZE; };
     
-    using namespace quick_e;
+    // Note that "using namespace" is not enough to pick up all
+    // quick_e functions since some are masked by templated functions
+    // in the present namespace
+    //    using namespace quick_e;
     
     // -------------------------------------------------------------------
     // Define packet type
@@ -95,29 +101,30 @@ namespace adept {
 	T value_[size];
       };
       // Constructors
-      Packet() : data(set0<intrinsic_type>()) { }
+      Packet() : data(quick_e::set0<intrinsic_type>()) { }
       Packet(const Packet& d) : data(d.data) { }
       template <typename TT>
       Packet(TT d, typename enable_if<is_same<TT,intrinsic_type>::value,int>::type = 0)
 	: data(d) { }
-      explicit Packet(const T* d) : data(load<intrinsic_type>(d)) { }
-      //      explicit Packet(T d) : data(set1<intrinsic_type>(d)) { }
+      explicit Packet(const T* d) : data(quick_e::load<intrinsic_type>(d)) { }
+      //      explicit Packet(T d) : data(quick_e::set1<intrinsic_type>(d)) { }
       template <typename TT>
       explicit Packet(TT d, typename enable_if<is_same<TT,T>::value&&is_vectorized,int>::type = 0)
-	: data(set1<intrinsic_type>(d)) { }
+	: data(quick_e::set1<intrinsic_type>(d)) { }
       // Member functions
-      void put(T* __restrict d) const { store(d, data); }
-      void put_unaligned(T* __restrict d) const { storeu(d, data); }
-      //      void operator=(T d)              { data = set1<intrinsic_type>(d); }
+      void put(T* __restrict d) const { quick_e::store(d, data); }
+      void put_unaligned(T* __restrict d) const { quick_e::storeu(d, data); }
+      //      void operator=(T d)              { data = quick_e::set1<intrinsic_type>(d); }
       template <typename TT> //, typename enable_if<is_same<T,TT>::value||is_same<T,intrinsic_type>::value,int>::type = 0>
-      void operator=(TT d)              { data = set1<intrinsic_type>(d); }
+      void operator=(TT d)              { data = quick_e::set1<intrinsic_type>(d); }
       //      void operator=(intrinsic_type d) { data = d;       }
       void operator=(const Packet& d)  { data = d.data;  }
-      void operator+=(const Packet& d) { data = add(data, d.data); }
-      void operator-=(const Packet& d) { data = sub(data, d.data); }
-      void operator*=(const Packet& d) { data = mul(data, d.data); }
-      void operator/=(const Packet& d) { data = div(data, d.data); }
-      Packet operator-()               { return neg(data); }
+      void operator+=(const Packet& d) { data = quick_e::add(data, d.data); }
+      void operator-=(const Packet& d) { data = quick_e::sub(data, d.data); }
+      void operator*=(const Packet& d) { data = quick_e::mul(data, d.data); }
+      void operator/=(const Packet& d) { data = quick_e::div(data, d.data); }
+      Packet operator-() const         { return quick_e::neg(data); }
+      Packet operator+() const         { return *this; }
       T value() const { return value_[0]; }
       T& operator[](int i) { return value_[i]; }
       const T& operator[](int i) const { return value_[i]; }
@@ -128,34 +135,35 @@ namespace adept {
         
     // Default functions
     template <typename T> Packet<T> operator+(QE_PACKET_ARG x, QE_PACKET_ARG y)
-    { return add(x.data,y.data); }
+    { return quick_e::add(x.data,y.data); }
     template <typename T> Packet<T> operator-(QE_PACKET_ARG x, QE_PACKET_ARG y)
-    { return sub(x.data,y.data); }
+    { return quick_e::sub(x.data,y.data); }
     template <typename T> Packet<T> operator*(QE_PACKET_ARG x, QE_PACKET_ARG y)
-    { return mul(x.data,y.data); }
+    { return quick_e::mul(x.data,y.data); }
     template <typename T> Packet<T> operator/(QE_PACKET_ARG x, QE_PACKET_ARG y)
-    { return div(x.data,y.data); }
+    { return quick_e::div(x.data,y.data); }
     template <typename T> Packet<T> fmin(QE_PACKET_ARG x, QE_PACKET_ARG y)
-    { return fmin(x.data,y.data); }
+    { return quick_e::fmin(x.data,y.data); }
     template <typename T> Packet<T> fmax(QE_PACKET_ARG x, QE_PACKET_ARG y)
-    { return fmax(x.data,y.data); }
+    { return quick_e::fmax(x.data,y.data); }
     template <typename T> Packet<T> sqrt(QE_PACKET_ARG x) {
       using std::sqrt;
+      using quick_e::sqrt;
       return sqrt(x.data);
     }
     template <typename T> Packet<T> fastexp(QE_PACKET_ARG x) {
       return quick_e::fastexp(x.data);
     }
-    template <typename T> T hsum(QE_PACKET_ARG x)  { return hsum(x.data); }
-    template <typename T> T hprod(QE_PACKET_ARG x) { return hmul(x.data); }
-    template <typename T> T hmin(QE_PACKET_ARG x)  { return hmin(x.data); }
-    template <typename T> T hmax(QE_PACKET_ARG x)  { return hmax(x.data); }
+    template <typename T> T hsum(QE_PACKET_ARG x)  { return quick_e::hsum(x.data); }
+    template <typename T> T hprod(QE_PACKET_ARG x) { return quick_e::hmul(x.data); }
+    template <typename T> T hmin(QE_PACKET_ARG x)  { return quick_e::hmin(x.data); }
+    template <typename T> T hmax(QE_PACKET_ARG x)  { return quick_e::hmax(x.data); }
 
     template <typename T>
     std::ostream& operator<<(std::ostream& os, QE_PACKET_ARG x) {
       os << "{";
       for (int i = 0; i < Packet<T>::size; ++i) {
-	os << " " << x.value[i];
+	os << " " << x.value_[i];
       }
       os << "}";
       return os;
