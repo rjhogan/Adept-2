@@ -555,24 +555,24 @@ namespace quick_e {
 		    _mm512_castsi512_pd, _mm512_sll_epi64)
 
   inline bool all_in_range(__m512 x, float low_bound, float high_bound) {
-    return static_cast<short int>(_mm512_kand(
+    return static_cast<unsigned short int>(_mm512_kand(
 	      _mm512_cmp_ps_mask(x,set1<__m512>(low_bound),_CMP_GE_OS),
 	      _mm512_cmp_ps_mask(x,set1<__m512>(high_bound),_CMP_LE_OS)))
-      == static_cast<short int>(-1);
+      == static_cast<unsigned short int>(65535);
   }
   inline bool all_in_range(__m512d x, double low_bound, double high_bound) {
-    return static_cast<short int>(_mm512_kand(
+    return static_cast<unsigned short int>(_mm512_kand(
 	      _mm512_cmp_pd_mask(x,set1<__m512d>(low_bound),_CMP_GE_OS),
 	      _mm512_cmp_pd_mask(x,set1<__m512d>(high_bound),_CMP_LE_OS)))
-      == static_cast<short int>(255);
+      == static_cast<unsigned short int>(255);
   }
   inline __m512 select_gt(__m512 x1, __m512 x2,
 			  __m512 y1, __m512 y2) {
-    return _m512_mask_mov_ps(y2, _mm512_cmp_ps_mask(x1,x2,_CMP_GT_OS), y2);
+    return _mm512_mask_mov_ps(y2, _mm512_cmp_ps_mask(x1,x2,_CMP_GT_OS), y1);
   }
   inline __m512d select_gt(__m512d x1, __m512d x2,
 			   __m512d y1, __m512d y2) {
-    return _m512_mask_mov_pd(y2, _mm512_cmp_pd_mask(x1,x2,_CMP_GT_OS), y2);
+    return _mm512_mask_mov_pd(y2, _mm512_cmp_pd_mask(x1,x2,_CMP_GT_OS), y1);
   }
 
 #endif
