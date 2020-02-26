@@ -489,21 +489,33 @@ namespace quick_e {
       return pack(pow2n(low(n)), pow2n(high(n)));
     }
   #endif
-
-
-  
+ 
+  // Return true if all elements of x are in the range (inclusive) of
+  // low_bound to high_bound.  If so the exp call can exit before the
+  // more costly case of working out what to do with inputs out of
+  // bounds.  Note that _CMP_GE_OS means compare
+  // greater-than-or-equal-to, ordered, signaling, where "ordered"
+  // means that if either operand is NaN, the result is false.
   inline bool all_in_range(__m256 x, float low_bound, float high_bound) {
-    return _mm256_testc_si256horiz_and(_mm256_castps_si256(_mm256_and_ps(
-			 _mm256_cmp_ps(x,set1<__m256>(low_bound), _CMP_NLT_US),
-			 _mm256_cmp_ps(x,set1<__m256>(high_bound), _CMP_LE_OS))));
+    return _mm256_testc_si256(_mm256_castps_si256(_mm256_and_ps(
+		 _mm256_cmp_ps(x,set1<__m256>(low_bound), _CMP_GE_OS),
+		 _mm256_cmp_ps(x,set1<__m256>(high_bound), _CMP_LE_OS))),
+			      _mm256_set1_epi32(-1)) != 0;
   }
   inline bool all_in_range(__m256d x, double low_bound, double high_bound) {
-    return horiz_and(_mm256_castpd_si256(_mm256_and_pd(
-			 _mm256_cmp_pd(x,set1<__m256d>(low_bound), _CMP_NLT_US),
-			 _mm256_cmp_pd(x,set1<__m256d>(high_bound), _CMP_LE_OS))));
+    return _mm256_testc_si256(_mm256_castpd_si256(_mm256_and_pd(
+		 _mm256_cmp_pd(x,set1<__m256d>(low_bound), _CMP_GE_OS),
+		 _mm256_cmp_pd(x,set1<__m256d>(high_bound), _CMP_LE_OS))),
+			      _mm256_set1_epi32(-1)) != 0;
   }
-
-
+  inline __m256 select_gt(__m256 x1, __m256 x2,
+			  __m256 y1, __m256 y2) {
+    return _mm256_blendv_ps(y2, y1, _mm256_cmp_ps(x1,x2,_CMP_GT_OS));
+  }
+  inline __m256d select_gt(__m256d x1, __m256d x2,
+			   __m256d y1, __m256d y2) {
+    return _mm256_blendv_pd(y2, y1, _mm256_cmp_pd(x1,x2,_CMP_GT_OS));
+  }
 
 #endif
   
@@ -544,23 +556,23 @@ namespace quick_e {
 
   inline bool all_in_range(__m512 x, float low_bound, float high_bound) {
     return static_cast<short int>(_mm512_kand(
-	      _mm512_cmp_ps_mask(x,set1<__m512>(low_bound),_CMP_NLT_US),
+	      _mm512_cmp_ps_mask(x,set1<__m512>(low_bound),_CMP_GE_OS),
 	      _mm512_cmp_ps_mask(x,set1<__m512>(high_bound),_CMP_LE_OS)))
       == static_cast<short int>(-1);
   }
   inline bool all_in_range(__m512d x, double low_bound, double high_bound) {
     return static_cast<short int>(_mm512_kand(
-	      _mm512_cmp_pd_mask(x,set1<__m512d>(low_bound),_CMP_NLT_US),
+	      _mm512_cmp_pd_mask(x,set1<__m512d>(low_bound),_CMP_GE_OS),
 	      _mm512_cmp_pd_mask(x,set1<__m512d>(high_bound),_CMP_LE_OS)))
       == static_cast<short int>(255);
   }
   inline __m512 select_gt(__m512 x1, __m512 x2,
 			  __m512 y1, __m512 y2) {
-    return _m512_mask_mov_ps(y2, _mm512_cmp_ps_mask(x1,x2,_CMP_NLE_US), y2);
+    return _m512_mask_mov_ps(y2, _mm512_cmp_ps_mask(x1,x2,_CMP_GT_OS), y2);
   }
   inline __m512d select_gt(__m512d x1, __m512d x2,
 			   __m512d y1, __m512d y2) {
-    return _m512_mask_mov_pd(y2, _mm512_cmp_pd_mask(x1,x2,_CMP_NLE_US), y2);
+    return _m512_mask_mov_pd(y2, _mm512_cmp_pd_mask(x1,x2,_CMP_GT_OS), y2);
   }
 
 #endif
@@ -598,6 +610,10 @@ namespace quick_e {
     const float VM_LOG2E = 1.44269504088896340736;  // 1/log(2)
     const float ln2f_hi  =  0.693359375f;
     const float ln2f_lo  = -2.12194440e-4f;
+#ifndef __FAST_MATH__
+    const float min_x    = -87.3f;
+    const float max_x    = +89.0f;
+#endif
 
     Vec r = unchecked_round(mul(initial_x,set1<Vec>(VM_LOG2E)));
     Vec x = fnma(r, set1<Vec>(ln2f_hi), initial_x); //  x -= r * ln2f_hi;
@@ -611,18 +627,22 @@ namespace quick_e {
     Vec n2 = pow2n(r);
 
     z = fma(z,n2,n2);
-    if (all_in_range(initial_x, -87.3f, +89.0f)) {
+#ifdef __FAST_MATH__
+    return z;
+#else
+    if (all_in_range(initial_x, min_x, max_x)) {
       return z;
     }
     else {
       // When initial_x<-87.3, set exp(x) to -Inf
-      z = select_gt(set1<Vec>(-87.3f), initial_x, set0<Vec>(), z);
+      z = select_gt(set1<Vec>(min_x), initial_x, set0<Vec>(), z);
       // When initial_x>+89.0, set exp(x) to +Inf
-      z = select_gt(initial_x, set1<Vec>(89.0f),
+      z = select_gt(initial_x, set1<Vec>(max_x),
 		    set1<Vec>(std::numeric_limits<float>::infinity()),
 		    z);
       return z;
     }
+#endif
   }
 
 
@@ -669,6 +689,10 @@ namespace quick_e {
     const double VM_LOG2E = 1.44269504088896340736;  // 1/log(2)
     const double ln2d_hi = 0.693145751953125;
     const double ln2d_lo = 1.42860682030941723212E-6;
+#ifndef __FAST_MATH__
+    const double min_x = -708.39;
+    const double max_x = +709.70;
+#endif
 
     Vec r = unchecked_round(mul(initial_x,set1<Vec>(VM_LOG2E)));
     // subtraction in two steps for higher precision
@@ -681,20 +705,23 @@ namespace quick_e {
     Vec z = polynomial_13m(x, p2, p3, p4, p5, p6, p7,
 			   p8, p9, p10, p11, p12, p13);
     z = fma(z,n2,n2);
-    
-    if (all_in_range(initial_x, -708.39, +709.70)) {
+#ifdef __FAST_MATH__
+    return z;
+#else
+    if (all_in_range(initial_x, min_x, max_x)) {
       // Fast normal path
       return z;
     }
     else {
       // When initial_x<-708.39, set exp(x) to 0.0
-      z = select_gt(set1<Vec>(-708.39), initial_x, set0<Vec>(), z);
+      z = select_gt(set1<Vec>(min_x), initial_x, set0<Vec>(), z);
       // When initial_x>+709.70.0, set exp(x) to +Inf
-      z = select_gt(initial_x, set1<Vec>(709.70),
+      z = select_gt(initial_x, set1<Vec>(max_x),
 		    set1<Vec>(std::numeric_limits<double>::infinity()),
 		    z);
       return z;
     }
+#endif
   }
 #endif
   

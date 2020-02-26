@@ -1,6 +1,6 @@
 #include <iostream>
 #define ADEPT_NO_AUTOMATIC_DIFFERENTIATION
-//#define ADEPT_FLOATING_POINT_TYPE float
+#define ADEPT_REAL_TYPE_SIZE 4
 #include <adept_arrays.h>
 #include "Timer.h"
 
