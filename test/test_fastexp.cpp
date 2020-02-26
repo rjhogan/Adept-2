@@ -12,6 +12,7 @@
 */
 
 #include <iostream>
+#include <limits>
 #include "adept_arrays.h"
 
 using namespace adept;
@@ -21,24 +22,35 @@ int main(int argc, const char** argv)
   {
     std::cout << "DOUBLE PRECISION\n";
     std::cout << "Packet<double>::size = " << internal::Packet<double>::size << "\n";
-    Vector x = linspace(-700.0,700.0,128);
+    Vector x = linspace(-750.0,750.0,128);
+    x(end) = std::numeric_limits<double>::quiet_NaN();
     Vector exponential = exp(x);
     Vector fast_exponential = fastexp(x);
     Vector fractional_error = (fast_exponential - exponential) / exponential;
-    std::cout << fractional_error << "\n";
-    //std::cout << (fastexp(x(stride(0,end,2))) - exponential(stride(0,end,2)))
-    //  / exponential(stride(0,end,2)) << "\n";
+    //    std::cout << fractional_error << "\n";
+    Matrix M(128,4);
+    M(__,0) = x;
+    M(__,1) = exponential;
+    M(__,2) = fast_exponential;
+    M(__,3) = fractional_error;
+    std::cout << "x  exp(x)  fastexp(x)  fractional-error";
+    std::cout << M << "\n";
   }
   {
-    std::cout << "SINGLE PRECISION\n";
+    std::cout << "\nSINGLE PRECISION\n";
     std::cout << "Packet<float>::size = " << internal::Packet<float>::size << "\n";
-    floatVector x = linspace(-87.0,87.0,128);
+    floatVector x = linspace(-100.0,100.0,128);
+    x(end) = std::numeric_limits<float>::quiet_NaN();
     floatVector exponential = exp(x);
     floatVector fast_exponential = fastexp(x);
     floatVector fractional_error = (fast_exponential - exponential) / exponential;
-    std::cout << fractional_error << "\n";
-    //    std::cout << (fastexp(x(stride(0,end,2))) - exponential(stride(0,end,2)))
-    //  / exponential(stride(0,end,2)) << "\n";
+    floatMatrix M(128,4);
+    M(__,0) = x;
+    M(__,1) = exponential;
+    M(__,2) = fast_exponential;
+    M(__,3) = fractional_error;
+    std::cout << "x  exp(x)  fastexp(x)  fractional-error";
+    std::cout << M << "\n";
   }
   return 0;
 }
