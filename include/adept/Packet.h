@@ -251,9 +251,10 @@ namespace adept {
   // Fast exponential function
   // -------------------------------------------------------------------
 
-#ifdef ADEPT_FAST_EXPONENTIAL
-  // Bring exp from quick_e into this namespace
-  using quick_e::exp;
+#ifdef ADEPT_FAST_SCALAR_EXPONENTIAL
+  // Bring scalar exp from quick_e into this namespace
+  inline float  exp(float x)  { return quick_e::exp(x); }
+  inline double exp(double x) { return quick_e::exp(x); }
 #endif
   inline float  fastexp(float x)  { return quick_e::exp(x); }
   inline double fastexp(double x) { return quick_e::exp(x); }
