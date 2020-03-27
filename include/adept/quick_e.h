@@ -451,13 +451,13 @@ namespace quick_e {
 
   // Implement by calling SSE2 h* functions
   inline float  hsum(__m256 x)  { return hsum(add(low(x), high(x))); }
-  inline float  hmul(__m256 x)  { return hmul(add(low(x), high(x))); }
-  inline float  hmin(__m256 x)  { return hmin(add(low(x), high(x))); }
-  inline float  hmax(__m256 x)  { return hmax(add(low(x), high(x))); }
+  inline float  hmul(__m256 x)  { return hmul(mul(low(x), high(x))); }
+  inline float  hmin(__m256 x)  { return hmin(fmin(low(x), high(x))); }
+  inline float  hmax(__m256 x)  { return hmax(fmax(low(x), high(x))); }
   inline double hsum(__m256d x) { return hsum(add(low(x), high(x))); } // Alternative would be to use _mm_hadd_pd
-  inline double hmul(__m256d x) { return hmul(add(low(x), high(x))); }
-  inline double hmin(__m256d x) { return hmin(add(low(x), high(x))); }
-  inline double hmax(__m256d x) { return hmax(add(low(x), high(x))); }
+  inline double hmul(__m256d x) { return hmul(mul(low(x), high(x))); }
+  inline double hmin(__m256d x) { return hmin(fmin(low(x), high(x))); }
+  inline double hmax(__m256d x) { return hmax(fmax(low(x), high(x))); }
   
   // Define extras
 #ifdef __FMA__
