@@ -179,18 +179,23 @@ namespace quick_e {
   template <typename V> inline V set0() { return 0.0; };
   template <typename T> T sqrt(T x) { return std::sqrt(x); }
   
+  template <typename T> T hsum(T x) { return x; }
+  template <typename T> T hmul(T x) { return x; }
+  template <typename T> T hmin(T x) { return x; }
+  template <typename T> T hmax(T x) { return x; }
+  
   template <typename T> T fma(T x, T y, T z)  { return (x*y)+z; }
-  template <typename T> T fnma(T x, T y, T z)  { return z-(x*y); }
+  template <typename T> T fnma(T x, T y, T z) { return z-(x*y); }
   template <typename T> T fmin(T x, T y)  { return std::min(x,y); }
   template <typename T> T fmax(T x, T y)  { return std::min(x,y); }
  
 #if __cplusplus > 199711L
-  template <> inline float fmin(float x, float y)  { return std::fmin(x,y); }
-  template <> inline double fmin(double x, double y)  { return std::fmin(x,y); }
-  template <> inline float fmax(float x, float y)  { return std::fmax(x,y); }
-  template <> inline double fmax(double x, double y)  { return std::fmax(x,y); }
+  template <> inline float  fmin(float x, float y)   { return std::fmin(x,y); }
+  template <> inline double fmin(double x, double y) { return std::fmin(x,y); }
+  template <> inline float  fmax(float x, float y)   { return std::fmax(x,y); }
+  template <> inline double fmax(double x, double y) { return std::fmax(x,y); }
 #endif
-  
+
   // -------------------------------------------------------------------
   // Macros to define mathematical operations
   // -------------------------------------------------------------------
