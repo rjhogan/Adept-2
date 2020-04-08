@@ -27,11 +27,16 @@ AC_SUBST(AM_CXXFLAGS,"$OPENMP_CXXFLAGS")
 
 #### LIBRARIES NEEDED BY ADEPT ###
 
-# Check for BLAS and LAPACK
-# First we need this since the libraries are Fortran called from C++
-AC_F77_LIBRARY_LDFLAGS
-# The following tests for both BLAS and LAPACK
-AX_LAPACK
+if test "x$F77" = x
+then
+	AC_MSG_NOTICE([Not checking for BLAS and LAPACK because no Fortran compiler found])
+else
+	# Check for BLAS and LAPACK
+	# First we need this since the libraries are Fortran called from C++
+	AC_F77_LIBRARY_LDFLAGS
+	# The following tests for both BLAS and LAPACK
+	AX_LAPACK
+fi
 
 # Dependencies dictate the following order of libraries
 LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS"
