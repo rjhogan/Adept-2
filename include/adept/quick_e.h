@@ -90,6 +90,9 @@
   #include <immintrin.h>
 #endif
 
+#ifdef __ARM_NEON
+  #include "arm_neon.h"
+#endif
 
 namespace quick_e {
 
@@ -128,6 +131,7 @@ namespace quick_e {
   };
   
 #ifdef __SSE2__
+  #define QE_HAVE_FAST_EXP 1
   QE_DEFINE_TRAITS(float, 4, __m128, __m128)
   QE_DEFINE_TRAITS(double, 2, __m128d, double)
   #ifdef __AVX__
@@ -151,6 +155,13 @@ namespace quick_e {
   #endif
   // If QE_AVAILABLE is defined then we can use the fast exponential
   #define QE_AVAILABLE
+#elif defined(__ARM_NEON)
+  #define QE_HAVE_FAST_EXP 1
+  QE_DEFINE_TRAITS(float, 4, float32x4_t, float32x4_t)
+  QE_DEFINE_TRAITS(double, 2, float64x2_t, double)
+  QE_DEFINE_LONGEST(float32x4_t, float64x2_t)
+  #define QE_LONGEST_FLOAT_PACKET 4
+  #define QE_LONGEST_DOUBLE_PACKET 2
 #else
   // No vectorization available: longest packet is of size 1
   QE_DEFINE_LONGEST(float, double);
@@ -263,23 +274,25 @@ namespace quick_e {
   { return add(mul(x,y),set1<VEC>(z)); }			\
   inline VEC fnma(VEC x,VEC y,VEC z) { return sub(z,mul(x,y));}
 
-#define QE_DEFINE_POW2N_S(VEC, VECI, CASTTO, CASTBACK, SHIFTL)	\
+#define QE_DEFINE_POW2N_S(VEC, VECI, CASTTO, CASTBACK, SHIFTL,  \
+			  SETELEM)				\
   inline VEC pow2n(VEC n) {					\
     const float pow2_23 = 8388608.0;				\
     const float bias = 127.0;					\
     VEC  a = add(n, set1<VEC>(bias+pow2_23));			\
     VECI b = CASTTO(a);						\
-    VECI c = SHIFTL(b, _mm_cvtsi32_si128(23));			\
+    VECI c = SHIFTL(b, SETELEM(23));				\
     VEC  d = CASTBACK(c);					\
     return d;							\
   }
-#define QE_DEFINE_POW2N_D(VEC, VECI, CASTTO, CASTBACK, SHIFTL)	\
+#define QE_DEFINE_POW2N_D(VEC, VECI, CASTTO, CASTBACK, SHIFTL,  \
+			  SETELEM)				\
   inline VEC pow2n(VEC n) {					\
     const double pow2_52 = 4503599627370496.0;			\
     const double bias = 1023.0;					\
     VEC  a = add(n, set1<VEC>(bias+pow2_52));			\
     VECI b = CASTTO(a);						\
-    VECI c = SHIFTL(b, _mm_cvtsi32_si128(52));			\
+    VECI c = SHIFTL(b, SETELEM(52));				\
     VEC  d = CASTBACK(c);					\
     return d;							\
   }
@@ -356,9 +369,9 @@ namespace quick_e {
   { return low(unchecked_round(_mm_set_sd(x))); }
 
   QE_DEFINE_POW2N_S(__m128, __m128i, _mm_castps_si128,
-		    _mm_castsi128_ps, _mm_sll_epi32)
+		    _mm_castsi128_ps, _mm_sll_epi32, _mm_cvtsi32_si128)
   QE_DEFINE_POW2N_D(__m128d, __m128i, _mm_castpd_si128,
-		    _mm_castsi128_pd, _mm_sll_epi64)
+		    _mm_castsi128_pd, _mm_sll_epi64, _mm_cvtsi32_si128)
   inline float pow2n(float x)
   { return _mm_cvtss_f32(pow2n(quick_e::set1<__m128>(x))); }
   inline double pow2n(double x)
@@ -456,13 +469,13 @@ namespace quick_e {
 
   // Implement by calling SSE2 h* functions
   inline float  hsum(__m256 x)  { return hsum(add(low(x), high(x))); }
-  inline float  hmul(__m256 x)  { return hmul(add(low(x), high(x))); }
-  inline float  hmin(__m256 x)  { return hmin(add(low(x), high(x))); }
-  inline float  hmax(__m256 x)  { return hmax(add(low(x), high(x))); }
+  inline float  hmul(__m256 x)  { return hmul(mul(low(x), high(x))); }
+  inline float  hmin(__m256 x)  { return hmin(min(low(x), high(x))); }
+  inline float  hmax(__m256 x)  { return hmax(max(low(x), high(x))); }
   inline double hsum(__m256d x) { return hsum(add(low(x), high(x))); } // Alternative would be to use _mm_hadd_pd
-  inline double hmul(__m256d x) { return hmul(add(low(x), high(x))); }
-  inline double hmin(__m256d x) { return hmin(add(low(x), high(x))); }
-  inline double hmax(__m256d x) { return hmax(add(low(x), high(x))); }
+  inline double hmul(__m256d x) { return hmul(mul(low(x), high(x))); }
+  inline double hmin(__m256d x) { return hmin(min(low(x), high(x))); }
+  inline double hmax(__m256d x) { return hmax(max(low(x), high(x))); }
   
   // Define extras
 #ifdef __FMA__
@@ -481,9 +494,9 @@ namespace quick_e {
 			       |_MM_FROUND_NO_EXC)); }
   #ifdef __AVX2__
     QE_DEFINE_POW2N_S(__m256, __m256i, _mm256_castps_si256,
-		      _mm256_castsi256_ps, _mm256_sll_epi32)
+		      _mm256_castsi256_ps, _mm256_sll_epi32, _mm_cvtsi32_si128)
     QE_DEFINE_POW2N_D(__m256d, __m256i, _mm256_castpd_si256,
-		      _mm256_castsi256_pd, _mm256_sll_epi64)
+		      _mm256_castsi256_pd, _mm256_sll_epi64, _mm_cvtsi32_si128)
   #else
     // Suboptimized versions call the SSE2 functions on the upper and
     // lower parts
@@ -555,9 +568,9 @@ namespace quick_e {
   QE_DEFINE_FMA(double, __m512d, _mm512_fmadd_pd, _mm512_fnmadd_pd)
   
   QE_DEFINE_POW2N_S(__m512, __m512i, _mm512_castps_si512,
-		    _mm512_castsi512_ps, _mm512_sll_epi32)
+		    _mm512_castsi512_ps, _mm512_sll_epi32, _mm_cvtsi32_si128)
   QE_DEFINE_POW2N_D(__m512d, __m512i, _mm512_castpd_si512,
-		    _mm512_castsi512_pd, _mm512_sll_epi64)
+		    _mm512_castsi512_pd, _mm512_sll_epi64, _mm_cvtsi32_si128)
 
   inline bool all_in_range(__m512 x, float low_bound, float high_bound) {
     return static_cast<unsigned short int>(_mm512_kand(
@@ -582,7 +595,78 @@ namespace quick_e {
 
 #endif
 
-#ifdef __SSE2__
+  
+#ifdef __ARM_NEON
+  // Implement ARM version of x86 setzero
+  inline float32x4_t vzeroq_f32() { return vdupq_n_f32(0.0); }
+  inline float64x2_t vzeroq_f64() { return vdupq_n_f64(0.0); }
+  // Horizontal multiply across vector
+  inline float vmulvq_f32(float32x4_t x) {
+    union {
+      float32x2_t v;
+      float data[2];
+    };
+    v = vmul_f32(vget_low_f32(x), vget_high_f32(x));
+    return data[0] * data[1];
+  }
+  inline double vmulvq_f64(float64x2_t x) {
+    union {
+      float64x2_t v;
+      double data[2];
+    };
+    v = x;
+    return data[0] * data[1];
+  }
+  
+  QE_DEFINE_BASIC(float, float32x4_t, vld1q_f32, vld1q_f32,
+		  vzeroq_f32, vdupq_n_f32, vst1q_f32, vst1q_f32,
+		  vaddq_f32, vsubq_f32, vmulq_f32, vdivq_f32,
+		  vsqrtq_f32, vminq_f32, vmaxq_f32)
+  QE_DEFINE_HORIZ(float, float32x4_t,
+		  vaddvq_f32, vmulvq_f32,
+		  vminvq_f32, vmaxvq_f32)
+  QE_DEFINE_BASIC(double, float64x2_t, vld1q_f64, vld1q_f64,
+		  vzeroq_f64, vdupq_n_f64, vst1q_f64, vst1q_f64,
+		  vaddq_f64, vsubq_f64, vmulq_f64, vdivq_f64,
+		  vsqrtq_f64, vminq_f64, vmaxq_f64)
+  QE_DEFINE_HORIZ(double, float64x2_t,
+		  vaddvq_f64, vmulvq_f64,
+		  vminvq_f64, vmaxvq_f64)
+  QE_DEFINE_POW2N_S(float32x4_t, int32x4_t, vreinterpretq_s32_f32,
+		    vreinterpretq_f32_s32, vshlq_s32, vdupq_n_s32)
+  QE_DEFINE_POW2N_D(float64x2_t, int64x2_t, vreinterpretq_s64_f64,
+		    vreinterpretq_f64_s64, vshlq_s64, vdupq_n_s64)
+  inline bool all_in_range(float32x4_t x, double low_bound, double high_bound) {
+    union {
+      uint32x2_t v;
+      uint32_t data[2];
+    };
+    uint32x4_t tmp = vandq_u32(vcgeq_f32(x,vdupq_n_f32(low_bound)),
+			       vcleq_f32(x,vdupq_n_f32(high_bound)));
+    v = vand_u32(vget_low_u32(tmp), vget_high_u32(tmp));
+    return data[0] && data[1];
+  }
+  inline bool all_in_range(float64x2_t x, double low_bound, double high_bound) {
+    union {
+      uint64x2_t v;
+      uint64_t data[2];
+    };
+    v = vandq_u64(vcgeq_f64(x,vdupq_n_f64(low_bound)),
+		  vcleq_f64(x,vdupq_n_f64(high_bound)));
+    return data[0] && data[1];
+  }
+
+  inline float32x4_t unchecked_round(float32x4_t x) {
+    return vcvtq_f32_s32(vcvtaq_s32_f32(x));
+  }
+  inline float64x2_t unchecked_round(float64x2_t x) {
+    return vcvtq_f64_s64(vcvtaq_s64_f64(x));
+  }
+  
+#endif
+ 
+  
+#ifdef QE_HAVE_FAST_EXP
   
   // -------------------------------------------------------------------
   // Implementation of fast exponential
@@ -749,8 +833,13 @@ namespace quick_e {
   inline __m512d exp(__m512d x) { return fastexp_double(x); }
 #endif
 
+#ifdef __ARM_NEON
+  inline float32x4_t exp(float32x4_t x) { return fastexp_float(x);  }
+  inline float64x2_t exp(float64x2_t x) { return fastexp_double(x); }
+#endif
+
   // Define the quick_e::exp function for scalar arguments
-#ifdef __SSE2__
+#ifdef QE_HAVE_FAST_EXP
   inline float  exp(float x)  { return quick_e::fastexp_float(x); }
   inline double exp(double x) { return quick_e::fastexp_double(x); }
 #else
@@ -769,7 +858,7 @@ namespace quick_e {
 #undef QE_EMULATE_FMA
 #undef QE_DEFINE_POW2N_S
 #undef QE_DEFINE_POW2N_D
-
+#undef QE_HAVE_FAST_EXP
 }
 
 #endif
