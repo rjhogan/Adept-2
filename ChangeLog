@@ -2,6 +2,8 @@ version 2.0.7
 	- Added fast, vectorizable exponential function "fastexp", or can
 	use as adept::exp if the ADEPT_FAST_EXPONENTIAL preprocessor
 	variable is defined
+	- Moved all the vector intrinsic stuff to quick_e.h
+	- Added ARM-NEON support to quick_e.h
 
 version 2.0.6 (20 February 2020)
 	- Fixed bug in hand-coded adjoint of Toon advection scheme

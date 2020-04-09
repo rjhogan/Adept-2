@@ -50,6 +50,7 @@
 #define QuickE_H 1
 
 #include <cmath>
+#include <iostream>
 
 // Headers needed for x86 vector intrinsics
 #ifdef __SSE2__
@@ -207,6 +208,20 @@ namespace quick_e {
   template <> inline double fmax(double x, double y) { return std::fmax(x,y); }
 #endif
 
+  inline float select_gt(float x1, float x2, float y1, float y2) {
+    if (x1 > x2) { return y1; } else { return y2; }
+  }
+  inline double select_gt(double x1, double x2, double y1, double y2) {
+    if (x1 > x2) { return y1; } else { return y2; }
+  }
+  
+  inline bool all_in_range(float x, float low_bound, float high_bound) {
+    return x >= low_bound && x <= high_bound;
+  }
+  inline bool all_in_range(double x, double low_bound, double high_bound) {
+    return x >= low_bound && x <= high_bound;
+  }
+  
   // -------------------------------------------------------------------
   // Macros to define mathematical operations
   // -------------------------------------------------------------------
@@ -262,6 +277,17 @@ namespace quick_e {
   inline VEC fma(VEC x, VEC y, TYPE z)				\
   { return FMA(x,y,set1<VEC>(z)); }				\
   inline VEC fnma(VEC x,VEC y,VEC z) { return FNMA(x,y,z);}
+
+  // Alternative order of arguments for ARM NEON
+#define QE_DEFINE_FMA_ALT(TYPE, VEC, FMA, FNMA)			\
+  inline VEC fma(VEC x,VEC y,VEC z)  { return FMA(z,x,y); }	\
+  inline VEC fma(VEC x,TYPE y,VEC z)				\
+  { return FMA(z,x,set1<VEC>(y)); }				\
+  inline VEC fma(TYPE x, VEC y, TYPE z)				\
+  { return FMA(set1<VEC>(z),set1<VEC>(x),y); }			\
+  inline VEC fma(VEC x, VEC y, TYPE z)				\
+  { return FMA(set1<VEC>(z),x,y); }				\
+  inline VEC fnma(VEC x,VEC y,VEC z) { return FNMA(z,x,y);}
   
   // Emulate fused multiply-add if instruction not available
 #define QE_EMULATE_FMA(TYPE, VEC)				\
@@ -406,13 +432,6 @@ namespace quick_e {
 			 _mm_cmple_pd(x,set1<__m128d>(high_bound)))));
   }
 
-  inline bool all_in_range(float x, float low_bound, float high_bound) {
-    return x >= low_bound && x <= high_bound;
-  }
-  inline bool all_in_range(double x, double low_bound, double high_bound) {
-    return x >= low_bound && x <= high_bound;
-  }
-
   // If x1 > x2, select y1, or select y2 otherwise
   inline __m128 select_gt(__m128 x1, __m128 x2,
 			  __m128 y1, __m128 y2) {
@@ -433,12 +452,6 @@ namespace quick_e {
     return _mm_or_pd(_mm_and_pd(mask, y1),
 		     _mm_andnot_pd(mask, y2));
 #endif
-  }
-  inline float select_gt(float x1, float x2, float y1, float y2) {
-    if (x1 > x2) { return y1; } else { return y2; }
-  }
-  inline double select_gt(double x1, double x2, double y1, double y2) {
-    if (x1 > x2) { return y1; } else { return y2; }
   }
 #endif
 
@@ -597,6 +610,7 @@ namespace quick_e {
 
   
 #ifdef __ARM_NEON
+
   // Implement ARM version of x86 setzero
   inline float32x4_t vzeroq_f32() { return vdupq_n_f32(0.0); }
   inline float64x2_t vzeroq_f64() { return vdupq_n_f64(0.0); }
@@ -636,6 +650,8 @@ namespace quick_e {
 		    vreinterpretq_f32_s32, vshlq_s32, vdupq_n_s32)
   QE_DEFINE_POW2N_D(float64x2_t, int64x2_t, vreinterpretq_s64_f64,
 		    vreinterpretq_f64_s64, vshlq_s64, vdupq_n_s64)
+  QE_DEFINE_FMA_ALT(float, float32x4_t, vfmaq_f32, vfmsq_f32)
+  QE_DEFINE_FMA_ALT(double, float64x2_t, vfmaq_f64, vfmsq_f64)
   inline bool all_in_range(float32x4_t x, double low_bound, double high_bound) {
     union {
       uint32x2_t v;
@@ -662,7 +678,27 @@ namespace quick_e {
   inline float64x2_t unchecked_round(float64x2_t x) {
     return vcvtq_f64_s64(vcvtaq_s64_f64(x));
   }
-  
+  inline float32x4_t select_gt(float32x4_t x1, float32x4_t x2,
+			       float32x4_t y1, float32x4_t y2) {
+    return vbslq_f32(vcgtq_f32(x1,x2), y1, y2);
+  }
+  inline float64x2_t select_gt(float64x2_t x1, float64x2_t x2,
+			       float64x2_t y1, float64x2_t y2) {
+    return vbslq_f64(vcgtq_f64(x1,x2), y1, y2);
+  }
+
+  inline float unchecked_round(float x)
+  { return vgetq_lane_f32(unchecked_round(vdupq_n_f32(x)), 0); }
+  inline double unchecked_round(double x)
+  { return vgetq_lane_f64(unchecked_round(vdupq_n_f64(x)), 0); }
+
+  inline float pow2n(float x) {
+    return vgetq_lane_f32(pow2n(vdupq_n_f32(x)),0);
+  }
+  inline double pow2n(double x) {
+    return vgetq_lane_f64(pow2n(vdupq_n_f64(x)),0);
+  }
+
 #endif
  
   
@@ -708,14 +744,21 @@ namespace quick_e {
     Vec x = fnma(r, set1<Vec>(ln2f_hi), initial_x); //  x -= r * ln2f_hi;
     x = fnma(r, set1<Vec>(ln2f_lo), x);             //  x -= r * ln2f_lo;
  
-    Vec z = polynomial_5(x,P0expf,P1expf,P2expf,P3expf,P4expf,P5expf);    
+    Vec z = polynomial_5(x,P0expf,P1expf,P2expf,P3expf,P4expf,P5expf);
+
+    std::cout << z << "\n";
+    
     Vec x2 = mul(x, x);
     z = fma(z, x2, x);                       // z *= x2;  z += x;
 
     // multiply by power of 2 
     Vec n2 = pow2n(r);
 
+    std::cout << initial_x << " " << r << " " << x << " " << x2 << " " << n2 << " " << z << " " << " " << set1<Vec>(ln2f_hi) << " " << fnma(r,set1<Vec>(ln2f_hi),initial_x) << "\n";
+    
     z = fma(z,n2,n2);
+
+    
 #ifdef __FAST_MATH__
     return z;
 #else
@@ -855,6 +898,7 @@ namespace quick_e {
 #undef QE_DEFINE_CHOP
 #undef QE_DEFINE_HORIZ
 #undef QE_DEFINE_FMA
+#undef QE_DEFINE_FMA_ALT
 #undef QE_EMULATE_FMA
 #undef QE_DEFINE_POW2N_S
 #undef QE_DEFINE_POW2N_D
