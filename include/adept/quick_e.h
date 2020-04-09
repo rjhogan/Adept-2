@@ -50,7 +50,6 @@
 #define QuickE_H 1
 
 #include <cmath>
-#include <iostream>
 
 // Headers needed for x86 vector intrinsics
 #ifdef __SSE2__
@@ -746,18 +745,13 @@ namespace quick_e {
  
     Vec z = polynomial_5(x,P0expf,P1expf,P2expf,P3expf,P4expf,P5expf);
 
-    std::cout << z << "\n";
-    
     Vec x2 = mul(x, x);
     z = fma(z, x2, x);                       // z *= x2;  z += x;
 
     // multiply by power of 2 
     Vec n2 = pow2n(r);
 
-    std::cout << initial_x << " " << r << " " << x << " " << x2 << " " << n2 << " " << z << " " << " " << set1<Vec>(ln2f_hi) << " " << fnma(r,set1<Vec>(ln2f_hi),initial_x) << "\n";
-    
     z = fma(z,n2,n2);
-
     
 #ifdef __FAST_MATH__
     return z;
