@@ -1,6 +1,6 @@
 /* UnaryOperation.h -- Unary operations on Adept expressions
 
-    Copyright (C) 2014-2017 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014-2020 European Centre for Medium-Range Weather Forecasts
 
     Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -249,7 +249,7 @@ namespace adept {
   // Adept's vectorizable exponential function
   ADEPT_DEF_UNARY_FUNC(Fastexp, fastexp, adept::fastexp, "fastexp", result, true)
 #ifdef ADEPT_FAST_EXPONENTIAL
-  ADEPT_DEF_UNARY_FUNC(Exp,   exp,   adept::exp, "fastexp", result, true)
+  ADEPT_DEF_UNARY_FUNC(Exp,   exp,   adept::functions::exp, "fastexp", result, true)
 #else
   ADEPT_DEF_UNARY_FUNC(Exp,   exp,   std::exp,   "exp",   result, false)
 #endif

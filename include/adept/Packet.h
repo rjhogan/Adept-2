@@ -259,6 +259,18 @@ namespace adept {
   inline float  fastexp(float x)  { return quick_e::exp(x); }
   inline double fastexp(double x) { return quick_e::exp(x); }
 
+  // This namespace is only for use in array operations
+  namespace functions {
+#ifdef ADEPT_FAST_EXPONENTIAL
+    // Bring scalar exp from quick_e into this namespace
+    inline float  exp(float x)  { return quick_e::exp(x); }
+    inline double exp(double x) { return quick_e::exp(x); }
+#else
+    inline float  exp(float x)  { return std::exp(x); }
+    inline double exp(double x) { return std::exp(x); }
+#endif
+  }
+
 } // End namespace adept
 
 #endif
