@@ -1,4 +1,4 @@
-/* quick_e.h -- Fast exponential function for Intel intrinsics
+/* quick_e.h -- Fast exponential function for Intel and ARM intrinsics
 
    Copyright (C) 2020 European Centre for Medium-Range Weather Forecasts
 
@@ -10,17 +10,18 @@
    The exponential function for real arguments is used in many areas
    of physics, yet is not vectorized by many compilers.  This C++
    header file provides a fast exponential function (quick_e::exp) for
-   single and double precision floating point numbers, as well as for
-   Intel intrinsics representing packets of 2, 4, 8 and 16 such
-   numbers.  The algorithm has been taken from Agner Fog's Vector
-   Class Library. It is designed to be used in other libraries that
-   make use of Intel intrinsics.  Since such libraries often define
-   their own classes for representing vectors of numbers, this file
-   does not define any such classes itself.
+   single and double precision floating point numbers, Intel
+   intrinsics representing packets of 2, 4, 8 and 16 such numbers, and
+   ARM NEON intrinsics representing 2 doubles or 4 floats.  The
+   algorithm has been taken from Agner Fog's Vector Class Library. It
+   is designed to be used in other libraries that make use of Intel or
+   ARM intrinsics.  Since such libraries often define their own
+   classes for representing vectors of numbers, this file does not
+   define any such classes itself.
 
    Also in the namespace quick_e, this file defines the following
-   inline functions that work on Intel intrinsics of type "Vec" and
-   the corresponding scalar type "Sca":
+   inline functions that work on intrinsics of type "Vec" and the
+   corresponding scalar type "Sca":
 
      Vec add(Vec x, Vec y)   Add the elements of x and y
      Vec sub(Vec x, Vec y)   Subtract the elements of x and y
@@ -244,7 +245,7 @@ namespace quick_e {
   template <> inline VEC loadu<VEC,TYPE>(const TYPE* d)         \
   { return LOADU(d); }						\
   inline void store(TYPE* d, VEC x)  { STORE(d, x);      }	\
-  inline void storeu(TYPE* d, VEC x) { STORE(d, x);      }	\
+  inline void storeu(TYPE* d, VEC x) { STOREU(d, x);     }	\
   inline std::ostream& operator<<(std::ostream& os, VEC x) {	\
     static const int size = sizeof(VEC)/sizeof(TYPE);		\
     union { VEC v; TYPE d[size]; };				\
