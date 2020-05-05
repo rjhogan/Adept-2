@@ -3472,6 +3472,18 @@ atomic, enabling the \code{Array} and \code{SpecialMatrix} objects
 that use them to be accessed safely in a multi-threaded
 environment. Note that this may incur a performance penalty, and is
 only available in C++11. See section \ref{sec:thread}.
+\citem{ADEPT\_INIT\_REAL\_SNAN} To detect errors caused by use of
+uninitialized data, initialize floating point arrays and active
+scalars with signaling NaNs.  This is typically accompanied by
+directing the program to fail with a floating-point exception if a NaN
+is used in an expression, achieved by adding the following to one of
+the program source files:
+\begin{lstlisting}
+ #include <fenv.h>
+ int _feenableexcept_status = feenableexcept(FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
+\end{lstlisting}
+It should then be possible to use a debugger to identify the array
+that was read before being initialized with real numbers.
 \end{description}
 
 \subsection{Modifications requiring a library recompile}
@@ -3556,15 +3568,10 @@ default behaviour, define this variable yourself in
   not caught within the program will enable you to locate the line in
   your code where the problem originated.  You may need to turn
   optimizations off (compile with \code{-O0}) for the line
-  identification to be accurate. Another approach is to add the
-  following in a C++ source file:
-\begin{lstlisting}
- #include <fenv.h>
- int _feenableexcept_status = feenableexcept(FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
-\end{lstlisting}
-  This will cause a floating point exception to be thrown when a
-  \code{NaN} or \code{Inf} is generated, which can again be located in
-  a debugger.
+  identification to be accurate. You can also turn on trapping of
+  floating-point exceptions, as explained in the description of the
+  \code{ADEPT\_INIT\_REAL\_SNAN} option in section
+  \ref{sec:configuring_no_lib}.
 \item[Why are the gradients coming out of the automatic
   differentiation wrong?] Before suspecting a bug in \Adept, note that
   round-off error can lead to incorrect gradients even in hand-coded
