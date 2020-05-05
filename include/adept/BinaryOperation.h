@@ -609,7 +609,12 @@ namespace adept {
       Packet<R> right;
 
       BinaryOpScalarRight(const Expression<typename L::type, L>& left_, R right_)
-	: left(left_.cast()), right(right_) { 
+	: left(left_.cast()), right(right_) {
+	// Some operations (divide and atan2) store one extra piece of
+	// information during differentiation, so have
+	// store_result==2.  This should not be needed when the RHS is
+	// scalar, so has not been implemented.
+	ADEPT_STATIC_ASSERT((!is_active || store_result<2), ERROR_IN_BINARY_OP_SCALAR_RIGHT);
       }
       
       template <int Rank>
@@ -1339,7 +1344,8 @@ namespace adept {
   // since this can be changed to a more efficient multiplication
   template<class L, typename RType>
   inline
-  typename internal::enable_if<internal::is_not_expression<RType>::value && is_floating_point<RType>::value,
+  typename internal::enable_if<internal::is_not_expression<RType>::value 
+                               && (is_floating_point<RType>::value || L::is_active),
 			       internal::BinaryOpScalarRight<typename internal::promote<typename L::type,
 											RType>::type,
 							     L, internal::Multiply, 
@@ -1351,10 +1357,14 @@ namespace adept {
     return BinaryOpScalarRight<PType, L, Multiply, PType>(l.cast(), 1.0/static_cast<PType>(r));
   }
 
-  // Treat expression divided by any other type of scalar as division
+  // Treat expression divided by any other type of scalar as division,
+  // but differentiation is not properly implemented for dividing by a
+  // scalar, so if the left hand side is active then the version above
+  // (converting to a multiplication) will be used
   template<class L, typename RType>
   inline
-  typename internal::enable_if<internal::is_not_expression<RType>::value && !is_floating_point<RType>::value,
+  typename internal::enable_if<internal::is_not_expression<RType>::value
+                               && (!is_floating_point<RType>::value && !L::is_active),
 			       internal::BinaryOpScalarRight<typename internal::promote<typename L::type,
 											RType>::type,
 							     L, internal::Divide, 
