@@ -19,6 +19,7 @@
 #include <iostream>
 #include <sstream>
 #include <limits>
+#include <complex>
 
 #include <adept/Array.h>
 #include <adept/Allocator.h>
@@ -157,8 +158,45 @@ namespace adept {
     // Initialize an empty array
     FixedArray() : GradientIndex<IsActive>(length_, false) {
       ADEPT_STATIC_ASSERT(!(std::numeric_limits<Type>::is_integer
-			    && IsActive), CANNOT_CREATE_ACTIVE_FIXED_ARRAY_OF_INTEGERS); 
+			    && IsActive), CANNOT_CREATE_ACTIVE_FIXED_ARRAY_OF_INTEGERS);
+#ifdef ADEPT_REAL_INIT
+      initialize<Type>();
+#endif 
     }
+
+#ifdef ADEPT_REAL_INIT
+  private:
+
+    // Initialize to zero, NaN or whatever for debugging
+    template <typename T>
+    typename internal::enable_if<internal::is_floating_point<T>::value, void>::type
+    initialize() {
+      for (int i = 0; i < length_; ++i) {
+	data_[i] = ADEPT_INIT_REAL;
+      }
+    }
+    template <typename T>
+    typename internal::enable_if<internal::is_complex<T>::value, void>::type
+    initialize() {
+      for (int i = 0; i < length_; ++i) {
+#ifdef ADEPT_INIT_REAL_SNAN
+        data_[i] = std::complex<typename Type::value_type>(
+          std::numeric_limits<typename Type::value_type>::signaling_NaN(),
+	  std::numeric_limits<typename Type::value_type>::signaling_NaN());
+#else
+	data_[i] = std::complex<typename Type::value_type>(ADEPT_INIT_REAL, ADEPT_INIT_REAL);
+#endif
+      }
+    }
+
+    // Dummy initialize for non-floats
+    template <typename T>
+    typename internal::enable_if<!internal::is_floating_point<T>::value
+				 && !internal::is_complex<T>::value, void>::type
+    initialize() { }
+
+  public:
+#endif
 
     // Copy constructor copies the data, unlike in the Array class
     FixedArray(const FixedArray& rhs) 

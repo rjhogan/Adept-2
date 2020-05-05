@@ -60,6 +60,10 @@
 // little.  
 //#define ADEPT_RECORDING_PAUSABLE 1
 
+// Initialize real types to signaling NaN or zero
+//#define ADEPT_INIT_REAL_SNAN 1
+//#define ADEPT_INIT_REAL_ZERO 1
+
 // Often when you first convert a code for automatic differentiation
 // the gradients computed contain NaNs or infinities: uncommenting the
 // following will check for these and throw an error when they are
@@ -240,23 +244,33 @@
 // ADEPT_THREAD_LOCAL preprocessor variable in the previous section,
 // otherwise it is defined here depending on your compiler
 #ifndef ADEPT_THREAD_LOCAL
-#if defined(__APPLE__)
-// Thread-local storage typically does not work on Mac OS X so we turn
-// it off and provide a blank definition of ADEPT_THREAD_LOCAL
-#define ADEPT_STACK_THREAD_UNSAFE 1
-#define ADEPT_THREAD_LOCAL
-#elif defined(ADEPT_CXX11_FEATURES)
-// C++11 has thread_local as part of the language, and should be
-// supported on non-Mac C++11 platforms
-#define ADEPT_THREAD_LOCAL thread_local
-#elif defined(_MSC_VER)
-// Microsoft C++98 has a different way to specify thread-local storage
-// from the GCC/Intel/Sun/IBM compilers.
-#define ADEPT_THREAD_LOCAL __declspec(thread)
-#else
-// The following should work on GCC/Intel/Sun/IBM C++98 compilers
-#define ADEPT_THREAD_LOCAL __thread
-#endif
+  #if defined(__APPLE__)
+    // Thread-local storage often does not work on Mac OS X so by
+    // default we turn it off and provide a blank definition of
+    // ADEPT_THREAD_LOCAL, but then check for its existance using
+    // Clang features
+    #define ADEPT_STACK_THREAD_UNSAFE 1
+    #define ADEPT_THREAD_LOCAL
+    #ifdef __has_feature
+      #if __has_feature(cxx_thread_local)
+        // Clang feature check has found that thread_local is
+        // available
+        #define ADEPT_THREAD_LOCAL thread_local
+        #undef  ADEPT_STACK_THREAD_UNSAFE
+      #endif
+    #endif
+  #elif defined(ADEPT_CXX11_FEATURES)
+    // C++11 has thread_local as part of the language, and should be
+    // supported on non-Mac C++11 platforms
+    #define ADEPT_THREAD_LOCAL thread_local
+  #elif defined(_MSC_VER)
+    // Microsoft C++98 has a different way to specify thread-local
+    // storage from the GCC/Intel/Sun/IBM compilers.
+    #define ADEPT_THREAD_LOCAL __declspec(thread)
+  #else
+    // The following should work on GCC/Intel/Sun/IBM C++98 compilers
+    #define ADEPT_THREAD_LOCAL __thread
+  #endif
 #endif
 
 // If we use OpenMP to parallelize array expressions then some
@@ -280,6 +294,13 @@
 // be used in matrix multiplication.
 #define ADEPT_ONLY_DIFFERENTIATE_DENSE_MATRIX_MULTIPLICATION 1
 
+// To find bugs it can be useful to initialize arrays to signaling
+// NaNs, in which case ADEPT_INIT_REAL is set and used internally
+#ifdef ADEPT_INIT_REAL_SNAN
+#define ADEPT_INIT_REAL std::numeric_limits<T>::signaling_NaN()
+#elif defined(ADEPT_INIT_REAL_ZERO)
+#define ADEPT_INIT_REAL 0.0
+#endif
 
 // ---------------------------------------------------------------------
 // 5: Define basic floating-point and integer types

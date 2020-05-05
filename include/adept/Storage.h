@@ -20,11 +20,14 @@
 
 #include <string>
 #include <sstream>
+#include <limits>
+#include <complex>
 
 #include <adept/exception.h>
 #include <adept/base.h>
 #include <adept/Stack.h>
 #include <adept/Packet.h>
+#include <adept/traits.h>
 
 #ifdef ADEPT_STORAGE_THREAD_SAFE
 #include <atomic>
@@ -60,6 +63,9 @@ namespace adept {
     Storage(Index n, bool IsActive = false)
       : n_(n), n_links_(1), gradient_index_(-1) {
       data_ = internal::alloc_aligned<Type>(n);
+#ifdef ADEPT_INIT_REAL
+      initialize<Type>();
+#endif
       internal::n_storage_objects_created_++; 
 #ifndef ADEPT_NO_AUTOMATIC_DIFFERENTIATION
       if (IsActive) {
@@ -85,14 +91,46 @@ namespace adept {
       }
 #endif
 #endif
-      internal::n_storage_objects_deleted_++; }
-
+      internal::n_storage_objects_deleted_++; 
+    }
 
     // Null initialization, copy and assignment methods that are
     // "protected" to prevent them being used
     Storage() { }
     Storage(Storage& storage) { };
     void operator=(Storage& storage) { };
+
+#ifdef ADEPT_INIT_REAL
+
+    // Initialize to zero, NaN or whatever for debugging
+    template <typename T>
+    typename internal::enable_if<internal::is_floating_point<T>::value, void>::type
+    initialize() {
+      for (int i = 0; i < n_; ++i) {
+	data_[i] = ADEPT_INIT_REAL;
+      }
+    }
+    template <typename T>
+    typename internal::enable_if<internal::is_complex<T>::value, void>::type
+    initialize() {
+      for (int i = 0; i < n_; ++i) {
+#ifdef ADEPT_INIT_REAL_SNAN
+        data_[i] = std::complex<typename Type::value_type>(
+          std::numeric_limits<typename Type::value_type>::signaling_NaN(),
+	  std::numeric_limits<typename Type::value_type>::signaling_NaN());
+#else
+	data_[i] = std::complex<typename Type::value_type>(ADEPT_INIT_REAL, ADEPT_INIT_REAL);
+#endif
+      }
+    }
+
+    // Dummy initialize for non-floats
+    template <typename T>
+    typename internal::enable_if<!internal::is_floating_point<T>::value
+				 && !internal::is_complex<T>::value, void>::type
+    initialize() { }
+
+#endif
 
 
     // -------------------------------------------------------------------
