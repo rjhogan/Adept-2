@@ -63,7 +63,6 @@
 #ifdef __AVX512F__
 #include <immintrin.h>
 #endif
->>>>>>> master
 
 // Headers needed for allocation of aligned memory
 #include <new>
