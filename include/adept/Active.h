@@ -58,6 +58,7 @@ namespace adept {
     static const int  n_active  = 1 + is_complex<Type>::value;
     static const int  n_arrays  = 0;
     static const int  n_scratch = 0;
+    typedef Type T; // Needed so that ADEPT_INIT_REAL_SNAN works
 
     // -------------------------------------------------------------------
     // 2. Constructors
@@ -69,9 +70,14 @@ namespace adept {
     // assume that it is set to zero but should later assign it to a
     // particular value. Otherwise in the reverse pass the
     // corresponding gradient will not be set to zero.
+#ifdef ADEPT_INIT_REAL
+    Active()
+      : val_(ADEPT_INIT_REAL), gradient_index_(ADEPT_ACTIVE_STACK->register_gradient()) { }
+#else
     Active()
       : val_(0.0), gradient_index_(ADEPT_ACTIVE_STACK->register_gradient()) { }
-    
+#endif
+
     // Constructor with a passive argument; this constructor is
     // invoked with either of the following:
     //   aReal x = 1.0;

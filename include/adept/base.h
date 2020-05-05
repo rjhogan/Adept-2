@@ -60,6 +60,10 @@
 // little.  
 //#define ADEPT_RECORDING_PAUSABLE 1
 
+// Initialize real types to signaling NaN or zero
+//#define ADEPT_INIT_REAL_SNAN 1
+//#define ADEPT_INIT_REAL_ZERO 1
+
 // Often when you first convert a code for automatic differentiation
 // the gradients computed contain NaNs or infinities: uncommenting the
 // following will check for these and throw an error when they are
@@ -265,6 +269,13 @@
 // be used in matrix multiplication.
 #define ADEPT_ONLY_DIFFERENTIATE_DENSE_MATRIX_MULTIPLICATION 1
 
+// To find bugs it can be useful to initialize arrays to signaling
+// NaNs, in which case ADEPT_INIT_REAL is set and used internally
+#ifdef ADEPT_INIT_REAL_SNAN
+#define ADEPT_INIT_REAL std::numeric_limits<T>::signaling_NaN()
+#elif defined(ADEPT_INIT_REAL_ZERO)
+#define ADEPT_INIT_REAL 0.0
+#endif
 
 // ---------------------------------------------------------------------
 // 5: Define basic floating-point and integer types

@@ -24,7 +24,10 @@
 #ifndef AdeptScratchVector_H
 #define AdeptScratchVector_H
 
+#include <limits>
+
 #include <adept/base.h>
+#include <adept/traits.h>
 
 namespace adept {
 
@@ -37,7 +40,24 @@ namespace adept {
       // Constructors
 
       // By default no initialization is done
-      ScratchVector() { }
+      ScratchVector() {
+#ifdef ADEPT_INIT_REAL
+	initialize<Type>();
+#endif
+      }
+
+#ifdef ADEPT_INIT_REAL
+      template <typename T>
+      typename internal::enable_if<internal::is_floating_point<T>::value, void>::type
+      initialize() {
+	for (int is = 0; is < Size; ++is) {
+	  val[is] = ADEPT_INIT_REAL;
+	}
+      }
+      template <typename T>
+      typename internal::enable_if<!internal::is_floating_point<T>::value, void>::type
+      initialize() { }
+#endif
 
       // Set all dimensions to the same value
       ScratchVector(Type x) {
