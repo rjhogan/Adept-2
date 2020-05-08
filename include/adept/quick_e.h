@@ -52,6 +52,14 @@
 
 #include <cmath>
 
+// Microsoft compiler doesn't define __SSE2__ even if __AVX__ is
+// defined
+#ifdef __AVX__
+#ifndef __SSE2__
+#define __SSE2__ 1
+#endif
+#endif
+
 // Headers needed for x86 vector intrinsics
 #ifdef __SSE2__
   #include <xmmintrin.h> // SSE

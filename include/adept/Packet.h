@@ -21,49 +21,6 @@
 #include <cstdlib>
 #include <cmath>
 
-// Microsoft compiler doesn't define __SSE2__ even if __AVX__ is
-// defined
-#ifdef __AVX__
-#ifndef __SSE2__
-#define __SSE2__ 1
-#endif
-#endif
-
-// Headers needed for x86 vector intrinsics
-#ifdef __SSE2__
-#include <xmmintrin.h> // SSE
-#include <emmintrin.h> // SSE2
-// Numerous platforms don't define _mm_undefined_ps in xmmintrin.h, so
-// we assume none do, except GCC >= 4.9.1 and CLANG >= 3.8.0.  Those
-// that don't use an equivalent function that sets the elements to
-// zero.
-#define ADEPT_MM_UNDEFINED_PS _mm_setzero_ps
-#ifdef __clang__
-  #if __has_builtin(__builtin_ia32_undef128)
-    #undef ADEPT_MM_UNDEFINED_PS
-    #define ADEPT_MM_UNDEFINED_PS _mm_undefined_ps
-  #endif
-#elif defined(__GNUC__)
-  #define GCC_VERSION (__GNUC__ * 10000 \
-		       + __GNUC_MINOR__ * 100	\
-		       + __GNUC_PATCHLEVEL__)
-  #if GCC_VERSION >= 40901
-    #undef ADEPT_MM_UNDEFINED_PS
-    #define ADEPT_MM_UNDEFINED_PS _mm_undefined_ps
-  #endif
-  #undef GCC_VERSION
-#endif // __clang__/__GNUC__
-#endif // __SSE2__
-
-#ifdef __AVX__
-#include <tmmintrin.h> // SSE3
-#include <immintrin.h> // AVX
-#endif
-
-#ifdef __AVX512F__
-#include <immintrin.h>
-#endif
-
 // Headers needed for allocation of aligned memory
 #include <new>
 
