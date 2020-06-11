@@ -284,10 +284,20 @@ will need to recompile with (e.g. for g++) -msse2, -mavx2 or -mavx512f
 and check that the output is the same each time.
 
 
-TEST 17: FAST EXPONENTIAL OPERATIONS
+TEST 18: FAST EXPONENTIAL OPERATIONS
 
 Executable: test_fastexp
 
 Source file: test_fastexp.cpp
 
 Demonstrates: Correctness of Adept's fast exponential function.
+
+
+TEST 18: ACTIVE REDUCE OPERATIONS
+
+Executable: test_reduce_active
+
+Source file: test_reduce_active.cpp
+
+Demonstrates: differentiation of reduction operations (sum, product,
+maxval etc).
