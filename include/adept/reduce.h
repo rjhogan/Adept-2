@@ -216,7 +216,7 @@ namespace adept {
 	T xval = rhs.next_value_and_gradient_special(*ADEPT_ACTIVE_STACK, loc,
 						     total.value());
 	// Now treat x as inactive and Active<T> will do the rest
-	total *= xval;	
+	total *= xval;
       }
       template <class X>
       void finish(X& total, const Index& n) { }
@@ -233,9 +233,15 @@ namespace adept {
       // Initiate the total with the minimum possible value
       T first_value() { return internal::numeric_limits<T>::min_inf(); }
 #ifdef ADEPT_CXX11_FEATURES
-      void accumulate(T& total, const T& rhs) { total = std::fmax(total,rhs); }
+      void accumulate(T& total, const T& rhs) { 
+	using std::fmax;
+	total = fmax(total,rhs);
+      }
 #else
-      void accumulate(T& total, const T& rhs) { total = std::max(total,rhs); }
+      void accumulate(T& total, const T& rhs) {
+	using std::max;
+	total = max(total,rhs);
+      }
 #endif
       void accumulate(Packet<T>& total, const Packet<T>& rhs) { total = fmax(total,rhs); }
       T accumulate_packet(const Packet<T>& ptotal) {
@@ -254,6 +260,9 @@ namespace adept {
 	  // stack.
 	  total = rhs.next_value_and_gradient(*ADEPT_ACTIVE_STACK, loc);
 	}
+	else {
+	  rhs.advance_location(loc);
+	}
       }
       template <class X>
       void finish(X& total, const Index& n) { }
@@ -269,9 +278,15 @@ namespace adept {
       const char* name() { return "minval"; }
       T first_value() { return internal::numeric_limits<T>::max_inf(); }
 #ifdef ADEPT_CXX11_FEATURES
-      void accumulate(T& total, const T& rhs) { total = std::fmin(total,rhs); }
+      void accumulate(T& total, const T& rhs) {
+	using std::fmin;
+	total = fmin(total,rhs);
+      }
 #else
-      void accumulate(T& total, const T& rhs) { total = std::min(total,rhs); }
+      void accumulate(T& total, const T& rhs) {
+	using std::min;
+	total = min(total,rhs);
+      }
 #endif
       void accumulate(Packet<T>& total, const Packet<T>& rhs) { total = fmin(total,rhs); }
       T accumulate_packet(const Packet<T>& ptotal) {
@@ -287,6 +302,9 @@ namespace adept {
 	  // while operator= puts the left hand side on the statement
 	  // stack.
 	  total = rhs.next_value_and_gradient(*ADEPT_ACTIVE_STACK, loc);
+	}
+	else {
+	  rhs.advance_location(loc);
 	}
       }
       template <class X>
@@ -311,11 +329,11 @@ namespace adept {
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
 			     ExpressionSize<NArrays>& loc) {
-	// Differentiate t += x*x -> dt += 2*x*dx.  Use the "special"
+	// Differentiate t += x*x -> dt += 2*x*dx.  Use the "special2"
 	// version of the following function, where multiplier*x*dx is
 	// put on the operation stack.
-	T xval = rhs.next_value_and_gradient_special(*ADEPT_ACTIVE_STACK, loc,
-						   2.0);
+	T xval = rhs.next_value_and_gradient_special2(*ADEPT_ACTIVE_STACK,
+						      loc, 2.0);
 	// Now do a purely inactive operation since we will put
 	// "total" on the statement stack only right at the end
 	total.lvalue() += xval*xval;

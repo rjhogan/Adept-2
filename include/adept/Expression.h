@@ -227,9 +227,21 @@ namespace adept {
       return val;
     }
 
-    // This is used in norm2()
+    // This is used in product()
     template <int NArrays, typename MyType>
     Type next_value_and_gradient_special(Stack& stack,
+				 ExpressionSize<NArrays>& index,
+				 const MyType& multiplier) const {
+      internal::ScratchVector<A::n_scratch> scratch;
+      Type val = cast().template value_at_location_store_<0,0>(index, scratch);
+      cast().template calc_gradient_<0,0>(stack, index, scratch, multiplier);
+      cast().template advance_location_<0>(index);
+      return val;
+    }
+
+    // This is used in norm2()
+    template <int NArrays, typename MyType>
+    Type next_value_and_gradient_special2(Stack& stack,
 				 ExpressionSize<NArrays>& index,
 				 const MyType& multiplier) const {
       internal::ScratchVector<A::n_scratch> scratch;

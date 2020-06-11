@@ -11,6 +11,10 @@ version 2.0.7
 	- Preprocessor option ADEPT_INIT_REAL_SNAN and
 	ADEPT_INIT_REAL_ZERO initialize real numbers (and complex numbers)
 	to signaling NaN or zero, useful for debugging
+	- Fixed bug that caused incorrect result of maxval and minval
+	applied to active arrays
+	- Fixed bug that caused incorrect differentiation of "product"
+	function
 
 version 2.0.6 (20 February 2020)
 	- Fixed bug in hand-coded adjoint of Toon advection scheme
