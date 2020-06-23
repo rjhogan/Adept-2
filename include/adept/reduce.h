@@ -140,9 +140,15 @@ namespace adept {
       void accumulate(E& total, const E& rhs) { total += rhs; }
       // When the reduce operation is vectorized, packets of data are
       // accumulated, requiring the ability to horizontally accumulate
-      // each element of the packet
-      T accumulate_packet(const Packet<T>& ptotal) {
-	return hsum(ptotal);
+      // each element of the packet, but only the packet2 version is
+      // needed (the original accumulate_packet had problems with the
+      // norm2 function, and is no longer used - can be removed)
+      //T accumulate_packet(const Packet<T>& ptotal) {
+      //  return hsum(ptotal);
+      //}
+      template <typename E>
+      void accumulate_packet2(E& total, const Packet<T>& ptotal) {
+	total += hsum(ptotal);
       }
       // In the case of active arguments, the next_value_and_gradient
       // function pushes the right hand side onto the operation stack,
@@ -176,8 +182,12 @@ namespace adept {
       T first_value() { return 0; }
       template <typename E>
       void accumulate(E& total, const E& rhs) { total += rhs; }
-      T accumulate_packet(const Packet<T>& ptotal) {
-	return hsum(ptotal);
+      //T accumulate_packet(const Packet<T>& ptotal) {
+      //  return hsum(ptotal);
+      //}
+      template <typename E>
+      void accumulate_packet2(E& total, const Packet<T>& ptotal) {
+	total += hsum(ptotal);
       }
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
@@ -204,8 +214,12 @@ namespace adept {
       T first_value() { return 1; }
       template <typename E>
       void accumulate(E& total, const E& rhs) { total *= rhs; }
-      T accumulate_packet(const Packet<T>& ptotal) {
-	return hprod(ptotal);
+      //T accumulate_packet(const Packet<T>& ptotal) {
+      //  return hprod(ptotal);
+      //}
+      template <typename E>
+      void accumulate_packet2(E& total, const Packet<T>& ptotal) {
+	total *= hprod(ptotal);
       }
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
@@ -237,16 +251,26 @@ namespace adept {
 	using std::fmax;
 	total = fmax(total,rhs);
       }
+      template <typename E>
+      void accumulate_packet2(E& total, const Packet<T>& ptotal) {
+	using std::fmax;
+	total = fmax(total,hmax(ptotal));
+      }
 #else
       void accumulate(T& total, const T& rhs) {
 	using std::max;
 	total = max(total,rhs);
       }
+      template <typename E>
+      void accumulate_packet2(E& total, const Packet<T>& ptotal) {
+	using std::max;
+	total = max(total,hmax(ptotal));
+      }
 #endif
       void accumulate(Packet<T>& total, const Packet<T>& rhs) { total = fmax(total,rhs); }
-      T accumulate_packet(const Packet<T>& ptotal) {
-	return hmax(ptotal);
-      }
+      //T accumulate_packet(const Packet<T>& ptotal) {
+      //  return hmax(ptotal);
+      //}
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
 			     ExpressionSize<NArrays>& loc) {
@@ -282,16 +306,24 @@ namespace adept {
 	using std::fmin;
 	total = fmin(total,rhs);
       }
+      void accumulate_packet2(T& total, const Packet<T>& ptotal) {
+	using std::fmin;
+	total = fmin(total,hmin(ptotal));
+      }
 #else
       void accumulate(T& total, const T& rhs) {
 	using std::min;
 	total = min(total,rhs);
       }
+      void accumulate_packet2(T& total, const Packet<T>& ptotal) {
+	using std::min;
+	total = min(total,hmin(ptotal));
+      }
 #endif
       void accumulate(Packet<T>& total, const Packet<T>& rhs) { total = fmin(total,rhs); }
-      T accumulate_packet(const Packet<T>& ptotal) {
-	return hmin(ptotal);
-      }
+      //T accumulate_packet(const Packet<T>& ptotal) {
+      //  return hmin(ptotal);
+      //}
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
 			     ExpressionSize<NArrays>& loc) {
@@ -323,8 +355,14 @@ namespace adept {
       T first_value() { return 0; }
       template <typename E>
       void accumulate(E& total, const E& rhs) { total += rhs*rhs; }
-      T accumulate_packet(const Packet<T>& ptotal) {
-	return hsum(ptotal);
+      //T accumulate_packet(const Packet<T>& ptotal) {
+      //  return hsum(ptotal);
+      //}
+      // Note that ptotal is already an accumulation of squared
+      // values, so does not need to be squared again
+      template <typename E>
+      void accumulate_packet2(E& total, const Packet<T>& ptotal) {
+	total += hsum(ptotal);
       }
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
@@ -517,7 +555,9 @@ namespace adept {
 	    }
 	  }
 	} while (my_rank >= 0);
-	f.accumulate(total, f.accumulate_packet(ptotal));
+	// norm2 cannot use accumulate here or elements will be squared twice
+	//f.accumulate(total, f.accumulate_packet(ptotal));
+	f.accumulate_packet2(total, ptotal);
 	f.finish(total, n);
       }
       else {
