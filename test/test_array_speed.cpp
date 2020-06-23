@@ -1,11 +1,14 @@
 #include <iostream>
 #define ADEPT_NO_AUTOMATIC_DIFFERENTIATION
-//#define ADEPT_FLOATING_POINT_TYPE float
+#define ADEPT_REAL_TYPE_SIZE 4
 #include <adept_arrays.h>
 #include "Timer.h"
 
 #define ASSIGN   =
-#define OPERATOR /
+#define WARMUP_OPERATOR + exp
+#define OPERATOR + fastexp
+//#define SUFFIX_OP + 0.5
+#define SUFFIX_OP
 
 using namespace adept;
 
@@ -50,7 +53,7 @@ int main()
   for (int irep = 0; irep < rep; ++irep) {
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-	Mc[i][j] ASSIGN Pc[i][j] OPERATOR (Qc[i][j]+0.5);
+	Mc[i][j] ASSIGN Pc[i][j] WARMUP_OPERATOR (Qc[i][j] SUFFIX_OP);
       }
     }
   }
@@ -73,7 +76,7 @@ int main()
   for (int irep = 0; irep < rep; ++irep) {
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-	Mc[i][j] ASSIGN Pc[i][j] OPERATOR (Qc[i][j]+0.5);
+	Mc[i][j] ASSIGN Pc[i][j] OPERATOR (Qc[i][j] SUFFIX_OP);
       }
     }
   }
@@ -101,8 +104,8 @@ int main()
   stack.new_recording();
   timer.start(t_adept_w);
   for (int irep = 0; irep < rep; ++irep) {
-    //    M ASSIGN noalias(P OPERATOR (Q+0.5));
-    M ASSIGN P OPERATOR (Q+0.5);
+    //    M ASSIGN noalias(P WARMUP_OPERATOR (Q SUFFIX_OP));
+    M ASSIGN P WARMUP_OPERATOR (Q SUFFIX_OP);
   }
   timer.stop();
   //  std::cout << stack;
@@ -117,14 +120,14 @@ int main()
     }
   }
 
-  std::cout << "Alignment offset = " << (P OPERATOR (Q+0.5)).alignment_offset() << "\n";
+  std::cout << "Alignment offset = " << (P OPERATOR (Q SUFFIX_OP)).alignment_offset() << "\n";
 
 
   stack.new_recording();
   timer.start(t_adept);
   for (int irep = 0; irep < rep; ++irep) {
-    //    M += noalias(P OPERATOR (Q+0.5));
-    M ASSIGN P OPERATOR (Q+0.5);
+    //    M += noalias(P OPERATOR (Q SUFFIX_OP));
+    M ASSIGN P OPERATOR (Q SUFFIX_OP);
   }
   timer.stop();
   //  std::cout << stack;
@@ -154,7 +157,7 @@ int main()
   for (int irep = 0; irep < rep; ++irep) {
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-	M(i,j) ASSIGN P(i,j) OPERATOR (Q(i,j)+0.5);
+	M(i,j) ASSIGN P(i,j) WARMUP_OPERATOR (Q(i,j) SUFFIX_OP);
       }
     }
   }
@@ -167,7 +170,7 @@ int main()
   for (int irep = 0; irep < rep; ++irep) {
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-	M(i,j) ASSIGN P(i,j) OPERATOR (Q(i,j)+0.5);
+	M(i,j) ASSIGN P(i,j) OPERATOR (Q(i,j) SUFFIX_OP);
       }
     }
   }

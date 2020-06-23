@@ -1,6 +1,6 @@
 /* UnaryOperation.h -- Unary operations on Adept expressions
 
-    Copyright (C) 2014-2017 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014-2020 European Centre for Medium-Range Weather Forecasts
 
     Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -238,14 +238,21 @@ namespace adept {
   ADEPT_DEF_UNARY_FUNC(Atan,  atan,  std::atan,  "atan",  1.0/(1.0+val*val), false)
   ADEPT_DEF_UNARY_FUNC(Sinh,  sinh,  std::sinh,  "sinh",  cosh(val), false)
   ADEPT_DEF_UNARY_FUNC(Cosh,  cosh,  std::cosh,  "cosh",  sinh(val), false)
-  ADEPT_DEF_UNARY_FUNC(Abs,   abs,   std::abs, "abs", ((val>0.0)-(val<0.0)), false)
-  ADEPT_DEF_UNARY_FUNC(Fabs,  fabs,  std::fabs, "fabs", ((val>0.0)-(val<0.0)), false)
+  ADEPT_DEF_UNARY_FUNC(Abs,   abs,   std::abs,   "abs",   ((val>0.0)-(val<0.0)), false)
+  ADEPT_DEF_UNARY_FUNC(Fabs,  fabs,  std::fabs,  "fabs",  ((val>0.0)-(val<0.0)), false)
 
   // Functions y(x) whose derivative depends on the result of the
   // function, i.e. dy(x)/dx = f(y)
-  ADEPT_DEF_UNARY_FUNC(Exp,   exp,   std::exp,   "exp",   result, false)
   ADEPT_DEF_UNARY_FUNC(Sqrt,  sqrt,  std::sqrt,  "sqrt",  0.5/result, true)
   ADEPT_DEF_UNARY_FUNC(Tanh,  tanh,  std::tanh,  "tanh",  1.0 - result*result, false)
+
+  // Adept's vectorizable exponential function
+  ADEPT_DEF_UNARY_FUNC(Fastexp, fastexp, adept::fastexp, "fastexp", result, true)
+#ifdef ADEPT_FAST_EXPONENTIAL
+  ADEPT_DEF_UNARY_FUNC(Exp,   exp,   adept::functions::exp, "fastexp", result, true)
+#else
+  ADEPT_DEF_UNARY_FUNC(Exp,   exp,   std::exp,   "exp",   result, false)
+#endif
 
   // Functions with zero derivative
   ADEPT_DEF_UNARY_FUNC(Ceil,  ceil,  std::ceil,  "ceil",  0.0, false)

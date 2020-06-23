@@ -1,4 +1,9 @@
 version 2.0.7
+	- Added fast, vectorizable exponential function "fastexp", or can
+	use as adept::exp if the ADEPT_FAST_EXPONENTIAL preprocessor
+	variable is defined
+	- Moved all the vector intrinsic stuff to quick_e.h
+	- Added ARM-NEON support to quick_e.h
 	- Adept is now thread safe on Mac OS versions that support the
 	thread_local keyword
 	- Fixed bug that caused incorrect differentiation of
@@ -6,6 +11,10 @@ version 2.0.7
 	- Preprocessor option ADEPT_INIT_REAL_SNAN and
 	ADEPT_INIT_REAL_ZERO initialize real numbers (and complex numbers)
 	to signaling NaN or zero, useful for debugging
+	- Fixed bug that caused incorrect result of maxval and minval
+	applied to active arrays
+	- Fixed bug that caused incorrect differentiation of "product"
+	function
 
 version 2.0.6 (20 February 2020)
 	- Fixed bug in hand-coded adjoint of Toon advection scheme

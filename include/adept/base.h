@@ -90,13 +90,38 @@
 // Do we disable automatic alias checking in array operations?
 //#define ADEPT_NO_ALIAS_CHECKING 1
 
+// Does adept::exp when applied to Adept types such as arrays invoke a
+// faster vectorizable exponential function?  This is not bit
+// reproducible with "exp" in the standard library, but the faster
+// function is always available as adept::fastexp (and this also works
+// on scalars).  Note that when applied to an Adept type, a simple
+// "exp" selects the function from the adept namespace.
+//#define ADEPT_FAST_EXPONENTIAL 1
+
+// The following will define the adept::exp function for the scalar
+// types "float" and "double" to call the faster exponential function,
+// bit reproducible with the vectorizable one above.  However, this
+// can cause a namespace clash as some C header files import "exp"
+// outside of any namespace.  Alternatively you can use adept::fastexp
+// on scalars.
+//#define ADEPT_FAST_SCALAR_EXPONENTIAL 1
+
 // A shortcut for faster execution that does not change the behaviour
 // of single-threaded bug-free code that uses the "eval" function in
-// case of aliasing
+// case of aliasing.  ADEPT_FAST_EXPONENTIAL changes results so is not
+// activated wtih ADEPT_FAST.
 #ifdef ADEPT_FAST
 #define ADEPT_STACK_THREAD_UNSAFE 1
 #define ADEPT_NO_DIMENSION_CHECKING 1
 #define ADEPT_NO_ALIAS_CHECKING 1
+#endif
+
+// The compiler option -ffast-math turns on __FAST_MATH__ and allows
+// for optimizations that may not be bit-reproducible or do all the
+// normal error checking - Adept's fast exponential falls into this
+// category.
+#ifdef __FAST_MATH__
+#define ADEPT_FAST_EXPONENTIAL 1
 #endif
 
 // The initial size of the stacks, which can be grown if required
