@@ -244,11 +244,11 @@ is stored. If you use the GNU compiler then consider the \code{-g1}
 option instead to reduce the amount of debugging information
 stored. The GNU \code{-march=native} option will also enable the
 fastest instruction set for the machine on which the code is being
-compiled.  On Intel you may see a performance improvement if AVX
-instructions are enabled \code{-mavx} since \Adept\ is able to
-vectorize certain expressions. If a library you wish to use is
-installed in a non-system directory, say under \code{/foo}, then
-specify the locations as follows:
+compiled.  \Adept\ can vectorize certain floating-point array
+expressions making use of the SSE2, AVX and AVX512 instruction sets on
+Intel hardware and the NEON instruction set on ARM. If a library you
+wish to use is installed in a non-system directory, say under
+\code{/foo}, then specify the locations as follows:
 \begin{lstlisting}
  ./configure CPPFLAGS="-I/foo/include" LDFLAGS="-L/foo/lib -Wl,-rpath,/foo/lib"
 \end{lstlisting}
@@ -3186,6 +3186,35 @@ OpenBLAS, and the \code{OMP\_NUM\_THREADS} environment variable to
 control the number used in Jacobian calculations.
 
 
+\section{The fast exponential function}
+\label{sec:fastexp}
+\Adept\ was originally developed for algorithms that make frequent
+calls to the exponential function \code{exp}, but unfortunately most
+compilers do not vectorize \code{exp}.  Therefore, \Adept\ provides
+the function \code{fastexp} in the \code{adept} namespace, which can
+operate on active and passive scalars and array arguments (including
+the simple \code{float} and \code{double}) just like \code{exp}.  It
+uses an adapted form of an algorithm from Agner Fog's Vector Class
+Library (VCL) that is around a third faster for scalar arguments, but
+can be vectorized making it as much as 10 times faster when applied to
+\Adept\ arrays depending on the instruction set available.  It is
+accurate but not bit-reproducible with \code{exp} and produces finite
+results for a slightly smaller range of input values: from $-87.3$ to
+$+89.0$ for \code{float} arguments and from $-708.39$ to $+709.70$ for
+\code{double} arguments.
+
+If you have an existing code that calls \code{exp} with \Adept\ types
+as arguments, and wish to use the faster algorithm for all of them,
+then simply compile your code with \code{-DADEPT\_FAST\_EXPONENTIAL}.
+This will not change the behaviour of \code{exp} for other types of
+arguments, which would typically use the version from the C++ standard
+library. If you compile your code with
+\code{-DADEPT\_FAST\_SCALAR\_EXPONENTIAL} then a fast exponential
+function \code{adept::exp} will be defined that works on arguments of
+type \code{float} and \code{double}.  However, this can cause a
+namespace clash as some C header files import \code{exp} from the
+standard library outside of any namespace.
+
 \section{Tips for the best performance}
 \label{sec:tips}
 \begin{itemize}
@@ -3208,17 +3237,25 @@ control the number used in Jacobian calculations.
   the function calls associated with mathematical expressions.  On the
   GNU C++ compiler, the \code{-O3 -march=native} setting is
   recommended.
-\item On Intel architectures, \Adept\ will vectorize expressions if
-  they satisfy a number of requirements: (1) they contain only
-  elementary mathematical operators (including the functions
-  \code{sqrt}, \code{max} and \code{min}), (2) the arrays in the
-  expression are either all of type \code{float} or all of type
-  \code{double}, (3) all the arrays in the expression must have their
-  final dimension increasing in memory with no stride, and (4) none of
-  the arrays are active. If AVX is enabled (\code{-mavx}) then four
-  \code{double}s or eight \code{float}s will be operated on at once,
-  otherwise if SSE2 is enabled (\code{-msse2}) then two \code{double}s
-  or four \code{float}s will be operated on at once.
+\item As outlined in the previous section, if you use the \code{exp}
+  function then you can replace them with the faster \code{fastexp}
+  function in or compile your code with
+  \code{-DADEPT\_FAST\_EXPONENTIAL}.
+\item On Intel and ARM architectures, \Adept\ will use the SSE2, AVX,
+  AVX512 or NEON instruction sets (depending on availability) to
+  vectorize array expressions that satisfy a number of requirements:
+  (1) they contain only elementary mathematical operators (including
+  the functions \code{sqrt}, \code{max}, \code{min} and
+  \code{fastexp}), (2) the arrays in the expression are either all of
+  type \code{float} or all of type \code{double}, (3) all the arrays
+  in the expression must have their final dimension increasing in
+  memory with no stride, and (4) none of the arrays are active. On the
+  GNU compiler the \code{-march=native} selects the best available
+  instruction set, but you can select a specific set with
+  \code{-msse2}, \code{-mavx} or \code{-mavx512f}. With the SSE2 and
+  NEON instruction sets, 2 \code{double}s or 4 \code{float}s are
+  operated on at once, for AVX these rise to 4 and 8 respectively, and
+  for AVX512 they rise to 8 and 16 respectively.
 \item By default the Jacobian functions are compiled to process a
   strip of rows or columns of the Jacobian matrix at once. The optimum
   width of the strip depends on your platform, and you may wish to
