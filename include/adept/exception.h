@@ -162,7 +162,20 @@ namespace adept {
 				   = "Fortran interoperability error")
     { message_ = message; }
   };
+
   
+  // -------------------------------------------------------------------
+  // optimization_exception
+  // -------------------------------------------------------------------
+
+  // The optimization_exception type
+  class optimization_exception : public adept::exception { 
+  public:
+    optimization_exception(const std::string& message
+		    = "Optimization/minimization error")
+    { message_ = message; }
+  };
+
 
   // -------------------------------------------------------------------
   // Provide location of where exception was thrown
