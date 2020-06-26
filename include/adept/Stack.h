@@ -638,6 +638,18 @@ namespace adept {
     // adjoint calculation
     uIndex max_gradients() const { return max_gradient_; }
 
+    // Return the highest gradient index on the left-hand-side of any
+    // of the statements currently on the stack
+    uIndex max_gradient_index() const {
+      uIndex mg = 0;
+      for (int is = 0; is < n_statements_; ++is) {
+	if (statement_[is].index > mg) {
+	  mg = statement_[is].index;
+	}
+      }
+      return mg;
+    }
+
     // Return the index to the current gradient
     uIndex i_gradient() const { return i_gradient_; }
 
