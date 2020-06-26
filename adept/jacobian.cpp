@@ -629,10 +629,6 @@ namespace adept {
   void
   Stack::jacobian(Real* jacobian_out)
   {
-    //    std::cout << ">>> Computing " << n_dependent() << "x" << n_independent()
-    //	      << " Jacobian from " << n_statements_ << " statements, "
-    //	      << n_operations() << " operations and " << max_gradient_ << " gradients\n";
-
     if (n_independent() <= n_dependent()) {
       jacobian_forward(jacobian_out);
     }
