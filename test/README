@@ -293,7 +293,7 @@ Source file: test_fastexp.cpp
 Demonstrates: Correctness of Adept's fast exponential function.
 
 
-TEST 18: ACTIVE REDUCE OPERATIONS
+TEST 19: ACTIVE REDUCE OPERATIONS
 
 Executable: test_reduce_active
 
@@ -301,3 +301,12 @@ Source file: test_reduce_active.cpp
 
 Demonstrates: differentiation of reduction operations (sum, product,
 maxval etc).
+
+
+TEST 20: MINIMIZER
+
+Executable: test_minimizer
+
+Source file: test_minimizer.cpp
+
+Demonstrates: Adept's Levenberg-Marquardt minimizer.
