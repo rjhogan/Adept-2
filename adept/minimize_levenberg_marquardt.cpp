@@ -211,17 +211,6 @@ namespace adept {
       else if (any(!isfinite(gradient))) {
 	return MINIMIZER_STATUS_INVALID_GRADIENT;
       }
-      // Compute L2 norm of gradient to see how "flat" the environment
-      // is
-      gnorm = norm2(gradient);
-      // Report progress using user-defined function
-      optimizable.record_progress(iteration, x, cost, gnorm);
-      // Convergence has been achieved if the L2 norm has been reduced
-      // to a user-specified threshold
-      if (gnorm <= converged_gradient_norm) {
-	status = MINIMIZER_STATUS_SUCCESS;
-	break;
-      }
 
       // Find which dimensions are in play
       if (nbound > 0) {
@@ -232,8 +221,8 @@ namespace adept {
 	// value of gamma leads to a point on the valid side of the
 	// bound
 	modified_hessian = hessian;
-	hessian.diag_vector() *= (1.0 + gamma);
-	dx = -adept::solve(hessian, gradient);
+	modified_hessian.diag_vector() *= (1.0 + gamma);
+	dx = -adept::solve(modified_hessian, gradient);
 	// Release points at the minimum bound
 	bound_status.where(bound_status == -1
 			   && gradient < 0.0
@@ -244,21 +233,46 @@ namespace adept {
 			   && dx < 0.0) = 0;
       }
 
-      std::cout << "bound_status = " << bound_status << "\n";
-
       nbound = count(bound_status != 0);
       nfree  = nx - nbound;
 
+      // List of indices of free state variables
       intVector ifree(nfree);
+      if (nbound > 0) {
+	ifree = find(bound_status == 0);
+      }
+      else {
+	ifree = range(0, nx-1);
+      }
+
+      // Compute L2 norm of gradient to see how "flat" the environment
+      // is, restricting ourselves to the dimensions currently in play
+      if (nfree > 0) {
+	gnorm = norm2(gradient(ifree));
+      }
+      else {
+	// If no dimensions are in play we are at a corner of the
+	// bounds and the gradient is pointing into the corner: we
+	// have reached a minimum in the cost function subject to the
+	// bounds so have converged
+	gnorm = 0.0;
+      }
+      // Report progress using user-defined function
+      optimizable.record_progress(iteration, x, cost, gnorm);
+      // Convergence has been achieved if the L2 norm has been reduced
+      // to a user-specified threshold
+      if (gnorm <= converged_gradient_norm) {
+	status = MINIMIZER_STATUS_SUCCESS;
+	break;
+      }
+
       sub_gradient.clear();
       sub_hessian.clear();
       if (nbound > 0) {
-	ifree = find(bound_status == 0);
 	sub_gradient = gradient(ifree);
 	sub_hessian  = SymmMatrix(Matrix(hessian)(ifree,ifree));
       }
       else {
-	ifree = range(0, nx-1);
 	sub_gradient >>= gradient;
 	sub_hessian  >>= hessian;
       }
@@ -266,7 +280,7 @@ namespace adept {
       // FIX reuse dx if possible below...
 
       // Try to minimize cost function 
-	Real previous_diag_scaling = 1.0;
+      Real previous_diag_scaling = 1.0;
       while(true) {
 	sub_dx.resize(nfree);
 	if (gamma > 1000.0) {
@@ -301,14 +315,12 @@ namespace adept {
 	    / sub_dx(new_min_bounds);
 	  mmin_frac = minval(min_frac);
 	  imin = new_min_bounds(minloc(min_frac));
-	  std::cout << "  min_frac=" << min_frac << ", imin=" << imin << "\n";
 	}
 	if (!new_max_bounds.empty()) {
 	  Vector max_frac = (max_x(ifree(new_max_bounds)) - x(ifree(new_max_bounds)))
 	    / sub_dx(new_max_bounds);
 	  mmax_frac = minval(max_frac);
 	  imax = new_max_bounds(maxloc(max_frac));
-	  std::cout << "  max_frac=" << max_frac << ", imax=" << imax << "\n";
 	}
 
 	Real frac = 1.0;
@@ -365,8 +377,6 @@ namespace adept {
 	  iteration++;
 	  if (frac < 1.0) {
 	    // Found a new bound
-	    std::cout << "  ifree=" << ifree <<", ibound=" << ibound << "\n";
-
 	    bound_status(ifree(ibound)) = bound_type;
 	  }
 	  // Reduce gamma for next iteration

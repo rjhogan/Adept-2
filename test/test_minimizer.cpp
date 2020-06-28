@@ -36,13 +36,16 @@ class RosenbrockN : public Optimizable2 {
   virtual void record_progress(int niter, const adept::Vector& x,
 			       Real cost, Real gnorm) {
     std::cout << "Iteration " << niter
-	      << ": cost=" << cost << ", gnorm=" << gnorm
-	      << ", x=" << x << "\n";
-    std::cerr << x(0) << " " << x(1) << " " << cost << "\n";
+	      << ": cost=" << cost << ", gnorm=" << gnorm << "\n";
+    // For plotting progress, direct standard error to a text file
+    for (int ix = 0; ix < x.size(); ++ix) {
+      std::cerr << x(ix) << " ";
+    }
+    std::cerr << cost << "\n";
   }
 
   virtual Real calc_cost_function(const Vector& x) {
-    std::cout << "  test x: " << x << "\n";
+    //std::cout << "  test x: " << x << "\n";
     Vector y = calc_y(x);
     return 0.5*sum(y*y);
   }
@@ -108,13 +111,15 @@ main(int argc, const char* argv[])
   std::cout << "Minimizing " << nx << "-dimensional Rosenbrock function\n";
 
   rosenbrock.initialize_bounds(nx);
-  rosenbrock.set_upper_bound(1, 2);
+  //  rosenbrock.set_upper_bound(1, 2);
+  //rosenbrock.set_lower_bound(1, 0.2);
   //  rosenbrock.set_upper_bound(0, 0.5);
+  rosenbrock.set_lower_bound(0, 1.5);
   //  rosenbrock.set_lower_bound(1, 0.5);
 
   // Initial state vector
   Vector x(nx);
-  x = -3.0;
+  x = 4.0;
 
   MinimizerStatus status = minimizer.minimize(rosenbrock, x);
   std::cout << "Status: " << minimizer_status_string(status) << "\n";
