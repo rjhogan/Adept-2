@@ -36,10 +36,13 @@ class RosenbrockN : public Optimizable2 {
   virtual void record_progress(int niter, const adept::Vector& x,
 			       Real cost, Real gnorm) {
     std::cout << "Iteration " << niter
-	      << ": cost=" << cost << ", gnorm=" << gnorm << "\n";
+	      << ": cost=" << cost << ", gnorm=" << gnorm
+	      << ", x=" << x << "\n";
+    std::cerr << x(0) << " " << x(1) << " " << cost << "\n";
   }
 
   virtual Real calc_cost_function(const Vector& x) {
+    std::cout << "  test x: " << x << "\n";
     Vector y = calc_y(x);
     return 0.5*sum(y*y);
   }
@@ -83,7 +86,7 @@ int
 main(int argc, const char* argv[])
 {
   RosenbrockN rosenbrock;
-  Minimizer minimizer(MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT);
+  Minimizer minimizer(MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT, true);
   int nx = 2;
   if (argc > 1) {
     nx = std::stoi(argv[1]);
@@ -103,6 +106,11 @@ main(int argc, const char* argv[])
   }
 
   std::cout << "Minimizing " << nx << "-dimensional Rosenbrock function\n";
+
+  rosenbrock.initialize_bounds(nx);
+  rosenbrock.set_upper_bound(1, 2);
+  //  rosenbrock.set_upper_bound(0, 0.5);
+  //  rosenbrock.set_lower_bound(1, 0.5);
 
   // Initial state vector
   Vector x(nx);

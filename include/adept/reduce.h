@@ -1107,6 +1107,72 @@ namespace adept {
     return sum(l*r);
   }
 
+  // -------------------------------------------------------------------
+  // Section 7. minloc
+  // -------------------------------------------------------------------
+
+  template <typename Type, class E>
+  inline
+  typename enable_if<E::rank == 1, Index>::type
+  minloc(const Expression<Type, E>& rhs) {
+    ExpressionSize<1> length;
+    // Check the argument of the function is a valid expression
+    if (!rhs.get_dimensions(length)) {
+      std::string str = "Array size mismatch in "
+	+ rhs.expression_string() + ".";
+      throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
+    }
+    // Length of the rank-1 expression
+    Index& len = length[0];
+    Type running_min  = internal::numeric_limits<Type>::max_inf();
+    Index running_loc = 0;
+    ExpressionSize<1> coords(0);
+    ExpressionSize<E::n_arrays> loc;
+    rhs.set_location(coords, loc);
+    // Loop over all values in the expression
+    for (Index i = 0; i < len; i++) {
+      Type val = rhs.next_value(loc);
+      if (val < running_min) {
+	running_min = val;
+	running_loc = i;
+      }
+    }
+    return running_loc;
+  }
+
+  // -------------------------------------------------------------------
+  // Section 8. maxloc
+  // -------------------------------------------------------------------
+
+  template <typename Type, class E>
+  inline
+  typename enable_if<E::rank == 1, Index>::type
+  maxloc(const Expression<Type, E>& rhs) {
+    ExpressionSize<1> length;
+    // Check the argument of the function is a valid expression
+    if (!rhs.get_dimensions(length)) {
+      std::string str = "Array size mismatch in "
+	+ rhs.expression_string() + ".";
+      throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
+    }
+    // Length of the rank-1 expression
+    Index& len = length[0];
+    Type running_max  = internal::numeric_limits<Type>::min_inf();
+    Index running_loc = 0;
+    ExpressionSize<1> coords(0);
+    ExpressionSize<E::n_arrays> loc;
+    rhs.set_location(coords, loc);
+    // Loop over all values in the expression
+    for (Index i = 0; i < len; i++) {
+      Type val = rhs.next_value(loc);
+      if (val > running_max) {
+	running_max = val;
+	running_loc = i;
+      }
+    }
+    return running_loc;
+  }
+
 } // End namespace adept
 
 #endif

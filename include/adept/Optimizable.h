@@ -31,6 +31,34 @@ namespace adept {
     // each iteration, if required. By default it does nothing.
     virtual void record_progress(int niter, const adept::Vector& x,
 				 Real cost, Real gnorm) { }
+    virtual void initialize_bounds(int nx) {
+      x_lower_bound_.resize(nx);
+      x_upper_bound_.resize(nx);
+      x_lower_bound_ = -std::numeric_limits<Real>::infinity();
+      x_upper_bound_ =  std::numeric_limits<Real>::infinity();
+    }
+    void set_lower_bound(int ix, Real val) {
+      x_lower_bound_(ix) = val;
+    }
+    void set_upper_bound(int ix, Real val) {
+      x_upper_bound_(ix) = val;
+    }
+    void set_lower_bounds(int ix1, int ix2, Real val) {
+      x_lower_bound_(range(ix1,ix2)) = val;
+    }
+    void set_upper_bounds(int ix1, int ix2, Real val) {
+      x_upper_bound_(range(ix1,ix2)) = val;
+    }
+    const Vector& lower_bounds() const { return x_lower_bound_; }
+    const Vector& upper_bounds() const { return x_upper_bound_; }
+    Real lower_bound(int ix)    const { return x_lower_bound_(ix); }
+    Real upper_bound(int ix)    const { return x_upper_bound_(ix); }
+    bool have_bounds()          const {
+      return !x_lower_bound_.empty() && !x_upper_bound_.empty();
+    }
+  protected:
+    // Data
+    Vector x_lower_bound_, x_upper_bound_;
   };
 
   // A class representing an optimization problem where the cost

@@ -28,6 +28,7 @@ namespace adept {
     MINIMIZER_STATUS_FAILED_TO_CONVERGE,
     MINIMIZER_STATUS_INVALID_COST_FUNCTION,
     MINIMIZER_STATUS_INVALID_GRADIENT,
+    MINIMIZER_STATUS_INVALID_BOUNDS,
     MINIMIZER_STATUS_NUMBER_AVAILABLE,
     MINIMIZER_STATUS_NOT_YET_CONVERGED
   };
@@ -61,14 +62,26 @@ namespace adept {
   minimize_levenberg_marquardt(Optimizable2& optimizable, Vector x,
 			       int max_iterations, Real converged_gradient_norm,
 			       Real max_step_size = -1.0);
+  MinimizerStatus
+  minimize_levenberg_marquardt_bounded(Optimizable2& optimizable, Vector x,
+				       const Vector& min_x,
+				       const Vector& max_x,
+				       int max_iterations,
+				       Real converged_gradient_norm,
+				       Real max_step_size = -1.0);
 
   // A class that can minimize a function using various algorithms
   class Minimizer {
 
   public:
 
-    Minimizer(MinimizerAlgorithm algo) : algorithm_(algo),
-					 is_constrained_(false) { }
+    Minimizer(MinimizerAlgorithm algo, bool is_bounded = false)
+      : algorithm_(algo), is_bounded_(is_bounded) { }
+
+    void set_algorithm(MinimizerAlgorithm algo, bool is_bounded = false) {
+      algorithm_ = algo;
+      is_bounded_ = is_bounded;
+    }
 
     MinimizerStatus minimize(Optimizable1& optimizable, Vector x);
     MinimizerStatus minimize(Optimizable2& optimizable, Vector x);
@@ -78,10 +91,10 @@ namespace adept {
     void max_step_size(Real mss) { max_step_size_ = mss; }
 
   private:
-    // Minimizer type and whether constrained or unconstrained
+    // Minimizer type and whether bounded or unbounded
     // minimization is performed
     MinimizerAlgorithm algorithm_;
-    bool is_constrained_;
+    bool is_bounded_;
 
     // Variables controling the behaviour of the minimizer
     int max_iterations_ = 100; // <=0 means no limit

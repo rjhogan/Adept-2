@@ -36,6 +36,9 @@ namespace adept {
     case MINIMIZER_STATUS_INVALID_GRADIENT:
       return "Non-finite gradient";
       break;
+    case MINIMIZER_STATUS_INVALID_BOUNDS:
+      return "Invalid bounds for bounded minimization";
+      break;
     case MINIMIZER_STATUS_NOT_YET_CONVERGED:
       return "Minimization still in progress";
       break;
@@ -70,10 +73,20 @@ namespace adept {
 					  max_step_size_);
     }
     else if (algorithm_ == MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT) {
-      return minimize_levenberg_marquardt(optimizable, x,
-					  max_iterations_,
-					  converged_gradient_norm_,
-					  max_step_size_);
+      if (is_bounded_ && optimizable.have_bounds()) {
+	return minimize_levenberg_marquardt_bounded(optimizable, x,
+					    optimizable.lower_bounds(),
+					    optimizable.upper_bounds(),
+					    max_iterations_,
+					    converged_gradient_norm_,
+					    max_step_size_);
+      }
+      else {
+	return minimize_levenberg_marquardt(optimizable, x,
+					    max_iterations_,
+					    converged_gradient_norm_,
+					    max_step_size_);
+      }
     }
     else {
       throw optimization_exception("Minimization algorithm not recognized");
