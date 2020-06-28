@@ -75,26 +75,28 @@ namespace adept {
 
   public:
 
-    Minimizer(MinimizerAlgorithm algo, bool is_bounded = false)
-      : algorithm_(algo), is_bounded_(is_bounded) { }
+    Minimizer(MinimizerAlgorithm algo) : algorithm_(algo) { }
 
-    void set_algorithm(MinimizerAlgorithm algo, bool is_bounded = false) {
+    void set_algorithm(MinimizerAlgorithm algo) {
       algorithm_ = algo;
-      is_bounded_ = is_bounded;
     }
 
+    // Unconstrained minimization
     MinimizerStatus minimize(Optimizable1& optimizable, Vector x);
     MinimizerStatus minimize(Optimizable2& optimizable, Vector x);
+    // Constrained minimization
+    //    MinimizerStatus minimize(Optimizable1& optimizable, Vector x,
+    //			     const Vector& x_lower, const Vector& x_upper);
+    MinimizerStatus minimize(Optimizable2& optimizable, Vector x,
+			     const Vector& x_lower, const Vector& x_upper);
 
     void max_iterations(int mi) { max_iterations_ = mi; }
     void converged_gradient_norm(Real cgn) { converged_gradient_norm_ = cgn; }
     void max_step_size(Real mss) { max_step_size_ = mss; }
 
   private:
-    // Minimizer type and whether bounded or unbounded
-    // minimization is performed
+    // Minimizer type
     MinimizerAlgorithm algorithm_;
-    bool is_bounded_;
 
     // Variables controling the behaviour of the minimizer
     int max_iterations_ = 100; // <=0 means no limit

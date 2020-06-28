@@ -89,7 +89,7 @@ int
 main(int argc, const char* argv[])
 {
   RosenbrockN rosenbrock;
-  Minimizer minimizer(MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT, true);
+  Minimizer minimizer(MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT);
   int nx = 2;
   if (argc > 1) {
     nx = std::stoi(argv[1]);
@@ -110,18 +110,24 @@ main(int argc, const char* argv[])
 
   std::cout << "Minimizing " << nx << "-dimensional Rosenbrock function\n";
 
-  rosenbrock.initialize_bounds(nx);
-  //  rosenbrock.set_upper_bound(1, 2);
-  //rosenbrock.set_lower_bound(1, 0.2);
-  //  rosenbrock.set_upper_bound(0, 0.5);
-  rosenbrock.set_lower_bound(0, 1.5);
-  //  rosenbrock.set_lower_bound(1, 0.5);
-
   // Initial state vector
   Vector x(nx);
-  x = 4.0;
+  x = -4.0;
 
-  MinimizerStatus status = minimizer.minimize(rosenbrock, x);
+  bool is_bounded = true;
+  MinimizerStatus status;
+
+  if (is_bounded) {
+    Vector x_lower, x_upper;
+    adept::initialize_bounds(nx, x_lower, x_upper);
+    x_upper(1) = 2.0;
+    x_lower(1) = 0.2;
+    status = minimizer.minimize(rosenbrock, x, x_lower, x_upper);
+  }
+  else {
+    status = minimizer.minimize(rosenbrock, x);
+  }
+
   std::cout << "Status: " << minimizer_status_string(status) << "\n";
   std::cout << "Solution: x=" << x << "\n";
 

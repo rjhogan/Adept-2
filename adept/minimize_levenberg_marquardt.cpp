@@ -27,7 +27,7 @@ namespace adept {
     // Parameters controlling some aspects of algorithm behaviour
     static const Real min_positive_gamma = 1.0/128.0;
     static const Real gamma_multiplier = 4.0;
-    static const Real max_gamma = 1000.0;
+    static const Real max_gamma = 100000.0;
 
     int nx = x.size();
 
@@ -161,7 +161,7 @@ namespace adept {
     // Parameters controlling some aspects of algorithm behaviour
     static const Real min_positive_gamma = 1.0/128.0;
     static const Real gamma_multiplier = 4.0;
-    static const Real max_gamma = 1000.0;
+    static const Real max_gamma = 100000.0;
 
     if (any(min_x >= max_x)) {
       return MINIMIZER_STATUS_INVALID_BOUNDS;

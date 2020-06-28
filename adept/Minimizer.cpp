@@ -73,20 +73,26 @@ namespace adept {
 					  max_step_size_);
     }
     else if (algorithm_ == MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT) {
-      if (is_bounded_ && optimizable.have_bounds()) {
-	return minimize_levenberg_marquardt_bounded(optimizable, x,
-					    optimizable.lower_bounds(),
-					    optimizable.upper_bounds(),
-					    max_iterations_,
-					    converged_gradient_norm_,
-					    max_step_size_);
-      }
-      else {
-	return minimize_levenberg_marquardt(optimizable, x,
-					    max_iterations_,
-					    converged_gradient_norm_,
-					    max_step_size_);
-      }
+      return minimize_levenberg_marquardt(optimizable, x,
+					  max_iterations_,
+					  converged_gradient_norm_,
+					  max_step_size_);
+    }
+    else {
+      throw optimization_exception("Minimization algorithm not recognized");
+    }
+  }
+
+  MinimizerStatus
+  Minimizer::minimize(Optimizable2& optimizable, Vector x,
+		      const Vector& x_lower, const Vector& x_upper)
+  {
+    if (algorithm_ == MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT) {
+      return minimize_levenberg_marquardt_bounded(optimizable, x,
+						  x_lower, x_upper,
+						  max_iterations_,
+						  converged_gradient_norm_,
+						  max_step_size_);
     }
     else {
       throw optimization_exception("Minimization algorithm not recognized");
