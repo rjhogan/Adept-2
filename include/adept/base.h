@@ -1,7 +1,7 @@
 /* base.h -- Basic definitions 
 
     Copyright (C) 2012-2014 University of Reading
-    Copyright (C) 2015-2018 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2020 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -22,8 +22,8 @@
 
 // The version of the Adept library is specified both as a string and
 // an integer
-#define ADEPT_VERSION      20007
-#define ADEPT_VERSION_STR "2.0.7"
+#define ADEPT_VERSION      20008
+#define ADEPT_VERSION_STR "2.0.8"
 
 
 // ---------------------------------------------------------------------

@@ -1,6 +1,12 @@
 version 2.0.8
 	- Added adept_optimize.h header file providing minimization
-	capability
+	capability, initially with the constrained and unconstrained
+	Levenberg-Marquardt minimization algorithm
+	- Test program test_minimize tests with the N-dimensional
+	Rosenbrock function
+	- The Stack member function "jacobian" can now operate on or
+	return Adept matrices, rather than solely on raw pointers which
+	had to point to data in column-major order
 
 version 2.0.7 (23 June 2020)
 	- Added fast, vectorizable exponential function "fastexp", or can
