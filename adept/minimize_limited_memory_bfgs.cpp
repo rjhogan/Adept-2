@@ -13,11 +13,12 @@
 namespace adept {
 
   MinimizerStatus
-  minimize_limited_memory_bfgs(Optimizable1& optimizable, Vector x,
+  minimize_limited_memory_bfgs(Optimizable& optimizable, Vector x,
 			       int max_iterations, Real converged_gradient_norm,
 			       Real max_step_size)
   {
-    return MINIMIZER_STATUS_SUCCESS;
+    throw optimization_exception("Limited-memory BFGS algorithm not yet implemented");
+    //return MINIMIZER_STATUS_SUCCESS;
   }
 
 };

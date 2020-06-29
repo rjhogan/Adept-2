@@ -18,7 +18,7 @@ namespace adept {
   // Levenberg-Marquardt algorithm, where "x" is the initial state
   // vector and also where the solution is stored.
   MinimizerStatus
-  minimize_levenberg_marquardt(Optimizable2& optimizable,
+  minimize_levenberg_marquardt(Optimizable& optimizable,
 			       Vector x,
 			       int max_iterations,
 			       Real converged_gradient_norm,
@@ -60,7 +60,7 @@ namespace adept {
       // is
       gnorm = norm2(gradient);
       // Report progress using user-defined function
-      optimizable.record_progress(iteration, x, cost, gnorm);
+      optimizable.report_progress(iteration, x, cost, gnorm);
       // Convergence has been achieved if the L2 norm has been reduced
       // to a user-specified threshold
       if (gnorm <= converged_gradient_norm) {
@@ -150,7 +150,7 @@ namespace adept {
   // Levenberg-Marquardt algorithm, where "x" is the initial state
   // vector and also where the solution is stored.
   MinimizerStatus
-  minimize_levenberg_marquardt_bounded(Optimizable2& optimizable,
+  minimize_levenberg_marquardt_bounded(Optimizable& optimizable,
 				       Vector x,
 				       const Vector& min_x,
 				       const Vector& max_x,
@@ -258,7 +258,7 @@ namespace adept {
 	gnorm = 0.0;
       }
       // Report progress using user-defined function
-      optimizable.record_progress(iteration, x, cost, gnorm);
+      optimizable.report_progress(iteration, x, cost, gnorm);
       // Convergence has been achieved if the L2 norm has been reduced
       // to a user-specified threshold
       if (gnorm <= converged_gradient_norm) {

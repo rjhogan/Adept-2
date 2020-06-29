@@ -14,7 +14,7 @@
 
 using namespace adept;
 
-class RosenbrockN : public Optimizable2 {
+class RosenbrockN : public Optimizable {
 
   // N-dimensional Rosenbrock function can be expressed as the sum of
   // the squared elements of vector y(x) defined as follows.  This
@@ -33,7 +33,7 @@ class RosenbrockN : public Optimizable2 {
     return y;
   }
     
-  virtual void record_progress(int niter, const adept::Vector& x,
+  virtual void report_progress(int niter, const adept::Vector& x,
 			       Real cost, Real gnorm) {
     std::cout << "Iteration " << niter
 	      << ": cost=" << cost << ", gnorm=" << gnorm << "\n";
@@ -42,6 +42,15 @@ class RosenbrockN : public Optimizable2 {
       std::cerr << x(ix) << " ";
     }
     std::cerr << cost << "\n";
+  }
+
+  virtual bool provides_derivative(int order) {
+    if (order >= 0 && order <= 2) {
+      return true;
+    }
+    else {
+      return false;
+    }
   }
 
   virtual Real calc_cost_function(const Vector& x) {

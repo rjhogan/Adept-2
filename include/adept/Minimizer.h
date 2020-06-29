@@ -55,15 +55,15 @@ namespace adept {
 
   // Direct access to specific minimization algorithms
   MinimizerStatus
-  minimize_limited_memory_bfgs(Optimizable1& optimizable, Vector x,
+  minimize_limited_memory_bfgs(Optimizable& optimizable, Vector x,
 			       int max_iterations, Real converged_gradient_norm,
 			       Real max_step_size = -1.0);
   MinimizerStatus
-  minimize_levenberg_marquardt(Optimizable2& optimizable, Vector x,
+  minimize_levenberg_marquardt(Optimizable& optimizable, Vector x,
 			       int max_iterations, Real converged_gradient_norm,
 			       Real max_step_size = -1.0);
   MinimizerStatus
-  minimize_levenberg_marquardt_bounded(Optimizable2& optimizable, Vector x,
+  minimize_levenberg_marquardt_bounded(Optimizable& optimizable, Vector x,
 				       const Vector& min_x,
 				       const Vector& max_x,
 				       int max_iterations,
@@ -82,12 +82,9 @@ namespace adept {
     }
 
     // Unconstrained minimization
-    MinimizerStatus minimize(Optimizable1& optimizable, Vector x);
-    MinimizerStatus minimize(Optimizable2& optimizable, Vector x);
+    MinimizerStatus minimize(Optimizable& optimizable, Vector x);
     // Constrained minimization
-    //    MinimizerStatus minimize(Optimizable1& optimizable, Vector x,
-    //			     const Vector& x_lower, const Vector& x_upper);
-    MinimizerStatus minimize(Optimizable2& optimizable, Vector x,
+    MinimizerStatus minimize(Optimizable& optimizable, Vector x,
 			     const Vector& x_lower, const Vector& x_upper);
 
     void max_iterations(int mi) { max_iterations_ = mi; }

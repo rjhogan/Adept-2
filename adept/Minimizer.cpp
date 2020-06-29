@@ -48,25 +48,13 @@ namespace adept {
   }
 
   MinimizerStatus
-  Minimizer::minimize(Optimizable1& optimizable, Vector x)
+  Minimizer::minimize(Optimizable& optimizable, Vector x)
   {
-    if (minimizer_algorithm_order(algorithm_) > 1) {
+    if (minimizer_algorithm_order(algorithm_) > 1
+	&& !optimizable.provides_derivative(2)) {
       throw optimization_exception("2nd-order minimization algorithm requires optimizable that can provide 2nd derivatives");
     }
     else if (algorithm_ == MINIMIZER_ALGORITHM_LIMITED_MEMORY_BFGS) {
-      return minimize_limited_memory_bfgs(optimizable, x,
-					  max_iterations_,
-					  converged_gradient_norm_);
-    }
-    else {
-      throw optimization_exception("Minimization algorithm not recognized");
-    }
-  }
-
-  MinimizerStatus
-  Minimizer::minimize(Optimizable2& optimizable, Vector x)
-  {
-    if (algorithm_ == MINIMIZER_ALGORITHM_LIMITED_MEMORY_BFGS) {
       return minimize_limited_memory_bfgs(optimizable, x,
 					  max_iterations_,
 					  converged_gradient_norm_,
@@ -84,9 +72,13 @@ namespace adept {
   }
 
   MinimizerStatus
-  Minimizer::minimize(Optimizable2& optimizable, Vector x,
+  Minimizer::minimize(Optimizable& optimizable, Vector x,
 		      const Vector& x_lower, const Vector& x_upper)
   {
+    if (minimizer_algorithm_order(algorithm_) > 1
+	&& !optimizable.provides_derivative(2)) {
+      throw optimization_exception("2nd-order minimization algorithm requires optimizable that can provide 2nd derivatives");
+    }
     if (algorithm_ == MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT) {
       return minimize_levenberg_marquardt_bounded(optimizable, x,
 						  x_lower, x_upper,

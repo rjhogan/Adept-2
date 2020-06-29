@@ -15,57 +15,63 @@
 
 namespace adept {
 
-  // A class representing an optimization problem where only the cost
-  // function can be computed, but not its derivative.  This is
-  // suitable for gradient-free minimization algorithms
-  // (e.g. Nelder-Mead).  The user should define their own class that
-  // publicly inherits from Optimizable0 and overrides
-  // calc_cost_function.
-  class Optimizable0 {
+  // A class representing an optimization problem that can be solved
+  // by Adept's Minimizer class. The user should define their own
+  // class that publicly inherits from Optimizable and overrides the
+  // member functions calc_cost_function and provides_derivative.
+  // This is the minimum requirement to use in gradient-free
+  // minimization algorithms (e.g. Nelder-Mead). To use in
+  // quasi-Newton and conjugate-gradient minimization algorithms, the
+  // user should also override the member function
+  // calc_cost_function_gradient. To use in Newton-type minimization
+  // algorithms such as Gauss-Newton and Levenberg-Marquardt, the user
+  // should also override the member function
+  // calc_cost_function_gradient_hessian.  The user may optionally
+  // override report_progress.
+  class Optimizable {
   public:
-    virtual ~Optimizable0() { }
+    virtual ~Optimizable() { }
+
     // Return the cost function corresponding to the state vector x.
     virtual Real calc_cost_function(const adept::Vector& x) = 0;
-    // This function is called at every iteration, and can be
-    // overridden by child classes to report or store the progress at
-    // each iteration, if required. By default it does nothing.
-    virtual void record_progress(int niter, const adept::Vector& x,
-				 Real cost, Real gnorm) { }
-  };
 
-  // A class representing an optimization problem where the cost
-  // function can be computed, as well as the gradient of the cost
-  // function with respect to each element of the state vector. This
-  // is suitable for quasi-Newton and conjugate gradient minimization
-  // algorithms. The user should define their own class that publicly
-  // inherits from Optimizable1 and overrides both calc_cost_function
-  // and calc_cost_function_gradient.
-  class Optimizable1 : public Optimizable0 {
-  public:
     // Return the cost function corresponding to the state vector x,
     // and also set the "gradient" argument to the gradient of the
     // cost function with respect to each element of x.
     virtual Real calc_cost_function_gradient(const adept::Vector& x,
-					     adept::Vector gradient) = 0;
-  };
-
-  // A class representing an optimization problem where the cost
-  // function, the gradient of the cost function with respect to each
-  // element of the state vector, and the Hessian matrix can be
-  // computed. This is suitable for Newton-type minimization
-  // algorithms such as Gauss-Newton and Levenberg-Marquardt. The user
-  // should define their own class that publicly inherits from
-  // Optimizable2 and overrides calc_cost_function,
-  // calc_cost_function_gradient and
-  // calc_cost_function_gradient_hessian.
-  class Optimizable2 : public Optimizable1 {
-  public:
+					     adept::Vector gradient) {
+      // If we get here then a gradient-based minimizer has been
+      // applied to this class but the user has not implemented a
+      // function to compute the gradient.
+      throw optimization_exception("Gradient calculation has not been implemented");
+    }
+   
     // Return the cost function corresponding to the state vector x,
     // and set the "gradient" argument to the gradient of the cost
     // function with respect to each element of x, and "hessian" to
     // the second derivative of the cost function with respect to x.
     virtual Real calc_cost_function_gradient_hessian(const adept::Vector& x,
-	     adept::Vector gradient, adept::SymmMatrix hessian) = 0;
+		     adept::Vector gradient, adept::SymmMatrix hessian) {
+      // If we get here then a Newton-type minimizer has been applied
+      // to this class but the user has not implemented a function to
+      // compute the Hessian matrix.
+      throw optimization_exception("Hessian calculation has not been implemented");
+    }
+
+    // This function is called at every iteration, and can be
+    // overridden by child classes to report or store the progress at
+    // each iteration, if required. By default it does nothing.
+    virtual void report_progress(int niter, const adept::Vector& x,
+				 Real cost, Real gnorm) { }
+
+    // Child classes should override this function to provide a
+    // run-time mechanism to check which of the first and second
+    // derivative (i.e. gradient and Hessian, respectively) are
+    // available.  If only the gradient is available then it could be
+    // implemented as: if (order == 0 || order == 1) { return true; }
+    // else { return false; }
+    virtual bool provides_derivative(int order) = 0;
+
   };
 
   // Convenience function for initializing vectors representing the
