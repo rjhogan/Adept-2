@@ -83,6 +83,9 @@ namespace adept {
     uIndex end;
   };
 
+  // Forward declaration of Array, to enable Jacobian functions
+  template<int Rank, typename Type, bool IsActive>
+  class Array;
 
   // ---------------------------------------------------------------------
   // Definition of Stack class
@@ -351,7 +354,7 @@ namespace adept {
     // Return the number of independent and dependent variables that
     // have been identified
     uIndex n_independent() const { return independent_index_.size(); }
-    uIndex n_dependent() const { return dependent_index_.size(); }
+    uIndex n_dependent()   const { return dependent_index_.size(); }
 
     // Compute the Jacobian matrix; note that jacobian_out must be
     // allocated to be of size m*n, where m is the number of dependent
@@ -359,16 +362,46 @@ namespace adept {
     // and dependents must have already been identified with the
     // functions "independent" and "dependent", otherwise this
     // function will throw a
-    // "dependents_or_independents_not_identified" exception. In the
-    // resulting matrix, the "m" dimension of the matrix varies
-    // fastest. This is implemented by calling one of jacobian_forward
-    // and jacobian_reverse, whichever would be faster.
-    void jacobian(Real* jacobian_out);
+    // "dependents_or_independents_not_identified" exception. The
+    // optional dep_offset and indep_offset specify the offsets in
+    // memory of the dependent and independent variables,
+    // respectively, where 0 indicates to use the size of the other
+    // dimension.  The default is dep_offset=1, i.e. the dependents
+    // vary contiguously in memory which is equivalent to the Jacobian
+    // being stored in column-major order.  Unfortunately this is not
+    // the same as the convention for Adept arrays, but this part of
+    // the interface was designed in Adept 1 before arrays were added.
+    void jacobian(Real* jacobian_out,
+		  Index dep_offset = 1,
+		  Index indep_offset = 0) {
+      // Call one of jacobian_forward and jacobian_reverse, whichever
+      // would be faster.
+      if (n_independent() <= n_dependent()) {
+	jacobian_forward(jacobian_out, dep_offset, indep_offset);
+      }
+      else {
+	jacobian_reverse(jacobian_out, dep_offset, indep_offset);
+      }
+    };
 
     // Compute the Jacobian matrix, but explicitly specify whether
     // this is done with repeated forward or reverse passes.
-    void jacobian_forward(Real* jacobian_out);
-    void jacobian_reverse(Real* jacobian_out);
+    void jacobian_forward(Real* jacobian_out,
+			  Index dep_offset = 1,
+			  Index indep_offset = 0);
+    void jacobian_reverse(Real* jacobian_out,
+			  Index dep_offset = 1,
+			  Index indep_offset = 0);
+
+    // If the user included "adept_arrays.h" rather than "adept.h",
+    // then allow the Jacobian to be returned in the form of an Adept
+    // matrix.
+    void jacobian(Array<2,Real,false> jac);
+    void jacobian_forward(Array<2,Real,false> jac);
+    void jacobian_reverse(Array<2,Real,false> jac);
+    Array<2,Real,false> jacobian();
+    Array<2,Real,false> jacobian_forward();
+    Array<2,Real,false> jacobian_reverse();
 
     // Return maximum number of OpenMP threads to be used in Jacobian
     // calculation
@@ -721,8 +754,10 @@ namespace adept {
     // OpenMP versions of the forward and reverse Jacobian functions,
     // which are called from the jacobian_forward and jacobian_reverse
     // if OpenMP is enabled
-    void jacobian_forward_openmp(Real* jacobian_out) const;
-    void jacobian_reverse_openmp(Real* jacobian_out) const;
+    void jacobian_forward_openmp(Real* jacobian_out,
+		  Index dep_offset, Index indep_offset) const;
+    void jacobian_reverse_openmp(Real* jacobian_out,
+		  Index dep_offset, Index indep_offset) const;
 
     // The core code for computing Jacobians, used in both OpenMP and
     // non-OpenMP versions

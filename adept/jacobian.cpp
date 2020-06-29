@@ -13,9 +13,7 @@
 #include <omp.h>
 #endif
 
-#include "adept/Stack.h"
-#include "adept/Packet.h"
-#include "adept/traits.h"
+#include <adept_arrays.h>
 
 namespace adept {
 
@@ -163,16 +161,17 @@ namespace adept {
   // and the OpenMP version would only be called if OpenMP is
   // available and the Jacobian matrix is large enough for
   // parallelization to be worthwhile.  Note that jacobian_out must be
-  // allocated to be of size m*n, where m is the number of dependent
-  // variables and n is the number of independents. The independents
-  // and dependents must have already been identified with the
-  // functions "independent" and "dependent", otherwise this function
-  // will fail with FAILURE_XXDEPENDENT_NOT_IDENTIFIED. In the
-  // resulting matrix, the "m" dimension of the matrix varies
-  // fastest. This is implemented using a forward pass, appropriate
-  // for m>=n.
+  // allocated to be at least of size m*n, where m is the number of
+  // dependent variables and n is the number of independents. The
+  // independents and dependents must have already been identified
+  // with the functions "independent" and "dependent", otherwise this
+  // function will fail with FAILURE_XXDEPENDENT_NOT_IDENTIFIED. The
+  // offsets in memory of the two dimensions are provided by
+  // dep_offset and indep_offset. This is implemented using a forward
+  // pass, appropriate for m>=n.
   void
-  Stack::jacobian_forward_openmp(Real* jacobian_out) const
+  Stack::jacobian_forward_openmp(Real* jacobian_out,
+				 Index dep_offset, Index indep_offset) const
   {
 
     // Number of blocks to cycle through, including a possible last
@@ -220,10 +219,22 @@ namespace adept {
 
 	// Copy the gradients corresponding to the dependent variables
 	// into the Jacobian matrix
-	for (uIndex idep = 0; idep < n_dependent(); idep++) {
-	  for (uIndex i = 0; i < block_size; i++) {
-	    jacobian_out[(i_independent+i)*n_dependent()+idep]
-	      = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+	if (indep_offset == 1) {
+	  for (uIndex idep = 0; idep < n_dependent(); idep++) {
+	    for (uIndex i = 0; i < block_size; i++) {
+	      jacobian_out[idep*dep_offset+i_independent+i]
+		= gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+	    }
+	  }
+	}
+	else {
+	  for (uIndex idep = 0; idep < n_dependent(); idep++) {
+	    for (uIndex i = 0; i < block_size; i++) {
+	      //jacobian_out[(i_independent+i)*n_dependent()+idep]
+	      //  = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+	      jacobian_out[(i_independent+i)*indep_offset+idep*dep_offset]
+		= gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+	    }
 	  }
 	}
       } // End of loop over blocks
@@ -237,23 +248,33 @@ namespace adept {
   // variables and n is the number of independents. The independents
   // and dependents must have already been identified with the
   // functions "independent" and "dependent", otherwise this function
-  // will fail with FAILURE_XXDEPENDENT_NOT_IDENTIFIED. In the
-  // resulting matrix, the "m" dimension of the matrix varies
-  // fastest. This is implemented using a forward pass, appropriate
-  // for m>=n.
+  // will fail with FAILURE_XXDEPENDENT_NOT_IDENTIFIED. This is
+  // implemented using a forward pass, appropriate for m>=n.
   void
-  Stack::jacobian_forward(Real* jacobian_out)
+  Stack::jacobian_forward(Real* jacobian_out,
+			  Index dep_offset, Index indep_offset)
   {
     if (independent_index_.empty() || dependent_index_.empty()) {
       throw(dependents_or_independents_not_identified());
     }
+
+    // If either of the offsets are zero, set them to the size of the
+    // other dimension, which assumes that the full Jacobian matrix is
+    // contiguous in memory.
+    if (dep_offset <= 0) {
+      dep_offset = n_independent();
+    }
+    if (indep_offset <= 0) {
+      indep_offset = n_dependent();
+    }
+
 #ifdef _OPENMP
     if (have_openmp_ 
 	&& !openmp_manually_disabled_
 	&& n_independent() > MULTIPASS_SIZE
 	&& omp_get_max_threads() > 1) {
       // Call the parallel version
-      jacobian_forward_openmp(jacobian_out);
+      jacobian_forward_openmp(jacobian_out, dep_offset, indep_offset);
       return;
     }
 #endif
@@ -289,10 +310,22 @@ namespace adept {
 
       // Copy the gradients corresponding to the dependent variables
       // into the Jacobian matrix
-      for (uIndex idep = 0; idep < n_dependent(); idep++) {
-	for (uIndex i = 0; i < MULTIPASS_SIZE; i++) {
-	  jacobian_out[(i_independent+i)*n_dependent()+idep] 
-	    = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+      if (indep_offset == 1) {
+	for (uIndex idep = 0; idep < n_dependent(); idep++) {
+	  for (uIndex i = 0; i < MULTIPASS_SIZE; i++) {
+	    jacobian_out[idep*dep_offset+i_independent+i]
+	      = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+	  }
+	}
+      }
+      else {
+	for (uIndex idep = 0; idep < n_dependent(); idep++) {
+	  for (uIndex i = 0; i < MULTIPASS_SIZE; i++) {
+	    //jacobian_out[(i_independent+i)*n_dependent()+idep] 
+	    //  = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+	    jacobian_out[(i_independent+i)*indep_offset+idep*dep_offset] 
+	      = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+	  }
 	}
       }
       i_independent += MULTIPASS_SIZE;
@@ -312,10 +345,22 @@ namespace adept {
 
       jacobian_forward_kernel_extra(gradient_multipass_b, n_extra);
 
-      for (uIndex idep = 0; idep < n_dependent(); idep++) {
-	for (uIndex i = 0; i < n_extra; i++) {
-	  jacobian_out[(i_independent+i)*n_dependent()+idep] 
-	    = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+      if (indep_offset == 1) {
+	for (uIndex idep = 0; idep < n_dependent(); idep++) {
+	  for (uIndex i = 0; i < n_extra; i++) {
+	    jacobian_out[idep*dep_offset+i_independent+i]
+	      = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+	  }
+	}
+      }
+      else {
+	for (uIndex idep = 0; idep < n_dependent(); idep++) {
+	  for (uIndex i = 0; i < n_extra; i++) {
+	    //jacobian_out[(i_independent+i)*n_dependent()+idep] 
+	    //  = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+	    jacobian_out[(i_independent+i)*indep_offset+idep*dep_offset] 
+	      = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
+	  }
 	}
       }
     }
@@ -329,16 +374,17 @@ namespace adept {
   // and the OpenMP version would only be called if OpenMP is
   // available and the Jacobian matrix is large enough for
   // parallelization to be worthwhile.  Note that jacobian_out must be
-  // allocated to be of size m*n, where m is the number of dependent
-  // variables and n is the number of independents. The independents
-  // and dependents must have already been identified with the
-  // functions "independent" and "dependent", otherwise this function
-  // will fail with FAILURE_XXDEPENDENT_NOT_IDENTIFIED. In the
-  // resulting matrix, the "m" dimension of the matrix varies
-  // fastest. This is implemented using a reverse pass, appropriate
-  // for m<n.
+  // allocated to be at least of size m*n, where m is the number of
+  // dependent variables and n is the number of independents. The
+  // independents and dependents must have already been identified
+  // with the functions "independent" and "dependent", otherwise this
+  // function will fail with FAILURE_XXDEPENDENT_NOT_IDENTIFIED. The
+  // offsets in memory of the two dimensions are provided by
+  // dep_offset and indep_offset.  This is implemented using a reverse
+  // pass, appropriate for m<n.
   void
-  Stack::jacobian_reverse_openmp(Real* jacobian_out) const
+  Stack::jacobian_reverse_openmp(Real* jacobian_out,
+				 Index dep_offset, Index indep_offset) const
   {
 
     // Number of blocks to cycle through, including a possible last
@@ -441,10 +487,22 @@ namespace adept {
 	} // End of loop over statement
 	// Copy the gradients corresponding to the independent
 	// variables into the Jacobian matrix
-	for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
-	  for (uIndex i = 0; i < block_size; i++) {
-	    jacobian_out[iindep*n_dependent()+i_dependent+i] 
-	      = gradient_multipass_b[independent_index_[iindep]][i];
+	if (dep_offset == 1) {
+	  for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
+	    for (uIndex i = 0; i < block_size; i++) {
+	      jacobian_out[iindep*indep_offset+i_dependent+i] 
+		= gradient_multipass_b[independent_index_[iindep]][i];
+	    }
+	  }
+	}
+	else {
+	  for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
+	    for (uIndex i = 0; i < block_size; i++) {
+	      //jacobian_out[iindep*n_dependent()+i_dependent+i] 
+	      //  = gradient_multipass_b[independent_index_[iindep]][i];
+	      jacobian_out[iindep*indep_offset+(i_dependent+i)*dep_offset] 
+		= gradient_multipass_b[independent_index_[iindep]][i];
+	    }
 	  }
 	}
       } // End of loop over blocks
@@ -457,23 +515,34 @@ namespace adept {
   // variables and n is the number of independents. The independents
   // and dependents must have already been identified with the
   // functions "independent" and "dependent", otherwise this function
-  // will fail with FAILURE_XXDEPENDENT_NOT_IDENTIFIED. In the
-  // resulting matrix, the "m" dimension of the matrix varies
-  // fastest. This is implemented using a reverse pass, appropriate
-  // for m<n.
+  // will fail with FAILURE_XXDEPENDENT_NOT_IDENTIFIED.  This is
+  // implemented using a reverse pass, appropriate for m<n.
   void
-  Stack::jacobian_reverse(Real* jacobian_out)
+  Stack::jacobian_reverse(Real* jacobian_out,
+			  Index dep_offset, Index indep_offset)
   {
     if (independent_index_.empty() || dependent_index_.empty()) {
       throw(dependents_or_independents_not_identified());
     }
+
+    // If either of the offsets are zero, set them to the size of the
+    // other dimension, which assumes that the full Jacobian matrix is
+    // contiguous in memory.
+    if (dep_offset <= 0) {
+      dep_offset = n_independent();
+    }
+    if (indep_offset <= 0) {
+      indep_offset = n_dependent();
+    }
+
 #ifdef _OPENMP
     if (have_openmp_ 
 	&& !openmp_manually_disabled_
 	&& n_dependent() > MULTIPASS_SIZE
 	&& omp_get_max_threads() > 1) {
       // Call the parallel version
-      jacobian_reverse_openmp(jacobian_out);
+      jacobian_reverse_openmp(jacobian_out,
+			      dep_offset, indep_offset);
       return;
     }
 #endif
@@ -552,10 +621,22 @@ namespace adept {
       } // End of loop over statement
       // Copy the gradients corresponding to the independent variables
       // into the Jacobian matrix
-      for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
-	for (uIndex i = 0; i < MULTIPASS_SIZE; i++) {
-	  jacobian_out[iindep*n_dependent()+i_dependent+i] 
-	    = gradient_multipass_b[independent_index_[iindep]][i];
+      if (dep_offset == 1) {
+	for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
+	  for (uIndex i = 0; i < MULTIPASS_SIZE; i++) {
+	    jacobian_out[iindep*indep_offset+i_dependent+i] 
+	      = gradient_multipass_b[independent_index_[iindep]][i];
+	  }
+	}
+      }
+      else {
+	for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
+	  for (uIndex i = 0; i < MULTIPASS_SIZE; i++) {
+	    //jacobian_out[iindep*n_dependent()+i_dependent+i] 
+	    //  = gradient_multipass_b[independent_index_[iindep]][i];
+	    jacobian_out[iindep*indep_offset+(i_dependent+i)*dep_offset] 
+	      = gradient_multipass_b[independent_index_[iindep]][i];
+	  }
 	}
       }
       i_dependent += MULTIPASS_SIZE;
@@ -611,30 +692,85 @@ namespace adept {
 	  }
 	}
       }
-      for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
-	for (uIndex i = 0; i < n_extra; i++) {
-	  jacobian_out[iindep*n_dependent()+i_dependent+i] 
-	    = gradient_multipass_b[independent_index_[iindep]][i];
+      if (dep_offset == 1) {
+	for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
+	  for (uIndex i = 0; i < n_extra; i++) {
+	    jacobian_out[iindep*indep_offset+i_dependent+i] 
+	      = gradient_multipass_b[independent_index_[iindep]][i];
+	  }
+	}
+      }
+      else {
+	for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
+	  for (uIndex i = 0; i < n_extra; i++) {
+	    //jacobian_out[iindep*n_dependent()+i_dependent+i] 
+	    //  = gradient_multipass_b[independent_index_[iindep]][i];
+	    jacobian_out[iindep*indep_offset+(i_dependent+i)*dep_offset] 
+	      = gradient_multipass_b[independent_index_[iindep]][i];
+	  }
 	}
       }
     }
   }
-
-  // Compute the Jacobian matrix; note that jacobian_out must be
-  // allocated to be of size m*n, where m is the number of dependent
-  // variables and n is the number of independents. In the resulting
-  // matrix, the "m" dimension of the matrix varies fastest. This is
-  // implemented by calling one of jacobian_forward and
-  // jacobian_reverse, whichever would be faster.
-  void
-  Stack::jacobian(Real* jacobian_out)
-  {
+  
+  // Return the Jacobian matrix in the matrix "jac", using the forward
+  // or reverse method depending which would be faster
+  void Stack::jacobian(Array<2,Real,false> jac) {
+    if (jac.dimension(0) != n_dependent()
+	|| jac.dimension(1) != n_independent()) {
+      throw size_mismatch("Jacobian matrix has wrong size");
+    }
     if (n_independent() <= n_dependent()) {
-      jacobian_forward(jacobian_out);
+      jacobian_forward(jac.data(), jac.offset(0), jac.offset(1));
     }
     else {
-      jacobian_reverse(jacobian_out);
+      jacobian_reverse(jac.data(), jac.offset(0), jac.offset(1));
     }
   }
-  
+
+  // Return the Jacobian matrix in the matrix "jac", explicitly
+  // specifying whether to use the forward or reverse method
+  void Stack::jacobian_forward(Array<2,Real,false> jac) {
+    if (jac.dimension(0) != n_dependent()
+	|| jac.dimension(1) != n_independent()) {
+      throw size_mismatch("Jacobian matrix has wrong size");
+    }
+    jacobian_forward(jac.data(), jac.offset(0), jac.offset(1));
+  }
+
+  void Stack::jacobian_reverse(Array<2,Real,false> jac) {
+    if (jac.dimension(0) != n_dependent()
+	|| jac.dimension(1) != n_independent()) {
+      throw size_mismatch("Jacobian matrix has wrong size");
+    }
+    jacobian_reverse(jac.data(), jac.offset(0), jac.offset(1));
+  }
+
+  // Return the Jacobian matrix using the forward or reverse method
+  // depending which would be faster
+  Array<2,Real,false> Stack::jacobian() {
+    Array<2,Real,false> jac(n_dependent(), n_independent());
+    if (n_independent() <= n_dependent()) {
+      jacobian_forward(jac.data(), jac.offset(0), jac.offset(1));
+    }
+    else {
+      jacobian_reverse(jac.data(), jac.offset(0), jac.offset(1));
+    }
+    return jac;
+  }
+
+  // Return the Jacobian matrix, explicitly specifying whether to use
+  // the forward or reverse method
+  Array<2,Real,false> Stack::jacobian_forward() {
+    Array<2,Real,false> jac(n_dependent(), n_independent());
+    jacobian_forward(jac.data(), jac.offset(0), jac.offset(1));
+    return jac;
+  }
+
+  Array<2,Real,false> Stack::jacobian_reverse() {
+    Array<2,Real,false> jac(n_dependent(), n_independent());
+    jacobian_reverse(jac.data(), jac.offset(0), jac.offset(1));
+    return jac;
+  }
+
 } // End namespace adept

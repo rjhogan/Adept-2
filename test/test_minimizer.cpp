@@ -71,15 +71,11 @@ class RosenbrockN : public Optimizable2 {
     stack.new_recording();
     aVector y = calc_y(xactive);
     aReal cost = 0.5*sum(y*y);
-    Matrix jac;
-    jac.resize_column_major(dimensions(y.size(), x.size()));
     stack.independent(xactive);
     stack.dependent(y);
-    stack.jacobian(jac.data());
-    hessian = jac.T() ** jac;
-    cost.set_gradient(1.0);
-    stack.reverse();
-    gradient = xactive.get_gradient();
+    Matrix jac = stack.jacobian();
+    hessian  = jac.T() ** jac;
+    gradient = jac.T() ** value(y);
     return value(cost);
   }
 

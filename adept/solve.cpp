@@ -10,7 +10,6 @@
 
 #include <vector>
 
-
 #include <adept/solve.h>
 #include <adept/Array.h>
 #include <adept/SpecialMatrix.h>
