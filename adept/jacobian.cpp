@@ -1,7 +1,7 @@
 /* jacobian.cpp -- Computation of Jacobian matrix
 
     Copyright (C) 2012-2014 University of Reading
-    Copyright (C) 2015-2016 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2020 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -35,51 +35,6 @@ namespace adept {
 			COMPILER_DOES_NOT_SUPPORT_16_BYTE_LONG_DOUBLE);
     return 1;
   }
-
-  /*
-  void
-  Stack::jacobian_forward_kernel(Real* gradient_multipass_b) const
-  {
-    static const int MULTIPASS_SIZE = Packet<Real>::size;
-
-    // Loop forward through the derivative statements
-    for (uIndex ist = 1; ist < n_statements_; ist++) {
-      const Statement& statement = statement_[ist];
-      // We copy the LHS to "a" in case it appears on the RHS in any
-      // of the following statements
-      Block<MULTIPASS_SIZE,Real> a; // Initialized to zero automatically
-      
-      // Loop through operations
-      for (uIndex iop = statement_[ist-1].end_plus_one;
-	   iop < statement.end_plus_one; iop++) {
-	Real* __restrict grad = gradient_multipass_b+index_[iop]*MULTIPASS_SIZE;
-	// Loop through columns within this block; we hope the
-	// compiler can optimize this loop. Note that it is faster
-	// to always use MULTIPASS_SIZE, always known at
-	// compile time, than to use block_size, which is not, even
-	// though in the last iteration this may involve redundant
-	// computations.
-	if (multiplier_[iop] == 1.0) {
-	  //	    if (__builtin_expect(multiplier_[iop] == 1.0,0)) {
-	  for (uIndex i = 0; i < MULTIPASS_SIZE; i++) {
-	    //	      for (uIndex i = 0; i < block_size; i++) {
-	    a[i] += grad[i];
-	  }
-	}
-	else {
-	  for (uIndex i = 0; i < MULTIPASS_SIZE; i++) {
-	    //	      for (uIndex i = 0; i < block_size; i++) {
-	    a[i] += multiplier_[iop]*grad[i];
-	  }
-	}
-      }
-      // Copy the results
-      for (uIndex i = 0; i < MULTIPASS_SIZE; i++) {
-	gradient_multipass_b[statement.index*MULTIPASS_SIZE+i] = a[i];
-      }
-    } // End of loop over statements
-  }    
-  */
 
 #if ADEPT_REAL_PACKET_SIZE > 1
   void
@@ -230,8 +185,6 @@ namespace adept {
 	else {
 	  for (uIndex idep = 0; idep < n_dependent(); idep++) {
 	    for (uIndex i = 0; i < block_size; i++) {
-	      //jacobian_out[(i_independent+i)*n_dependent()+idep]
-	      //  = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
 	      jacobian_out[(i_independent+i)*indep_offset+idep*dep_offset]
 		= gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
 	    }
@@ -321,8 +274,6 @@ namespace adept {
       else {
 	for (uIndex idep = 0; idep < n_dependent(); idep++) {
 	  for (uIndex i = 0; i < MULTIPASS_SIZE; i++) {
-	    //jacobian_out[(i_independent+i)*n_dependent()+idep] 
-	    //  = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
 	    jacobian_out[(i_independent+i)*indep_offset+idep*dep_offset] 
 	      = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
 	  }
@@ -356,8 +307,6 @@ namespace adept {
       else {
 	for (uIndex idep = 0; idep < n_dependent(); idep++) {
 	  for (uIndex i = 0; i < n_extra; i++) {
-	    //jacobian_out[(i_independent+i)*n_dependent()+idep] 
-	    //  = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
 	    jacobian_out[(i_independent+i)*indep_offset+idep*dep_offset] 
 	      = gradient_multipass_b[dependent_index_[idep]*MULTIPASS_SIZE+i];
 	  }
@@ -498,8 +447,6 @@ namespace adept {
 	else {
 	  for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
 	    for (uIndex i = 0; i < block_size; i++) {
-	      //jacobian_out[iindep*n_dependent()+i_dependent+i] 
-	      //  = gradient_multipass_b[independent_index_[iindep]][i];
 	      jacobian_out[iindep*indep_offset+(i_dependent+i)*dep_offset] 
 		= gradient_multipass_b[independent_index_[iindep]][i];
 	    }
@@ -632,8 +579,6 @@ namespace adept {
       else {
 	for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
 	  for (uIndex i = 0; i < MULTIPASS_SIZE; i++) {
-	    //jacobian_out[iindep*n_dependent()+i_dependent+i] 
-	    //  = gradient_multipass_b[independent_index_[iindep]][i];
 	    jacobian_out[iindep*indep_offset+(i_dependent+i)*dep_offset] 
 	      = gradient_multipass_b[independent_index_[iindep]][i];
 	  }
@@ -675,17 +620,12 @@ namespace adept {
 	    Real multiplier = multiplier_[iop];
 	    Real* __restrict gradient_multipass 
 	      = &(gradient_multipass_b[index_[iop]][0]);
-	    //	    if (index_[iop] > max_gradient_-1
-	    //		|| index_[iop] < 0) {
-	    //	    std::cerr << "AAAAAA: iop=" << iop << " index_[iop]=" << index_[iop] << " max_gradient_=" << max_gradient_ << " ist=" << ist << "\n";
-	      //	    }
 #if MULTIPASS_SIZE > MULTIPASS_SIZE_ZERO_CHECK
 	    for (uIndex i = 0; i < n_non_zero; i++) {
 	      gradient_multipass[i_non_zero[i]] += multiplier*a[i_non_zero[i]];
 	    }
 #else
 	    for (uIndex i = 0; i < n_extra; i++) {
-	      //	      std::cerr << "BBBBB: i=" << i << " gradient_multipass[i]=" << gradient_multipass[i] << " multiplier=" << multiplier << " a[i]=" << a[i] << "\n";
 	      gradient_multipass[i] += multiplier*a[i];
 	    }
 #endif
@@ -703,8 +643,6 @@ namespace adept {
       else {
 	for (uIndex iindep = 0; iindep < n_independent(); iindep++) {
 	  for (uIndex i = 0; i < n_extra; i++) {
-	    //jacobian_out[iindep*n_dependent()+i_dependent+i] 
-	    //  = gradient_multipass_b[independent_index_[iindep]][i];
 	    jacobian_out[iindep*indep_offset+(i_dependent+i)*dep_offset] 
 	      = gradient_multipass_b[independent_index_[iindep]][i];
 	  }

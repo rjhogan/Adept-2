@@ -1,7 +1,7 @@
 /* Stack.h -- Storage of automatic differentiation information
 
     Copyright (C) 2012-2014 University of Reading
-    Copyright (C) 2015-2017 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2020 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
