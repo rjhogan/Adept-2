@@ -74,7 +74,7 @@ class RosenbrockN : public Optimizable {
 
   virtual Real calc_cost_function_gradient_hessian(const Vector& x,
 						   Vector gradient,
-						   SymmMatrix hessian) {
+						   SymmMatrix& hessian) {
     Stack stack;
     aVector xactive = x;
     stack.new_recording();
@@ -99,27 +99,37 @@ main(int argc, const char* argv[])
   if (argc > 1) {
     nx = std::stoi(argv[1]);
     if (argc > 2) {
-      Real max_it = std::stof(argv[2]);
-      minimizer.max_iterations(max_it);
-      std::cout << "Maximum iterations: " << max_it << "\n";
+      minimizer.set_algorithm(argv[2]);
       if (argc > 3) {
-	Real converged_grad_norm = std::stof(argv[3]);
-	minimizer.converged_gradient_norm(converged_grad_norm);
-	std::cout << "Converged gradient norm: " << converged_grad_norm << "\n";
+	Real max_it = std::stof(argv[3]);
+	minimizer.set_max_iterations(max_it);
+	if (argc > 4) {
+	  Real converged_grad_norm = std::stof(argv[4]);
+	  minimizer.set_converged_gradient_norm(converged_grad_norm);
+	}
       }
     }
   }
   else {
-    std::cout << "Usage: " << argv[0] << " [nx] [max_iterations] [converged_gradient_norm]\n";
+    std::cout << "Usage: " << argv[0] << " [nx] [Levenberg|Levenberg-Marquardt|L-BFGS] [max_iterations] [converged_gradient_norm]\n";
   }
 
+  //minimizer.set_levenberg_damping_start(0.0);
+  //minimizer.set_max_step_size(1.0);
+  //minimizer.set_levenberg_damping_multiplier(2.0, 5.0);
+  minimizer.ensure_updated_state(2);
+
   std::cout << "Minimizing " << nx << "-dimensional Rosenbrock function\n";
+  std::cout << "Algorithm: " << minimizer.algorithm_name() << "\n";
+  std::cout << "Maximum iterations: " << minimizer.max_iterations() << "\n";
+  std::cout << "Converged gradient norm: " << minimizer.converged_gradient_norm() << "\n";
 
   // Initial state vector
   Vector x(nx);
-  x = -4.0;
+  x = -3.0;
+  //  x = {-3.0, 10.0};
 
-  bool is_bounded = true;
+  bool is_bounded = false;
   MinimizerStatus status;
 
   if (is_bounded) {
@@ -135,6 +145,7 @@ main(int argc, const char* argv[])
 
   std::cout << "Status: " << minimizer_status_string(status) << "\n";
   std::cout << "Solution: x=" << x << "\n";
+  std::cout << "Number of samples: " << minimizer.n_samples() << "\n";
 
   return static_cast<int>(status);
 }
