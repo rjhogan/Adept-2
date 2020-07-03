@@ -1,4 +1,4 @@
-include_HEADERS = adept.h adept_arrays.h
+include_HEADERS = adept.h adept_arrays.h adept_optimize.h
 
 pkginclude_HEADERS = adept/Active.h adept/ActiveReference.h adept/Allocator.h \
 	adept/Array.h adept/Expression.h adept/ExpressionSize.h \

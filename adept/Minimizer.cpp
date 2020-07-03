@@ -14,6 +14,11 @@
 
 namespace adept {
 
+  static const char* minimizer_algorithm_names_[]
+    = {"L-BFGS",
+       "Levenberg",
+       "Levenberg-Marquardt"};
+
   const char*
   minimizer_status_string(MinimizerStatus status)
   {
@@ -47,6 +52,30 @@ namespace adept {
     }
   }
 
+  void
+  Minimizer::set_algorithm(const std::string& algo) {
+    for (int ialgo = 0;
+	 ialgo < static_cast<int>(MINIMIZER_ALGORITHM_NUMBER_AVAILABLE);
+	 ++ialgo) {
+      if (algo == minimizer_algorithm_names_[ialgo]) {
+	set_algorithm(static_cast<MinimizerAlgorithm>(ialgo));
+	return;
+      }
+    }
+    throw optimization_exception("Algorithm name not understood");
+  }
+
+  std::string
+  Minimizer::algorithm_name() {
+    int ialgo = static_cast<MinimizerAlgorithm>(algorithm_);
+    if (ialgo >= 0 && ialgo < MINIMIZER_ALGORITHM_NUMBER_AVAILABLE) {
+      return minimizer_algorithm_names_[ialgo];
+    }
+    else {
+      return "Unknown";
+    }
+  }
+
   MinimizerStatus
   Minimizer::minimize(Optimizable& optimizable, Vector x)
   {
@@ -55,16 +84,13 @@ namespace adept {
       throw optimization_exception("2nd-order minimization algorithm requires optimizable that can provide 2nd derivatives");
     }
     else if (algorithm_ == MINIMIZER_ALGORITHM_LIMITED_MEMORY_BFGS) {
-      return minimize_limited_memory_bfgs(optimizable, x,
-					  max_iterations_,
-					  converged_gradient_norm_,
-					  max_step_size_);
+      return minimize_limited_memory_bfgs(optimizable, x);
+    }
+    else if (algorithm_ == MINIMIZER_ALGORITHM_LEVENBERG) {
+      return minimize_levenberg_marquardt(optimizable, x, true);
     }
     else if (algorithm_ == MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT) {
-      return minimize_levenberg_marquardt(optimizable, x,
-					  max_iterations_,
-					  converged_gradient_norm_,
-					  max_step_size_);
+      return minimize_levenberg_marquardt(optimizable, x, false);
     }
     else {
       throw optimization_exception("Minimization algorithm not recognized");
@@ -79,12 +105,13 @@ namespace adept {
 	&& !optimizable.provides_derivative(2)) {
       throw optimization_exception("2nd-order minimization algorithm requires optimizable that can provide 2nd derivatives");
     }
+    if (algorithm_ == MINIMIZER_ALGORITHM_LEVENBERG) {
+      return minimize_levenberg_marquardt_bounded(optimizable, x,
+						  x_lower, x_upper, true);
+    }
     if (algorithm_ == MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT) {
       return minimize_levenberg_marquardt_bounded(optimizable, x,
-						  x_lower, x_upper,
-						  max_iterations_,
-						  converged_gradient_norm_,
-						  max_step_size_);
+						  x_lower, x_upper, false);
     }
     else {
       throw optimization_exception("Minimization algorithm not recognized");

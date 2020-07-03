@@ -18,23 +18,16 @@ namespace adept {
   // Levenberg-Marquardt algorithm, where "x" is the initial state
   // vector and also where the solution is stored.
   MinimizerStatus
-  minimize_levenberg_marquardt(Optimizable& optimizable,
-			       Vector x,
-			       int max_iterations,
-			       Real converged_gradient_norm,
-			       Real max_step_size)
+  Minimizer::minimize_levenberg_marquardt(Optimizable& optimizable, Vector x,
+					  bool use_additive_damping)
   {
-    // Parameters controlling some aspects of algorithm behaviour
-    static const Real min_positive_gamma = 1.0/128.0;
-    static const Real gamma_multiplier = 4.0;
-    static const Real max_gamma = 100000.0;
-
     int nx = x.size();
 
     // Initial values
-    int iteration = 0;
-    MinimizerStatus status = MINIMIZER_STATUS_NOT_YET_CONVERGED;
-    Real cost = std::numeric_limits<Real>::infinity();
+    n_iterations_ = 0;
+    n_samples_ = 0;
+    status_ = MINIMIZER_STATUS_NOT_YET_CONVERGED;
+    cost_function_ = std::numeric_limits<Real>::infinity();
 
     Real new_cost;
     Vector new_x(nx);
@@ -42,53 +35,64 @@ namespace adept {
     Vector dx(nx);
     SymmMatrix hessian(nx);
     hessian = 0.0;
-    Real gamma = 1.0;
-    Real gnorm;
+    Real damping = levenberg_damping_start_;
+    gradient_norm_ = -1.0;
+    int state_up_to_date = -1;
 
     do {
       // At this point we have either just started or have just
       // reduced the cost function
-      cost = optimizable.calc_cost_function_gradient_hessian(x, gradient, hessian);
+      cost_function_ = optimizable.calc_cost_function_gradient_hessian(x, gradient, hessian);
+      state_up_to_date = 2;
+      ++n_samples_;
+      if (n_iterations_ == 0) {
+	start_cost_function_ = cost_function_;
+      }
+
       // Check cost function and gradient are finite
-      if (!std::isfinite(cost)) {
-	return MINIMIZER_STATUS_INVALID_COST_FUNCTION;
+      if (!std::isfinite(cost_function_)) {
+	status_ = MINIMIZER_STATUS_INVALID_COST_FUNCTION;
+	break;
       }
       else if (any(!isfinite(gradient))) {
-	return MINIMIZER_STATUS_INVALID_GRADIENT;
+	status_ = MINIMIZER_STATUS_INVALID_GRADIENT;
+	break;
       }
       // Compute L2 norm of gradient to see how "flat" the environment
       // is
-      gnorm = norm2(gradient);
+      gradient_norm_ = norm2(gradient);
       // Report progress using user-defined function
-      optimizable.report_progress(iteration, x, cost, gnorm);
+      optimizable.report_progress(n_iterations_, x, cost_function_, gradient_norm_);
       // Convergence has been achieved if the L2 norm has been reduced
       // to a user-specified threshold
-      if (gnorm <= converged_gradient_norm) {
-	status = MINIMIZER_STATUS_SUCCESS;
+      if (gradient_norm_ <= converged_gradient_norm_) {
+	status_ = MINIMIZER_STATUS_SUCCESS;
 	break;
       }
 
       // Try to minimize cost function 
-      Real previous_diag_scaling = 1.0;
+      Real previous_diag_scaling  = 1.0; // Used in Levenberg-Marquardt version
+      Real previous_diag_modifier = 0.0; // Used in Levenberg version
       while(true) {
-	if (gamma > 1000.0) {
-	  // Try steepest descent instead
-	  dx = -gradient/gamma;
+	if (!use_additive_damping) {
+	  // Levenberg-Marquardt formula: scale the diagonal of the
+	  // Hessian, where the larger the value of "damping", the
+	  // closer the resulting behaviour is to steepest descent
+	  hessian.diag_vector() *= (1.0 + damping)/previous_diag_scaling;
+	  previous_diag_scaling = 1.0 + damping;
 	}
 	else {
-	  // Levenberg-Marquardt formula: scale the diagonal of the
-	  // Hessian, where the larger the value of gamma, the closer
-	  // the resulting behaviour is to steepest descent
-	  hessian.diag_vector() *= (1.0 + gamma)/previous_diag_scaling;
-	  previous_diag_scaling = 1.0 + gamma;
-	  dx = -adept::solve(hessian, gradient);
+	  // Older Levenberg approach: add to the diagonal instead
+	  hessian.diag_vector() += damping - previous_diag_modifier;
+	  previous_diag_modifier = damping;
 	}
+	dx = -adept::solve(hessian, gradient);
 
 	// Limit the maximum step size, if required
-	if (max_step_size > 0.0) {
+	if (max_step_size_ > 0.0) {
 	  Real max_dx = maxval(abs(dx));
-	  if (max_dx > max_step_size) {
-	    dx *= (max_step_size/max_dx);
+	  if (max_dx > max_step_size_) {
+	    dx *= (max_step_size_/max_dx);
 	  }
 	}
 
@@ -96,28 +100,30 @@ namespace adept {
 	// gradient or Hessian for efficiency
 	new_x = x+dx;
 	new_cost = optimizable.calc_cost_function(new_x);
+	state_up_to_date = -1;
+	++n_samples_;
 
 	// If cost function is not finite it may be possible to
 	// recover by trying smaller step sizes
 	bool cost_invalid = !std::isfinite(new_cost);
 
-	if (new_cost >= cost || cost_invalid) {
+	if (new_cost >= cost_function_ || cost_invalid) {
 	  // We haven't managed to reduce the cost function: increase
-	  // gamma value to take smaller steps
-	  if (gamma <= 0.0) {
-	    gamma = min_positive_gamma;
+	  // damping value to take smaller steps
+	  if (damping <= 0.0) {
+	    damping = levenberg_damping_restart_;
 	  }
-	  else if (gamma < max_gamma) {
-	    gamma *= gamma_multiplier;
+	  else if (damping < levenberg_damping_max_) {
+	    damping *= levenberg_damping_multiplier_;
 	  }
 	  else {
-	    // The gamma value is now larger than max_gamma so we can
-	    // get no further
+	    // The damping value is now larger than the maximum so we
+	    // can get no further
 	    if (cost_invalid) {
-	      status = MINIMIZER_STATUS_INVALID_COST_FUNCTION;
+	      status_ = MINIMIZER_STATUS_INVALID_COST_FUNCTION;
 	    }
 	    else {
-	      status = MINIMIZER_STATUS_FAILED_TO_CONVERGE;
+	      status_ = MINIMIZER_STATUS_FAILED_TO_CONVERGE;
 	    }
 	    break;
 	  }
@@ -125,24 +131,42 @@ namespace adept {
 	else {
 	  // Managed to reduce cost function
 	  x = new_x;
-	  iteration++;
-	  // Reduce gamma for next iteration
-	  if (gamma > min_positive_gamma) {
-	    gamma /= gamma_multiplier;
+	  n_iterations_++;
+	  // Reduce damping for next iteration
+	  if (damping > levenberg_damping_min_) {
+	    damping /= levenberg_damping_divider_;
 	  }
 	  else {
-	    gamma = 0.0;
+	    damping = 0.0;
 	  }
-	  if (iteration >= max_iterations) {
-	    status = MINIMIZER_STATUS_MAX_ITERATIONS_REACHED;
+	  if (n_iterations_ >= max_iterations_) {
+	    status_ = MINIMIZER_STATUS_MAX_ITERATIONS_REACHED;
 	  }
 	  break;
 	}
       } // Inner loop
     }
-    while (status == MINIMIZER_STATUS_NOT_YET_CONVERGED);
+    while (status_ == MINIMIZER_STATUS_NOT_YET_CONVERGED);
      
-    return status;
+    if (state_up_to_date < ensure_updated_state_) {
+      // The last call to calc_cost_function* was not with the state
+      // vector returned to the user, and they want it to be.  Note
+      // that the cost function and gradient norm ought to be
+      // up-to-date already at this point.
+      if (ensure_updated_state_ > 0) {
+	// User wants at least the first derivative, but
+	// calc_cost_function_gradient() is not guaranteed to be
+	// present so we call the hessain function
+	cost_function_ = optimizable.calc_cost_function_gradient_hessian(x, gradient,
+									 hessian);
+      }
+      else {
+	// User does not need derivatives to have been computed
+	cost_function_ = optimizable.calc_cost_function(x);
+      }
+    }
+
+    return status_;
   }
 
 
@@ -150,29 +174,25 @@ namespace adept {
   // Levenberg-Marquardt algorithm, where "x" is the initial state
   // vector and also where the solution is stored.
   MinimizerStatus
-  minimize_levenberg_marquardt_bounded(Optimizable& optimizable,
-				       Vector x,
-				       const Vector& min_x,
-				       const Vector& max_x,
-				       int max_iterations,
-				       Real converged_gradient_norm,
-				       Real max_step_size)
+  Minimizer::minimize_levenberg_marquardt_bounded(Optimizable& optimizable,
+						  Vector x,
+						  const Vector& min_x,
+						  const Vector& max_x,
+						  bool use_additive_damping)
   {
-    // Parameters controlling some aspects of algorithm behaviour
-    static const Real min_positive_gamma = 1.0/128.0;
-    static const Real gamma_multiplier = 4.0;
-    static const Real max_gamma = 100000.0;
-
-    if (any(min_x >= max_x)) {
+    if (any(min_x >= max_x)
+	|| min_x.size() != x.size()
+	|| max_x.size() != x.size()) {
       return MINIMIZER_STATUS_INVALID_BOUNDS;
     }
 
     int nx = x.size();
 
     // Initial values
-    int iteration = 0;
-    MinimizerStatus status = MINIMIZER_STATUS_NOT_YET_CONVERGED;
-    Real cost = std::numeric_limits<Real>::infinity();
+    n_iterations_ = 0;
+    n_samples_ = 0;
+    status_ = MINIMIZER_STATUS_NOT_YET_CONVERGED;
+    cost_function_ = std::numeric_limits<Real>::infinity();
 
     Real new_cost;
     Vector new_x(nx);
@@ -184,8 +204,7 @@ namespace adept {
     Vector sub_gradient;
     Vector sub_dx;
     hessian = 0.0;
-    Real gamma = 1.0;
-    Real gnorm;
+    Real damping = levenberg_damping_start_;
 
     // Which state variables are at the minimum bound (-1), maximum
     // bound (1) or free (0)?
@@ -199,17 +218,27 @@ namespace adept {
 
     int nbound = count(bound_status != 0);
     int nfree  = nx - nbound;
+    gradient_norm_ = -1.0;
+    int state_up_to_date = -1;
 
     do {
       // At this point we have either just started or have just
       // reduced the cost function
-      cost = optimizable.calc_cost_function_gradient_hessian(x, gradient, hessian);
+      cost_function_ = optimizable.calc_cost_function_gradient_hessian(x, gradient, hessian);
+      state_up_to_date = 2;
+      ++n_samples_;
+      if (n_iterations_ == 0) {
+	start_cost_function_ = cost_function_;
+      }
+
       // Check cost function and gradient are finite
-      if (!std::isfinite(cost)) {
-	return MINIMIZER_STATUS_INVALID_COST_FUNCTION;
+      if (!std::isfinite(cost_function_)) {
+	status_ = MINIMIZER_STATUS_INVALID_COST_FUNCTION;
+	break;
       }
       else if (any(!isfinite(gradient))) {
-	return MINIMIZER_STATUS_INVALID_GRADIENT;
+	status_ = MINIMIZER_STATUS_INVALID_GRADIENT;
+	break;
       }
 
       // Find which dimensions are in play
@@ -218,10 +247,15 @@ namespace adept {
 	// maximum bound if two conditions are met: (1) the gradient
 	// in that dimension slopes away from the bound, and (2) the
 	// Levenberg-Marquardt formula to compute dx using the current
-	// value of gamma leads to a point on the valid side of the
+	// value of "damping" leads to a point on the valid side of the
 	// bound
 	modified_hessian = hessian;
-	modified_hessian.diag_vector() *= (1.0 + gamma);
+	if (!use_additive_damping) {
+	  modified_hessian.diag_vector() *= (1.0 + damping);
+	}
+	else {
+	  modified_hessian.diag_vector() += damping;
+	}
 	dx = -adept::solve(modified_hessian, gradient);
 	// Release points at the minimum bound
 	bound_status.where(bound_status == -1
@@ -248,21 +282,21 @@ namespace adept {
       // Compute L2 norm of gradient to see how "flat" the environment
       // is, restricting ourselves to the dimensions currently in play
       if (nfree > 0) {
-	gnorm = norm2(gradient(ifree));
+	gradient_norm_ = norm2(gradient(ifree));
       }
       else {
 	// If no dimensions are in play we are at a corner of the
 	// bounds and the gradient is pointing into the corner: we
 	// have reached a minimum in the cost function subject to the
 	// bounds so have converged
-	gnorm = 0.0;
+	gradient_norm_ = 0.0;
       }
       // Report progress using user-defined function
-      optimizable.report_progress(iteration, x, cost, gnorm);
+      optimizable.report_progress(n_iterations_, x, cost_function_, gradient_norm_);
       // Convergence has been achieved if the L2 norm has been reduced
       // to a user-specified threshold
-      if (gnorm <= converged_gradient_norm) {
-	status = MINIMIZER_STATUS_SUCCESS;
+      if (gradient_norm_ <= converged_gradient_norm_) {
+	status_ = MINIMIZER_STATUS_SUCCESS;
 	break;
       }
 
@@ -280,27 +314,29 @@ namespace adept {
       // FIX reuse dx if possible below...
 
       // Try to minimize cost function 
-      Real previous_diag_scaling = 1.0;
+      Real previous_diag_scaling  = 1.0; // Used in Levenberg-Marquardt version
+      Real previous_diag_modifier = 0.0; // Used in Levenberg version
       while(true) {
 	sub_dx.resize(nfree);
-	if (gamma > 1000.0) {
-	  // Try steepest descent instead
-	  sub_dx = -sub_gradient/gamma;
+	if (!use_additive_damping) {
+	  // Levenberg-Marquardt formula: scale the diagonal of the
+	  // Hessian, where the larger the value of "damping", the
+	  // closer the resulting behaviour is to steepest descent
+	  sub_hessian.diag_vector() *= (1.0 + damping)/previous_diag_scaling;
+	  previous_diag_scaling = 1.0 + damping;
 	}
 	else {
-	  // Levenberg-Marquardt formula: scale the diagonal of the
-	  // Hessian, where the larger the value of gamma, the closer
-	  // the resulting behaviour is to steepest descent
-	  sub_hessian.diag_vector() *= (1.0 + gamma)/previous_diag_scaling;
-	  previous_diag_scaling = 1.0 + gamma;
-	  sub_dx = -adept::solve(sub_hessian, sub_gradient);
+	  // Older Levenberg approach: add to the diagonal instead
+	  sub_hessian.diag_vector() += damping - previous_diag_modifier;
+	  previous_diag_modifier = damping;
 	}
+	sub_dx = -adept::solve(sub_hessian, sub_gradient);
 
 	// Limit the maximum step size, if required
-	if (max_step_size > 0.0) {
-	  Real max_dx = maxval(abs(dx));
-	  if (max_dx > max_step_size) {
-	    sub_dx *= (max_step_size/max_dx);
+	if (max_step_size_ > 0.0) {
+	  Real max_dx = maxval(abs(sub_dx));
+	  if (max_dx > max_step_size_) {
+	    sub_dx *= (max_step_size_/max_dx);
 	  }
 	}
 
@@ -345,28 +381,30 @@ namespace adept {
 	new_x = x;
 	new_x(ifree) += sub_dx;
 	new_cost = optimizable.calc_cost_function(new_x);
+	state_up_to_date = -1;
+	++n_samples_;
 
 	// If cost function is not finite it may be possible to
 	// recover by trying smaller step sizes
 	bool cost_invalid = !std::isfinite(new_cost);
 
-	if (new_cost >= cost || cost_invalid) {
+	if (new_cost >= cost_function_ || cost_invalid) {
 	  // We haven't managed to reduce the cost function: increase
-	  // gamma value to take smaller steps
-	  if (gamma <= 0.0) {
-	    gamma = min_positive_gamma;
+	  // damping value to take smaller steps
+	  if (damping <= 0.0) {
+	    damping = levenberg_damping_restart_;
 	  }
-	  else if (gamma < max_gamma) {
-	    gamma *= gamma_multiplier;
+	  else if (damping < levenberg_damping_max_) {
+	    damping *= levenberg_damping_multiplier_;
 	  }
 	  else {
-	    // The gamma value is now larger than max_gamma so we can
-	    // get no further
+	    // The damping value is now larger than the maximum so we
+	    // can get no further
 	    if (cost_invalid) {
-	      status = MINIMIZER_STATUS_INVALID_COST_FUNCTION;
+	      status_ = MINIMIZER_STATUS_INVALID_COST_FUNCTION;
 	    }
 	    else {
-	      status = MINIMIZER_STATUS_FAILED_TO_CONVERGE;
+	      status_ = MINIMIZER_STATUS_FAILED_TO_CONVERGE;
 	    }
 	    break;
 	  }
@@ -374,30 +412,46 @@ namespace adept {
 	else {
 	  // Managed to reduce cost function
 	  x = new_x;
-	  iteration++;
+	  n_iterations_++;
 	  if (frac < 1.0) {
 	    // Found a new bound
 	    bound_status(ifree(ibound)) = bound_type;
 	  }
-	  // Reduce gamma for next iteration
-	  if (gamma > min_positive_gamma) {
-	    gamma /= gamma_multiplier;
+	  // Reduce damping for next iteration
+	  if (damping > levenberg_damping_min_) {
+	    damping /= levenberg_damping_divider_;
 	  }
 	  else {
-	    gamma = 0.0;
+	    damping = 0.0;
 	  }
-	  if (iteration >= max_iterations) {
-	    status = MINIMIZER_STATUS_MAX_ITERATIONS_REACHED;
+	  if (n_iterations_ >= max_iterations_) {
+	    status_ = MINIMIZER_STATUS_MAX_ITERATIONS_REACHED;
 	  }
 	  break;
 	}
       } // Inner loop
     }
-    while (status == MINIMIZER_STATUS_NOT_YET_CONVERGED);
-     
-    return status;
+    while (status_ == MINIMIZER_STATUS_NOT_YET_CONVERGED);
+    
+    if (state_up_to_date < ensure_updated_state_) {
+      // The last call to calc_cost_function* was not with the state
+      // vector returned to the user, and they want it to be.  Note
+      // that the cost function and gradient norm ought to be
+      // up-to-date already at this point.
+      if (ensure_updated_state_ > 0) {
+	// User wants at least the first derivative, but
+	// calc_cost_function_gradient() is not guaranteed to be
+	// present so we call the hessain function
+	cost_function_ = optimizable.calc_cost_function_gradient_hessian(x, gradient,
+									 hessian);
+      }
+      else {
+	// User does not need derivatives to have been computed
+	cost_function_ = optimizable.calc_cost_function(x);
+      }
+    }
+
+    return status_;
   }
-
-
 
 };

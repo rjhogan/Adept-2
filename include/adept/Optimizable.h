@@ -51,7 +51,7 @@ namespace adept {
     // function with respect to each element of x, and "hessian" to
     // the second derivative of the cost function with respect to x.
     virtual Real calc_cost_function_gradient_hessian(const adept::Vector& x,
-		     adept::Vector gradient, adept::SymmMatrix hessian) {
+		     adept::Vector gradient, adept::SymmMatrix& hessian) {
       // If we get here then a Newton-type minimizer has been applied
       // to this class but the user has not implemented a function to
       // compute the Hessian matrix.
@@ -73,16 +73,6 @@ namespace adept {
     virtual bool provides_derivative(int order) = 0;
 
   };
-
-  // Convenience function for initializing vectors representing the
-  // lower and upper bounds on state variables
-  inline void initialize_bounds(int nx, adept::Vector& x_lower,
-				adept::Vector& x_upper) {
-    x_lower.resize(nx);
-    x_upper.resize(nx);
-    x_lower = -std::numeric_limits<Real>::max();
-    x_upper =  std::numeric_limits<Real>::max();
-  }
 
 };
 
