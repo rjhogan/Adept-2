@@ -373,7 +373,7 @@ namespace adept {
     // the interface was designed in Adept 1 before arrays were added.
     void jacobian(Real* jacobian_out,
 		  Index dep_offset = 1,
-		  Index indep_offset = 0) {
+		  Index indep_offset = 0) const {
       // Call one of jacobian_forward and jacobian_reverse, whichever
       // would be faster.
       if (n_independent() <= n_dependent()) {
@@ -388,20 +388,20 @@ namespace adept {
     // this is done with repeated forward or reverse passes.
     void jacobian_forward(Real* jacobian_out,
 			  Index dep_offset = 1,
-			  Index indep_offset = 0);
+			  Index indep_offset = 0) const;
     void jacobian_reverse(Real* jacobian_out,
 			  Index dep_offset = 1,
-			  Index indep_offset = 0);
+			  Index indep_offset = 0) const;
 
     // If the user included "adept_arrays.h" rather than "adept.h",
     // then allow the Jacobian to be returned in the form of an Adept
     // matrix.
-    void jacobian(Array<2,Real,false> jac);
-    void jacobian_forward(Array<2,Real,false> jac);
-    void jacobian_reverse(Array<2,Real,false> jac);
-    Array<2,Real,false> jacobian();
-    Array<2,Real,false> jacobian_forward();
-    Array<2,Real,false> jacobian_reverse();
+    void jacobian(Array<2,Real,false> jac) const;
+    void jacobian_forward(Array<2,Real,false> jac) const;
+    void jacobian_reverse(Array<2,Real,false> jac) const;
+    Array<2,Real,false> jacobian() const;
+    Array<2,Real,false> jacobian_forward() const;
+    Array<2,Real,false> jacobian_reverse() const;
 
     // Return maximum number of OpenMP threads to be used in Jacobian
     // calculation

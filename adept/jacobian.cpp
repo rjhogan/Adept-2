@@ -205,7 +205,7 @@ namespace adept {
   // implemented using a forward pass, appropriate for m>=n.
   void
   Stack::jacobian_forward(Real* jacobian_out,
-			  Index dep_offset, Index indep_offset)
+			  Index dep_offset, Index indep_offset) const
   {
     if (independent_index_.empty() || dependent_index_.empty()) {
       throw(dependents_or_independents_not_identified());
@@ -466,7 +466,7 @@ namespace adept {
   // implemented using a reverse pass, appropriate for m<n.
   void
   Stack::jacobian_reverse(Real* jacobian_out,
-			  Index dep_offset, Index indep_offset)
+			  Index dep_offset, Index indep_offset) const
   {
     if (independent_index_.empty() || dependent_index_.empty()) {
       throw(dependents_or_independents_not_identified());
@@ -653,7 +653,7 @@ namespace adept {
   
   // Return the Jacobian matrix in the matrix "jac", using the forward
   // or reverse method depending which would be faster
-  void Stack::jacobian(Array<2,Real,false> jac) {
+  void Stack::jacobian(Array<2,Real,false> jac) const {
     if (jac.dimension(0) != n_dependent()
 	|| jac.dimension(1) != n_independent()) {
       throw size_mismatch("Jacobian matrix has wrong size");
@@ -668,7 +668,7 @@ namespace adept {
 
   // Return the Jacobian matrix in the matrix "jac", explicitly
   // specifying whether to use the forward or reverse method
-  void Stack::jacobian_forward(Array<2,Real,false> jac) {
+  void Stack::jacobian_forward(Array<2,Real,false> jac) const {
     if (jac.dimension(0) != n_dependent()
 	|| jac.dimension(1) != n_independent()) {
       throw size_mismatch("Jacobian matrix has wrong size");
@@ -676,7 +676,7 @@ namespace adept {
     jacobian_forward(jac.data(), jac.offset(0), jac.offset(1));
   }
 
-  void Stack::jacobian_reverse(Array<2,Real,false> jac) {
+  void Stack::jacobian_reverse(Array<2,Real,false> jac) const {
     if (jac.dimension(0) != n_dependent()
 	|| jac.dimension(1) != n_independent()) {
       throw size_mismatch("Jacobian matrix has wrong size");
@@ -686,7 +686,7 @@ namespace adept {
 
   // Return the Jacobian matrix using the forward or reverse method
   // depending which would be faster
-  Array<2,Real,false> Stack::jacobian() {
+  Array<2,Real,false> Stack::jacobian() const {
     Array<2,Real,false> jac(n_dependent(), n_independent());
     if (n_independent() <= n_dependent()) {
       jacobian_forward(jac.data(), jac.offset(0), jac.offset(1));
@@ -699,13 +699,13 @@ namespace adept {
 
   // Return the Jacobian matrix, explicitly specifying whether to use
   // the forward or reverse method
-  Array<2,Real,false> Stack::jacobian_forward() {
+  Array<2,Real,false> Stack::jacobian_forward() const {
     Array<2,Real,false> jac(n_dependent(), n_independent());
     jacobian_forward(jac.data(), jac.offset(0), jac.offset(1));
     return jac;
   }
 
-  Array<2,Real,false> Stack::jacobian_reverse() {
+  Array<2,Real,false> Stack::jacobian_reverse() const {
     Array<2,Real,false> jac(n_dependent(), n_independent());
     jacobian_reverse(jac.data(), jac.offset(0), jac.offset(1));
     return jac;
