@@ -134,7 +134,7 @@ main(int argc, const char* argv[])
 
   if (is_bounded) {
     Vector x_lower, x_upper;
-    adept::initialize_bounds(nx, x_lower, x_upper);
+    adept::minimizer_initialize_bounds(nx, x_lower, x_upper);
     x_upper(1) = 2.0;
     x_lower(1) = 0.2;
     status = minimizer.minimize(rosenbrock, x, x_lower, x_upper);

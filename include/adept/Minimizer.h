@@ -57,8 +57,8 @@ namespace adept {
 
   // Convenience function for initializing vectors representing the
   // lower and upper bounds on state variables
-  inline void initialize_bounds(int nx, adept::Vector& x_lower,
-				adept::Vector& x_upper) {
+  inline void minimizer_initialize_bounds(int nx, adept::Vector& x_lower,
+					  adept::Vector& x_upper) {
     x_lower.resize(nx);
     x_upper.resize(nx);
     x_lower = -std::numeric_limits<Real>::max();
