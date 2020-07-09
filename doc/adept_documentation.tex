@@ -66,7 +66,7 @@
   xleftmargin=0cm,
   xrightmargin=0cm,
   basicstyle=\footnotesize\ttfamily,
-  emph={adouble,xdouble,Stack,adept,Array,FixedArray,Vector,aVector,Matrix,aMatrix,Array3D,aArray3D,intVector,boolVector,floatVector,adept,SpecialMatrix,SquareMatrix,aSquareMatrix,SymmMatrix,aSymmMatrix,UpperMatrix,LowerMatrix,IndexVector},
+  emph={adouble,xdouble,Stack,adept,Array,FixedArray,Vector,aVector,Matrix,aMatrix,Array3D,aArray3D,intVector,boolVector,floatVector,SpecialMatrix,SquareMatrix,aSquareMatrix,SymmMatrix,aSymmMatrix,UpperMatrix,LowerMatrix,IndexVector,adept_arrays},
   emphstyle=\bfseries\color{red}}
 \lstset{showstringspaces=false}
 
@@ -812,6 +812,8 @@ following function would return the full Jacobian matrix:
    stack.independent(&x[0], n);             // Identify independent variables
    stack.dependent(&y[0], m);               // Identify dependent variables
    stack.jacobian(jac);                     // Compute & store Jacobian in jac
+   for (int iy = 0; iy < m; ++iy) 
+     y_val[iy] = y[iy].value();             // Extract value from active object 
  }
 \end{lstlisting}
 %
@@ -845,6 +847,36 @@ Note that:
   thrown, since the memory associated with \code{x} and \code{y} will
   be automatically deallocated when they go out of scope.
 \end{itemize}%
+
+As described in chapter \ref{chap:arrays}, \Adept\ version 2.0
+introduced built-in multi-dimensional arrays of both active
+(e.g.\ \code{aVector} and passive (e.g.\ \code{Vector}) variables. It
+therefore seems more natural to express the algorithm above in terms
+of these objects, which could be done as follows:
+
+\begin{lstlisting}
+ #include <adept_arrays.h>
+
+ // Adept vectors know their own length, so lengths do not need to be
+ // passed in as well
+ adept::aVector algorithm2(const adept::aVector& x);
+
+ void algorithm2_jacobian(
+                const adept::Vector& x_val, // Input values
+                adept::Vector& y_val,       // Output values (correctly sized or empty)
+                adept::Matrix& jac) {       // Output Jacobian matrix (correctly sized)
+   adept::Stack stack;                      // Where the derivative information is stored
+   adept::aVector x = x_val;                // Active vector of inputs
+   stack.new_recording();                   // Start recording
+   adept::aVector y = algorithm2(x);        // Run algorithm and store outputs
+   stack.independent(x);                    // Identify independent variables
+   stack.dependent(y);                      // Identify dependent variables
+   stack.jacobian(jac);                     // Compute & store Jacobian (since Adept 2.0.8)
+   // If jac is empty we can automatically resize it using this instead (since Adept 2.0.8):
+   //jac = stack.jacobian();
+   y_val = value(y);                        // Extract the values from the active array
+ }
+\end{lstlisting}
 
 \section{Real-world usage: interfacing \Adept\ to a minimization library}
 \label{sec:realworld}
@@ -1442,15 +1474,35 @@ then the function will throw a
 practice, this function calls \codebf{jacobian\_forward} if $n\le
 m$ and \codebf{jacobian\_reverse} if $n>m$.
 %
-\citem{void jacobian\_forward(double* jacobian\_out)} Compute the Jacobian matrix by executing
-$n$ forward passes through the stored list of differential statements;
-this is typically faster than \codebf{jacobian\_reverse} for $n\le
-m$.
+\citem{void jacobian(Matrix jac)} Compute Jacobian matrix and store in
+a correctly sized \Adept\ \code{Matrix} object \codebf{jac}, which may
+be a subset of an larger matrix. See chapter \ref{chap:arrays} for a
+full description of \Adept\ array objects.
 %
-\citem{void jacobian\_reverse(double* jacobian\_out)} Compute the Jacobian matrix by executing
-$m$ reverse passes through the stored list of differential statements;
-this is typically faster than \codebf{jacobian\_forward} for
-$n>m$.
+\citem{Matrix jacobian()} As above but the Jacobian matrix is returned
+from the function.
+%
+\citem{void jacobian\_forward(double* jacobian\_out)} Compute the
+Jacobian matrix by executing $n$ forward passes through the stored
+list of differential statements; this is typically faster than
+\codebf{jacobian\_reverse} for $n\le m$.
+%
+\citem{void jacobian\_forward(Matrix jac)} As above but store in a
+correctly sized \Adept\ \code{Matrix} object \codebf{jac}.
+%
+\citem{Matrix jacobian\_forward()} As above but the Jacobian matrix is
+returned from the function.
+%
+\citem{void jacobian\_reverse(double* jacobian\_out)} Compute the
+Jacobian matrix by executing $m$ reverse passes through the stored
+list of differential statements; this is typically faster than
+\codebf{jacobian\_forward} for $n>m$.
+%
+\citem{void jacobian\_reverse(Matrix jac)} As above but store in a
+correctly sized \Adept\ \code{Matrix} object \codebf{jac}.
+%
+\citem{Matrix jacobian\_reverse()} As above but the Jacobian matrix is
+returned from the function.
 %
 \citem{void clear\_gradients()} Clear the gradients set with the
 \code{set\_gradient} member function of the \code{adouble} class. This
