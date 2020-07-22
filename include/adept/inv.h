@@ -28,8 +28,8 @@ namespace adept {
   // Invert symmetric matrix A
   // -------------------------------------------------------------------
   template <typename Type, SymmMatrixOrientation Orient>
-  SpecialMatrix<Type,SymmEngine<Orient>,false> 
-  inv(const SpecialMatrix<Type,SymmEngine<Orient>,false>& A);
+  SpecialMatrix<Type,internal::SymmEngine<Orient>,false> 
+  inv(const SpecialMatrix<Type,internal::SymmEngine<Orient>,false>& A);
  
   // -------------------------------------------------------------------
   // Invert arbitrary expression

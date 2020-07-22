@@ -24,8 +24,6 @@
 
 namespace adept {
 
-  using namespace internal;
-
   // ---------------------------------------------------------------------
   // Definition of ActiveReference class
   // ---------------------------------------------------------------------
@@ -49,7 +47,7 @@ namespace adept {
     // expression to be discerned at compile time
     static const bool is_active = true;
     static const int  rank      = 0;
-    static const int  n_active  = 1 + is_complex<Type>::value;
+    static const int  n_active  = 1 + internal::is_complex<Type>::value;
     static const int  n_arrays  = 0;
     static const int  n_scratch = 0;
 
@@ -266,18 +264,18 @@ namespace adept {
     
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
-				ScratchVector<NScratch>& scratch) const
+				internal::ScratchVector<NScratch>& scratch) const
     { return val_; }
 
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     Type value_stored_(const ExpressionSize<NArrays>& loc,
-		     const ScratchVector<NScratch>& scratch) const
+		     const internal::ScratchVector<NScratch>& scratch) const
     { return val_; }
 
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     void calc_gradient_(Stack& stack, 
 			const ExpressionSize<NArrays>& loc,
-			const ScratchVector<NScratch>& scratch) const {
+			const internal::ScratchVector<NScratch>& scratch) const {
       stack.push_rhs(1.0, gradient_index_);
     }
 
@@ -285,7 +283,7 @@ namespace adept {
 	      int NArrays, int NScratch, typename MyType>
     void calc_gradient_(Stack& stack, 
 			const ExpressionSize<NArrays>& loc,
-			const ScratchVector<NScratch>& scratch,
+			const internal::ScratchVector<NScratch>& scratch,
 			const MyType& multiplier) const {
       stack.push_rhs(multiplier, gradient_index_);
     }

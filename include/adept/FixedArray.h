@@ -25,7 +25,6 @@
 #include <adept/Allocator.h>
 
 namespace adept {
-  using namespace adept::internal;
 
   namespace internal {
 
@@ -83,9 +82,9 @@ namespace adept {
     // expression to be discerned at compile time
     static const bool is_active  = IsActive;
     static const bool is_lvalue  = true;
-    static const int  rank       = fixed_array<J0,J1,J2,J3,J4,J5,J6>::rank;
-    static const int  length_    = fixed_array<J0,J1,J2,J3,J4,J5,J6>::length;
-    static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
+    static const int  rank       = internal::fixed_array<J0,J1,J2,J3,J4,J5,J6>::rank;
+    static const int  length_    = internal::fixed_array<J0,J1,J2,J3,J4,J5,J6>::length;
+    static const int  n_active   = IsActive * (1 + internal::is_complex<Type>::value);
     static const int  n_scratch  = 0;
     static const int  n_arrays   = 1;
     static const bool is_vectorizable = Packet<Type>::is_vectorized;
@@ -156,7 +155,7 @@ namespace adept {
     // -------------------------------------------------------------------
     
     // Initialize an empty array
-    FixedArray() : GradientIndex<IsActive>(length_, false) {
+    FixedArray() : internal::GradientIndex<IsActive>(length_, false) {
       ADEPT_STATIC_ASSERT(!(std::numeric_limits<Type>::is_integer
 			    && IsActive), CANNOT_CREATE_ACTIVE_FIXED_ARRAY_OF_INTEGERS);
 #ifdef ADEPT_REAL_INIT
@@ -200,7 +199,7 @@ namespace adept {
 
     // Copy constructor copies the data, unlike in the Array class
     FixedArray(const FixedArray& rhs) 
-      : GradientIndex<IsActive>(length_, false)
+      : internal::GradientIndex<IsActive>(length_, false)
     { *this = rhs; }
 
   public:
@@ -211,35 +210,35 @@ namespace adept {
     // implicit conversion, use the "explicit" keyword.
     template<typename EType, class E>
     FixedArray(const Expression<EType, E>& rhs,
-	  typename enable_if<E::rank == rank,int>::type = 0)
-      : GradientIndex<IsActive>(length_, false)
+	  typename internal::enable_if<E::rank == rank,int>::type = 0)
+      : internal::GradientIndex<IsActive>(length_, false)
     { *this = rhs; }
 
 #ifdef ADEPT_CXX11_FEATURES
     // Initialize from initializer list
     template <typename T>
     FixedArray(std::initializer_list<T> list) 
-      : GradientIndex<IsActive>(length_,false) { *this = list; }
+      : internal::GradientIndex<IsActive>(length_,false) { *this = list; }
 
     // The unfortunate restrictions on initializer_list constructors
     // mean that each possible Array rank needs explicit treatment
     template <typename T>
     FixedArray(std::initializer_list<
 	  std::initializer_list<T> > list)
-      : GradientIndex<IsActive>(length_,false) { *this = list; }
+      : internal::GradientIndex<IsActive>(length_,false) { *this = list; }
 
     template <typename T>
     FixedArray(std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<T> > > list)
-      : GradientIndex<IsActive>(length_,false) { *this = list; }
+      : internal::GradientIndex<IsActive>(length_,false) { *this = list; }
 
     template <typename T>
     FixedArray(std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<T> > > > list)
-      : GradientIndex<IsActive>(length_,false) { *this = list; }
+      : internal::GradientIndex<IsActive>(length_,false) { *this = list; }
 
     template <typename T>
     FixedArray(std::initializer_list<
@@ -247,7 +246,7 @@ namespace adept {
 	  std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<T> > > > > list)
-      : GradientIndex<IsActive>(length_,false) { *this = list; }
+      : internal::GradientIndex<IsActive>(length_,false) { *this = list; }
 
     template <typename T>
     FixedArray(std::initializer_list<
@@ -256,7 +255,7 @@ namespace adept {
 	  std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<T> > > > > > list)
-      : GradientIndex<IsActive>(length_,false) { *this = list; }
+      : internal::GradientIndex<IsActive>(length_,false) { *this = list; }
 
     template <typename T>
     FixedArray(std::initializer_list<
@@ -266,7 +265,7 @@ namespace adept {
 	  std::initializer_list<
 	  std::initializer_list<
 	  std::initializer_list<T> > > > > > > list)
-      : GradientIndex<IsActive>(length_,false) { *this = list; }
+      : internal::GradientIndex<IsActive>(length_,false) { *this = list; }
     
 #endif
 
@@ -275,7 +274,7 @@ namespace adept {
     // of links to it drops to zero, it will destruct itself and
     // deallocate the memory.
     ~FixedArray()
-    { GradientIndex<IsActive>::unregister(length_); }
+    { internal::GradientIndex<IsActive>::unregister(length_); }
 
     // -------------------------------------------------------------------
     // FixedArray: 3. Assignment operators
@@ -292,7 +291,7 @@ namespace adept {
 
     // Assignment to an array expression of the same rank
     template <typename EType, class E>
-    typename enable_if<E::rank == rank, FixedArray&>::type
+    typename internal::enable_if<E::rank == rank, FixedArray&>::type
     inline
     operator=(const Expression<EType,E>& rhs) {
 #ifndef ADEPT_NO_DIMENSION_CHECKING
@@ -302,7 +301,7 @@ namespace adept {
 	  + rhs.expression_string() + ".";
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
-      else if (!compatible(dims, dimensions())) {
+      else if (!internal::compatible(dims, dimensions())) {
 	std::string str = "Expr";
 	str += dims.str() + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
@@ -317,7 +316,7 @@ namespace adept {
 
     // Assignment to a single value copies to every element
     template <typename RType>
-    typename enable_if<is_not_expression<RType>::value, FixedArray&>::type
+    typename internal::enable_if<internal::is_not_expression<RType>::value, FixedArray&>::type
     operator=(RType rhs) {
       assign_inactive_scalar_<rank,IsActive>(rhs);
       return *this;
@@ -326,7 +325,7 @@ namespace adept {
     // Assign active scalar expression to an active array by first
     // converting the RHS to an active scalar
     template <typename EType, class E>
-    typename enable_if<E::rank == 0 && (rank > 0) && IsActive && !E::is_lvalue,
+    typename internal::enable_if<E::rank == 0 && (rank > 0) && IsActive && !E::is_lvalue,
       FixedArray&>::type
     operator=(const Expression<EType,E>& rhs) {
       Active<EType> x = rhs;
@@ -376,7 +375,7 @@ namespace adept {
   
     // Firstly implement the A.where(B) to return a "Where<A,B>" object
     template <class B>
-    typename enable_if<B::rank == rank, Where<FixedArray,B> >::type
+    typename internal::enable_if<B::rank == rank, internal::Where<FixedArray,B> >::type
     where(const Expression<bool,B>& bool_expr) {
 #ifndef ADEPT_NO_DIMENSION_CHECKING
       ExpressionSize<rank> dims;
@@ -390,7 +389,7 @@ namespace adept {
 			    ADEPT_EXCEPTION_LOCATION);
       }
 #endif
-      return Where<FixedArray,B>(*this, bool_expr.cast());
+      return internal::Where<FixedArray,B>(*this, bool_expr.cast());
     }
     
     // When Where<A,B> = C is invoked, it calls
@@ -398,7 +397,7 @@ namespace adept {
     // the case when C is an inactive scalar and when it is an array
     // expression.
     template <class B, typename C>
-    typename enable_if<is_not_expression<C>::value, void>::type
+    typename internal::enable_if<internal::is_not_expression<C>::value, void>::type
     assign_conditional(const Expression<bool,B>& bool_expr,
 			    C rhs) {
       if (!empty()) {
@@ -417,7 +416,7 @@ namespace adept {
 	  + rhs.expression_string() + ".";
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
-      else if (!compatible(dims,dimensions())) {
+      else if (!internal::compatible(dims,dimensions())) {
 	throw size_mismatch("Right-hand-side of \"where\" construct of incompatible size"
 			    ADEPT_EXCEPTION_LOCATION);
       }
@@ -432,7 +431,7 @@ namespace adept {
     // Assignment of a FixedArray to an initializer list; the first ought
     // to only work for vectors
     template <typename T>
-    typename enable_if<std::is_convertible<T,Type>::value, FixedArray&>::type
+    typename internal::enable_if<std::is_convertible<T,Type>::value, FixedArray&>::type
     operator=(std::initializer_list<T> list) {
       ADEPT_STATIC_ASSERT(rank==1, RANK_MISMATCH_IN_INITIALIZER_LIST);
 
@@ -454,7 +453,7 @@ namespace adept {
     // Assignment of a higher rank Array to a list of lists...
     template <class IType>
     FixedArray& operator=(std::initializer_list<std::initializer_list<IType> > list) {
-      ADEPT_STATIC_ASSERT(rank==initializer_list_rank<IType>::value+2,
+      ADEPT_STATIC_ASSERT(rank==internal::initializer_list_rank<IType>::value+2,
       			  RANK_MISMATCH_IN_INITIALIZER_LIST);
       if (list.size() > J0) {
 	throw size_mismatch("Multi-dimensional initializer list larger than slowest-varying dimension of Array"
@@ -475,35 +474,35 @@ namespace adept {
     // -------------------------------------------------------------------
   
     // Get l-value of the element at the specified coordinates
-    typename active_reference<Type,IsActive>::type
+    typename internal::active_reference<Type,IsActive>::type
     get_lvalue(const ExpressionSize<rank>& i) {
       return get_lvalue_<IsActive>(index_(i));
     }
     
-    typename active_scalar<Type,IsActive>::type
+    typename internal::active_scalar<Type,IsActive>::type
     get_rvalue(const ExpressionSize<rank>& i) const {
       return get_rvalue_<IsActive>(index_(i));
     }
 
   protected:
     template <bool MyIsActive>
-    typename enable_if<MyIsActive, ActiveReference<Type> >::type
+    typename internal::enable_if<MyIsActive, ActiveReference<Type> >::type
     get_lvalue_(const Index& loc) {
       return ActiveReference<Type>(data_[loc], gradient_index()+loc);
     }
     template <bool MyIsActive>
-    typename enable_if<!MyIsActive, Type&>::type
+    typename internal::enable_if<!MyIsActive, Type&>::type
     get_lvalue_(const Index& loc) {
       return data_[loc];
     }
 
     template <bool MyIsActive>
-    typename enable_if<MyIsActive, Active<Type> >::type
+    typename internal::enable_if<MyIsActive, Active<Type> >::type
     get_rvalue_(const Index& loc) const {
       return Active<Type>(data_[loc], gradient_index()+loc);
     }
     template <bool MyIsActive>
-    typename enable_if<!MyIsActive, const Type&>::type
+    typename internal::enable_if<!MyIsActive, const Type&>::type
     get_rvalue_(const Index& loc) const {
       return data_[loc];
     }
@@ -525,45 +524,45 @@ namespace adept {
 
     // l-value access to inactive array with function-call operator
     template <typename I0>
-    typename enable_if<rank==1 && all_scalar_ints<1,I0>::value && !IsActive, Type&>::type
+    typename internal::enable_if<rank==1 && internal::all_scalar_ints<1,I0>::value && !IsActive, Type&>::type
     operator()(I0 i0) 
-    { return data_[get_index_with_len(i0,J0)]; }
+    { return data_[internal::get_index_with_len(i0,J0)]; }
     
     // r-value access to inactive array with function-call operator
     template <typename I0>
-    typename enable_if<rank==1 && all_scalar_ints<1,I0>::value && !IsActive, const Type&>::type
+    typename internal::enable_if<rank==1 && internal::all_scalar_ints<1,I0>::value && !IsActive, const Type&>::type
     operator()(I0 i0) const
-    { return data_[get_index_with_len(i0,J0)]; }
+    { return data_[internal::get_index_with_len(i0,J0)]; }
 
     // l-value access to inactive array with element-access operator
     template <typename I0>
-    typename enable_if<rank==1 && all_scalar_ints<1,I0>::value && !IsActive, Type&>::type
+    typename internal::enable_if<rank==1 && internal::all_scalar_ints<1,I0>::value && !IsActive, Type&>::type
     operator[](I0 i0) 
-    { return data_[get_index_with_len(i0,J0)]; }
+    { return data_[internal::get_index_with_len(i0,J0)]; }
 
     // r-value access to inactive array with element-access operator
     template <typename I0>
-    typename enable_if<rank==1 && all_scalar_ints<1,I0>::value && !IsActive, const Type&>::type
+    typename internal::enable_if<rank==1 && internal::all_scalar_ints<1,I0>::value && !IsActive, const Type&>::type
     operator[](I0 i0) const
-    { return data_[get_index_with_len(i0,J0)]; }
+    { return data_[internal::get_index_with_len(i0,J0)]; }
  
   protected:
     template <bool MyIsActive>
-    typename enable_if<!MyIsActive,Type&>::type
+    typename internal::enable_if<!MyIsActive,Type&>::type
     get_scalar_reference(const Index& offset)
     { return data_[offset]; }
 
     template <bool MyIsActive>
-    typename enable_if<!MyIsActive,const Type&>::type
+    typename internal::enable_if<!MyIsActive,const Type&>::type
     get_scalar_reference(const Index& offset) const
     { return data_[offset]; }
 
     template <bool MyIsActive>
-    typename enable_if<MyIsActive,ActiveReference<Type> >::type
+    typename internal::enable_if<MyIsActive,ActiveReference<Type> >::type
     get_scalar_reference(const Index& offset) 
     { return ActiveReference<Type>(data_[offset], gradient_index()+offset); }
     template <bool MyIsActive>
-    typename enable_if<MyIsActive,ActiveConstReference<Type> >::type
+    typename internal::enable_if<MyIsActive,ActiveConstReference<Type> >::type
     get_scalar_reference(const Index& offset) const
     { return ActiveConstReference<Type>(data_[offset], gradient_index()+offset); }
 
@@ -571,172 +570,172 @@ namespace adept {
 
     // l-value access to active array with function-call operator
     template <typename I0>
-    typename enable_if<rank==1 && all_scalar_ints<1,I0>::value && IsActive,
+    typename internal::enable_if<rank==1 && internal::all_scalar_ints<1,I0>::value && IsActive,
 		       ActiveReference<Type> >::type
     operator()(I0 i0) {
-      Index offset = get_index_with_len(i0,J0);
+      Index offset = internal::get_index_with_len(i0,J0);
       return ActiveReference<Type>(data_[offset], gradient_index()+offset);
     }
     
     // r-value access to active array with function-call operator
     template <typename I0>
-    typename enable_if<rank==1 && all_scalar_ints<1,I0>::value && IsActive,
+    typename internal::enable_if<rank==1 && internal::all_scalar_ints<1,I0>::value && IsActive,
 		       ActiveConstReference<Type> >::type
     operator()(I0 i0) const {
-      Index offset = get_index_with_len(i0,J0);
+      Index offset = internal::get_index_with_len(i0,J0);
       return ActiveConstReference<Type>(data_[offset], gradient_index()+offset);
     }
   
     // l-value access to active array with element-access operator
     template <typename I0>
-    typename enable_if<rank==1 && all_scalar_ints<1,I0>::value && IsActive,
+    typename internal::enable_if<rank==1 && internal::all_scalar_ints<1,I0>::value && IsActive,
 		       ActiveReference<Type> >::type
     operator[](I0 i0) {
-      Index offset = get_index_with_len(i0,J0);
+      Index offset = internal::get_index_with_len(i0,J0);
       return ActiveReference<Type>(data_[offset], gradient_index()+offset);
     }
     
     // r-value access to active array with element-access operator
     template <typename I0>
-    typename enable_if<rank==1 && all_scalar_ints<1,I0>::value && IsActive,
+    typename internal::enable_if<rank==1 && internal::all_scalar_ints<1,I0>::value && IsActive,
 		       ActiveConstReference<Type> >::type
     operator[](I0 i0) const {
-      Index offset = get_index_with_len(i0,J0);
+      Index offset = internal::get_index_with_len(i0,J0);
       return ActiveConstReference<Type>(data_[offset], gradient_index()+offset);
     }
       
     // 2D array l-value and r-value access
     template <typename I0, typename I1>
-    typename enable_if<rank==2 && all_scalar_ints<2,I0,I1>::value,
-		       typename active_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==2 && internal::all_scalar_ints<2,I0,I1>::value,
+		       typename internal::active_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1) {
       return get_scalar_reference<IsActive>(
-		    get_index_with_len(i0,J0)*J1
-		  + get_index_with_len(i1,J1));
+		    internal::get_index_with_len(i0,J0)*J1
+		  + internal::get_index_with_len(i1,J1));
     }
     template <typename I0, typename I1>
-    typename enable_if<rank==2 && all_scalar_ints<2,I0,I1>::value,
-		       typename active_const_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==2 && internal::all_scalar_ints<2,I0,I1>::value,
+		       typename internal::active_const_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1) const {
       return get_scalar_reference<IsActive>(
-		    get_index_with_len(i0,J0)*J1
-		  + get_index_with_len(i1,J1));
+		    internal::get_index_with_len(i0,J0)*J1
+		  + internal::get_index_with_len(i1,J1));
     }
   
     // 3D array l-value and r-value access
     template <typename I0, typename I1, typename I2>
-    typename enable_if<rank==3 && all_scalar_ints<3,I0,I1,I2>::value,
-		       typename active_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==3 && internal::all_scalar_ints<3,I0,I1,I2>::value,
+		       typename internal::active_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1, I2 i2) {
-      return get_scalar_reference<IsActive>(J2*(J1*get_index_with_len(i0,J0)
-						+ get_index_with_len(i1,J1))
-					    + get_index_with_len(i2,J2));
+      return get_scalar_reference<IsActive>(J2*(J1*internal::get_index_with_len(i0,J0)
+						+ internal::get_index_with_len(i1,J1))
+					    + internal::get_index_with_len(i2,J2));
     }
     template <typename I0, typename I1, typename I2>
-    typename enable_if<rank==3 && all_scalar_ints<3,I0,I1,I2>::value,
-		       typename active_const_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==3 && internal::all_scalar_ints<3,I0,I1,I2>::value,
+		       typename internal::active_const_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1, I2 i2) const {
-      return get_scalar_reference<IsActive>(J2*(J1*get_index_with_len(i0,J0)
-						+ get_index_with_len(i1,J1))
-					    + get_index_with_len(i2,J2));
+      return get_scalar_reference<IsActive>(J2*(J1*internal::get_index_with_len(i0,J0)
+						+ internal::get_index_with_len(i1,J1))
+					    + internal::get_index_with_len(i2,J2));
     }
 
     // 4D array l-value and r-value access
     template <typename I0, typename I1, typename I2, typename I3>
-    typename enable_if<rank==4 && all_scalar_ints<4,I0,I1,I2,I3>::value,
-		       typename active_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==4 && internal::all_scalar_ints<4,I0,I1,I2,I3>::value,
+		       typename internal::active_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3) {
-      return get_scalar_reference<IsActive>(J3*(J2*(J1*get_index_with_len(i0,J0)
-						    + get_index_with_len(i1,J1))
-						+ get_index_with_len(i2,J2))
-					    + get_index_with_len(i3,J3));
+      return get_scalar_reference<IsActive>(J3*(J2*(J1*internal::get_index_with_len(i0,J0)
+						    + internal::get_index_with_len(i1,J1))
+						+ internal::get_index_with_len(i2,J2))
+					    + internal::get_index_with_len(i3,J3));
     }
     template <typename I0, typename I1, typename I2, typename I3>
-    typename enable_if<rank==4 && all_scalar_ints<4,I0,I1,I2,I3>::value,
-		       typename active_const_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==4 && internal::all_scalar_ints<4,I0,I1,I2,I3>::value,
+		       typename internal::active_const_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3) const {
-      return get_scalar_reference<IsActive>(J3*(J2*(J1*get_index_with_len(i0,J0)
-						    + get_index_with_len(i1,J1))
-						+ get_index_with_len(i2,J2))
-					    + get_index_with_len(i3,J3));
+      return get_scalar_reference<IsActive>(J3*(J2*(J1*internal::get_index_with_len(i0,J0)
+						    + internal::get_index_with_len(i1,J1))
+						+ internal::get_index_with_len(i2,J2))
+					    + internal::get_index_with_len(i3,J3));
     }
 
     // 5D array l-value and r-value access
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4>
-    typename enable_if<rank==5 && all_scalar_ints<5,I0,I1,I2,I3,I4>::value,
-		       typename active_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==5 && internal::all_scalar_ints<5,I0,I1,I2,I3,I4>::value,
+		       typename internal::active_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4) {
-      return get_scalar_reference<IsActive>(J4*(J3*(J2*(J1*get_index_with_len(i0,J0)
-							+ get_index_with_len(i1,J1))
-						    + get_index_with_len(i2,J2))
-						+ get_index_with_len(i3,J3))
-					    + get_index_with_len(i4,J4));
+      return get_scalar_reference<IsActive>(J4*(J3*(J2*(J1*internal::get_index_with_len(i0,J0)
+							+ internal::get_index_with_len(i1,J1))
+						    + internal::get_index_with_len(i2,J2))
+						+ internal::get_index_with_len(i3,J3))
+					    + internal::get_index_with_len(i4,J4));
     }
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4>
-    typename enable_if<rank==5 && all_scalar_ints<5,I0,I1,I2,I3,I4>::value,
-		       typename active_const_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==5 && internal::all_scalar_ints<5,I0,I1,I2,I3,I4>::value,
+		       typename internal::active_const_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4) const {
-      return get_scalar_reference<IsActive>(J4*(J3*(J2*(J1*get_index_with_len(i0,J0)
-							+ get_index_with_len(i1,J1))
-						    + get_index_with_len(i2,J2))
-						+ get_index_with_len(i3,J3))
-					    + get_index_with_len(i4,J4));
+      return get_scalar_reference<IsActive>(J4*(J3*(J2*(J1*internal::get_index_with_len(i0,J0)
+							+ internal::get_index_with_len(i1,J1))
+						    + internal::get_index_with_len(i2,J2))
+						+ internal::get_index_with_len(i3,J3))
+					    + internal::get_index_with_len(i4,J4));
     }
 
     // 6D array l-value and r-value access
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4, typename I5>
-    typename enable_if<rank==6 && all_scalar_ints<6,I0,I1,I2,I3,I4,I5>::value,
-		       typename active_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==6 && internal::all_scalar_ints<6,I0,I1,I2,I3,I4,I5>::value,
+		       typename internal::active_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4, I5 i5) {
-      return get_scalar_reference<IsActive>(J5*(J4*(J3*(J2*(J1*get_index_with_len(i0,J0)
-							    + get_index_with_len(i1,J1))
-							+ get_index_with_len(i2,J2))
-						    + get_index_with_len(i3,J3))
-						+ get_index_with_len(i4,J4))
-					    + get_index_with_len(i5,J5));
+      return get_scalar_reference<IsActive>(J5*(J4*(J3*(J2*(J1*internal::get_index_with_len(i0,J0)
+							    + internal::get_index_with_len(i1,J1))
+							+ internal::get_index_with_len(i2,J2))
+						    + internal::get_index_with_len(i3,J3))
+						+ internal::get_index_with_len(i4,J4))
+					    + internal::get_index_with_len(i5,J5));
     }
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4, typename I5>
-    typename enable_if<rank==6 && all_scalar_ints<6,I0,I1,I2,I3,I4,I5>::value,
-		       typename active_const_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==6 && internal::all_scalar_ints<6,I0,I1,I2,I3,I4,I5>::value,
+		       typename internal::active_const_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4, I5 i5) const {
-      return get_scalar_reference<IsActive>(J5*(J4*(J3*(J2*(J1*get_index_with_len(i0,J0)
-							    + get_index_with_len(i1,J1))
-							+ get_index_with_len(i2,J2))
-						    + get_index_with_len(i3,J3))
-						+ get_index_with_len(i4,J4))
-					    + get_index_with_len(i5,J5));
+      return get_scalar_reference<IsActive>(J5*(J4*(J3*(J2*(J1*internal::get_index_with_len(i0,J0)
+							    + internal::get_index_with_len(i1,J1))
+							+ internal::get_index_with_len(i2,J2))
+						    + internal::get_index_with_len(i3,J3))
+						+ internal::get_index_with_len(i4,J4))
+					    + internal::get_index_with_len(i5,J5));
     }
 
     // 7D array l-value and r-value access
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4, typename I5, typename I6>
-    typename enable_if<rank==7 && all_scalar_ints<7,I0,I1,I2,I3,I4,I5,I6>::value,
-		       typename active_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==7 && internal::all_scalar_ints<7,I0,I1,I2,I3,I4,I5,I6>::value,
+		       typename internal::active_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4, I5 i5, I6 i6) {
-      return get_scalar_reference<IsActive>(J6*(J5*(J4*(J3*(J2*(J1*get_index_with_len(i0,J0)
-								+ get_index_with_len(i1,J1))
-							    + get_index_with_len(i2,J2))
-							+ get_index_with_len(i3,J3))
-						    + get_index_with_len(i4,J4))
-						+ get_index_with_len(i5,J5))
-					    + get_index_with_len(i6,J6));
+      return get_scalar_reference<IsActive>(J6*(J5*(J4*(J3*(J2*(J1*internal::get_index_with_len(i0,J0)
+								+ internal::get_index_with_len(i1,J1))
+							    + internal::get_index_with_len(i2,J2))
+							+ internal::get_index_with_len(i3,J3))
+						    + internal::get_index_with_len(i4,J4))
+						+ internal::get_index_with_len(i5,J5))
+					    + internal::get_index_with_len(i6,J6));
     }
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4, typename I5, typename I6>
-    typename enable_if<rank==7 && all_scalar_ints<7,I0,I1,I2,I3,I4,I5,I6>::value,
-		       typename active_const_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<rank==7 && internal::all_scalar_ints<7,I0,I1,I2,I3,I4,I5,I6>::value,
+		       typename internal::active_const_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4, I5 i5, I6 i6) const {
-      return get_scalar_reference<IsActive>(J6*(J5*(J4*(J3*(J2*(J1*get_index_with_len(i0,J0)
-								+ get_index_with_len(i1,J1))
-							    + get_index_with_len(i2,J2))
-							+ get_index_with_len(i3,J3))
-						    + get_index_with_len(i4,J4))
-						+ get_index_with_len(i5,J5))
-					    + get_index_with_len(i6,J6));
+      return get_scalar_reference<IsActive>(J6*(J5*(J4*(J3*(J2*(J1*internal::get_index_with_len(i0,J0)
+								+ internal::get_index_with_len(i1,J1))
+							    + internal::get_index_with_len(i2,J2))
+							+ internal::get_index_with_len(i3,J3))
+						    + internal::get_index_with_len(i4,J4))
+						+ internal::get_index_with_len(i5,J5))
+					    + internal::get_index_with_len(i6,J6));
     }
    
 
@@ -753,24 +752,24 @@ namespace adept {
     // First the case of a vector where we know the argument must be a
     // "range" object
     template <typename I0>
-    typename enable_if<is_ranged<rank,I0>::value,
+    typename internal::enable_if<internal::is_ranged<rank,I0>::value,
 		       Array<1,Type,IsActive> >::type
     operator()(I0 i0) {
       ExpressionSize<1> new_dim((i0.end(J0) + i0.stride(J0) - i0.begin(J0))
 				/i0.stride(J0));
       ExpressionSize<1> new_offset(i0.stride(J0));
       return Array<1,Type,IsActive>(data_, i0.begin(J0), new_dim, new_offset,
-				    GradientIndex<IsActive>::get());
+				    internal::GradientIndex<IsActive>::get());
     }
     template <typename I0>
-    typename enable_if<is_ranged<rank,I0>::value,
+    typename internal::enable_if<internal::is_ranged<rank,I0>::value,
 		       const Array<1,Type,IsActive> >::type
     operator()(I0 i0) const {
       ExpressionSize<1> new_dim((i0.end(J0) + i0.stride(J0) - i0.begin(J0))
 				/i0.stride(J0));
       ExpressionSize<1> new_offset(i0.stride(J0));
       return Array<1,Type,IsActive>(data_, i0.begin(J0), new_dim, new_offset,
-				    GradientIndex<IsActive>::get());
+				    internal::GradientIndex<IsActive>::get());
     }
 
   private:
@@ -779,17 +778,17 @@ namespace adept {
     // Treat the indexing of dimension "irank" in the case that the
     // index is of integer type
     template <int Rank, typename T, int NewRank>
-    typename enable_if<is_scalar_int<T>::value, void>::type
+    typename internal::enable_if<internal::is_scalar_int<T>::value, void>::type
     update_index(const T& i, Index& inew_rank, Index& ibegin,
 		 ExpressionSize<NewRank>& new_dim, 
 		 ExpressionSize<NewRank>& new_offset) const {
-      ibegin += get_index_with_len(i,dimension_<Rank>::value)*offset_<Rank>::value;
+      ibegin += internal::get_index_with_len(i,dimension_<Rank>::value)*offset_<Rank>::value;
     }
 
     // Treat the indexing of dimension "irank" in the case that the
     // index is a "range" object
     template <int Rank, typename T, int NewRank>
-    typename enable_if<is_range<T>::value, void>::type
+    typename internal::enable_if<internal::is_range<T>::value, void>::type
     update_index(const T& i, Index& inew_rank, Index& ibegin,
 		 ExpressionSize<NewRank>& new_dim, 
 		 ExpressionSize<NewRank>& new_offset) const {
@@ -808,10 +807,10 @@ namespace adept {
     // to 7, with separate r-value (const) and l-value (non-const)
     // versions
     template <typename I0, typename I1>
-    typename enable_if<is_ranged<rank,I0,I1>::value,
-		       Array<is_ranged<rank,I0,I1>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1>::value,
+		       Array<internal::is_ranged<rank,I0,I1>::count,Type,IsActive> >::type
     operator()(I0 i0, I1 i1) {
-      static const int new_rank = is_ranged<rank,I0,I1>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -819,14 +818,14 @@ namespace adept {
       update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
       update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
 
     template <typename I0, typename I1>
-    typename enable_if<is_ranged<rank,I0,I1>::value,
-		       const Array<is_ranged<rank,I0,I1>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1>::value,
+		       const Array<internal::is_ranged<rank,I0,I1>::count,Type,IsActive> >::type
     operator()(I0 i0, I1 i1) const {
-      static const int new_rank = is_ranged<rank,I0,I1>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -834,14 +833,14 @@ namespace adept {
       update_index<0>(i0, inew_rank, ibegin, new_dim, new_offset);
       update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
 
     template <typename I0, typename I1, typename I2>
-    typename enable_if<is_ranged<rank,I0,I1,I2>::value,
-	       Array<is_ranged<rank,I0,I1,I2>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1,I2>::value,
+	       Array<internal::is_ranged<rank,I0,I1,I2>::count,Type,IsActive> >::type
     operator()(I0 i0, I1 i1, I2 i2) {
-      static const int new_rank = is_ranged<rank,I0,I1,I2>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1,I2>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -850,14 +849,14 @@ namespace adept {
       update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
       update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
 
     template <typename I0, typename I1, typename I2>
-    typename enable_if<is_ranged<rank,I0,I1,I2>::value,
-	       const Array<is_ranged<rank,I0,I1,I2>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1,I2>::value,
+	       const Array<internal::is_ranged<rank,I0,I1,I2>::count,Type,IsActive> >::type
     operator()(I0 i0, I1 i1, I2 i2) const {
-      static const int new_rank = is_ranged<rank,I0,I1,I2>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1,I2>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -866,14 +865,14 @@ namespace adept {
       update_index<1>(i1, inew_rank, ibegin, new_dim, new_offset);
       update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
 
     template <typename I0, typename I1, typename I2, typename I3>
-    typename enable_if<is_ranged<rank,I0,I1,I2,I3>::value,
-       Array<is_ranged<rank,I0,I1,I2,I3>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1,I2,I3>::value,
+       Array<internal::is_ranged<rank,I0,I1,I2,I3>::count,Type,IsActive> >::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3) {
-      static const int new_rank = is_ranged<rank,I0,I1,I2,I3>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1,I2,I3>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -883,14 +882,14 @@ namespace adept {
       update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
       update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
 
     template <typename I0, typename I1, typename I2, typename I3>
-    typename enable_if<is_ranged<rank,I0,I1,I2,I3>::value,
-       const Array<is_ranged<rank,I0,I1,I2,I3>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1,I2,I3>::value,
+       const Array<internal::is_ranged<rank,I0,I1,I2,I3>::count,Type,IsActive> >::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3) const {
-      static const int new_rank = is_ranged<rank,I0,I1,I2,I3>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1,I2,I3>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -900,15 +899,15 @@ namespace adept {
       update_index<2>(i2, inew_rank, ibegin, new_dim, new_offset);
       update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
 
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4>
-    typename enable_if<is_ranged<rank,I0,I1,I2,I3,I4>::value,
-       Array<is_ranged<rank,I0,I1,I2,I3,I4>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1,I2,I3,I4>::value,
+       Array<internal::is_ranged<rank,I0,I1,I2,I3,I4>::count,Type,IsActive> >::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4) {
-      static const int new_rank = is_ranged<rank,I0,I1,I2,I3,I4>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1,I2,I3,I4>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -919,15 +918,15 @@ namespace adept {
       update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
       update_index<4>(i4, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
   
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4>
-    typename enable_if<is_ranged<rank,I0,I1,I2,I3,I4>::value,
-       const Array<is_ranged<rank,I0,I1,I2,I3,I4>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1,I2,I3,I4>::value,
+       const Array<internal::is_ranged<rank,I0,I1,I2,I3,I4>::count,Type,IsActive> >::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4) const {
-      static const int new_rank = is_ranged<rank,I0,I1,I2,I3,I4>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1,I2,I3,I4>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -938,15 +937,15 @@ namespace adept {
       update_index<3>(i3, inew_rank, ibegin, new_dim, new_offset);
       update_index<4>(i4, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
   
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4, typename I5>
-    typename enable_if<is_ranged<rank,I0,I1,I2,I3,I4,I5>::value,
-       Array<is_ranged<rank,I0,I1,I2,I3,I4,I5>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1,I2,I3,I4,I5>::value,
+       Array<internal::is_ranged<rank,I0,I1,I2,I3,I4,I5>::count,Type,IsActive> >::type
      operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4, I5 i5) {
-      static const int new_rank = is_ranged<rank,I0,I1,I2,I3,I4,I5>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1,I2,I3,I4,I5>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -958,16 +957,16 @@ namespace adept {
       update_index<4>(i4, inew_rank, ibegin, new_dim, new_offset);
       update_index<5>(i5, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
 
 
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4, typename I5>
-    typename enable_if<is_ranged<rank,I0,I1,I2,I3,I4,I5>::value,
-       const Array<is_ranged<rank,I0,I1,I2,I3,I4,I5>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1,I2,I3,I4,I5>::value,
+       const Array<internal::is_ranged<rank,I0,I1,I2,I3,I4,I5>::count,Type,IsActive> >::type
      operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4, I5 i5) const {
-      static const int new_rank = is_ranged<rank,I0,I1,I2,I3,I4,I5>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1,I2,I3,I4,I5>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -979,15 +978,15 @@ namespace adept {
       update_index<4>(i4, inew_rank, ibegin, new_dim, new_offset);
       update_index<5>(i5, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
 
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4, typename I5, typename I6>
-    typename enable_if<is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::value,
-       Array<is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::value,
+       Array<internal::is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::count,Type,IsActive> >::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4, I5 i5, I6 i6) {
-      static const int new_rank = is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -1000,15 +999,15 @@ namespace adept {
       update_index<5>(i5, inew_rank, ibegin, new_dim, new_offset);
       update_index<6>(i6, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
 
     template <typename I0, typename I1, typename I2, typename I3,
 	      typename I4, typename I5, typename I6>
-    typename enable_if<is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::value,
-       const Array<is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::count,Type,IsActive> >::type
+    typename internal::enable_if<internal::is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::value,
+       const Array<internal::is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::count,Type,IsActive> >::type
     operator()(I0 i0, I1 i1, I2 i2, I3 i3, I4 i4, I5 i5, I6 i6) const {
-      static const int new_rank = is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::count;
+      static const int new_rank = internal::is_ranged<rank,I0,I1,I2,I3,I4,I5,I6>::count;
       ExpressionSize<new_rank> new_dim;
       ExpressionSize<new_rank> new_offset;
       Index inew_rank = 0;
@@ -1021,7 +1020,7 @@ namespace adept {
       update_index<5>(i5, inew_rank, ibegin, new_dim, new_offset);
       update_index<6>(i6, inew_rank, ibegin, new_dim, new_offset);
       return Array<new_rank,Type,IsActive>(data_, ibegin, new_dim, new_offset,
-					   GradientIndex<IsActive>::get());
+					   internal::GradientIndex<IsActive>::get());
     }
   
     // If one or more of the indices is not guaranteed to be monotonic
@@ -1030,168 +1029,168 @@ namespace adept {
 
     // Indexing a 1D array
     template <typename I0>
-    typename enable_if<rank == 1 && is_int_vector<I0>::value
-		       && !is_ranged<rank,I0>::value,
-		       IndexedArray<rank,Type,IsActive,FixedArray,I0> >::type
+    typename internal::enable_if<rank == 1 && internal::is_int_vector<I0>::value
+		       && !internal::is_ranged<rank,I0>::value,
+		       internal::IndexedArray<rank,Type,IsActive,FixedArray,I0> >::type
     operator()(const I0& i0) {
-      return IndexedArray<rank,Type,IsActive,FixedArray,I0>(*this, i0);
+      return internal::IndexedArray<rank,Type,IsActive,FixedArray,I0>(*this, i0);
     }
     template <typename I0>
-    typename enable_if<rank == 1 && is_int_vector<I0>::value
-		       && !is_ranged<rank,I0>::value,
-		       const IndexedArray<rank,Type,IsActive,
+    typename internal::enable_if<rank == 1 && internal::is_int_vector<I0>::value
+		       && !internal::is_ranged<rank,I0>::value,
+		       const internal::IndexedArray<rank,Type,IsActive,
 					  FixedArray,I0> >::type
     operator()(const I0& i0) const {
-      return IndexedArray<rank,Type,IsActive,
+      return internal::IndexedArray<rank,Type,IsActive,
 			  FixedArray,I0>(*const_cast<FixedArray*>(this), i0);
     }
   
     // Indexing a 2D array
     template <typename I0, typename I1>
-    typename enable_if<rank == 2 && is_irreg_indexed<rank,I0,I1>::value,
-		       IndexedArray<is_irreg_indexed<rank,I0,I1>::count,
+    typename internal::enable_if<rank == 2 && internal::is_irreg_indexed<rank,I0,I1>::value,
+		       internal::IndexedArray<internal::is_irreg_indexed<rank,I0,I1>::count,
 				    Type,IsActive,FixedArray,I0,I1> >::type
     operator()(const I0& i0, const I1& i1) {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1>::count;
-      return IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1>(*this, i0, i1);
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1>::count;
+      return internal::IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1>(*this, i0, i1);
     }
     template <typename I0, typename I1>
-    typename enable_if<rank == 2 && is_irreg_indexed<rank,I0,I1>::value,
-		       const IndexedArray<is_irreg_indexed<rank,I0,I1>::count,
+    typename internal::enable_if<rank == 2 && internal::is_irreg_indexed<rank,I0,I1>::value,
+		       const internal::IndexedArray<internal::is_irreg_indexed<rank,I0,I1>::count,
 				    Type,IsActive,FixedArray,I0,I1> >::type
     operator()(const I0& i0, const I1& i1) const {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1>::count;
-      return IndexedArray<new_rank,Type,IsActive,
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1>::count;
+      return internal::IndexedArray<new_rank,Type,IsActive,
 			  FixedArray,I0,I1>(*const_cast<FixedArray*>(this), i0, i1);
     }
 
     // Indexing a 3D array
     template <typename I0, typename I1, typename I2>
-    typename enable_if<rank == 3 && is_irreg_indexed<rank,I0,I1,I2>::value,
-		       IndexedArray<is_irreg_indexed<rank,I0,I1,I2>::count,
+    typename internal::enable_if<rank == 3 && internal::is_irreg_indexed<rank,I0,I1,I2>::value,
+		       internal::IndexedArray<internal::is_irreg_indexed<rank,I0,I1,I2>::count,
 				    Type,IsActive,FixedArray,I0,I1,I2> >::type
     operator()(const I0& i0, const I1& i1, const I2& i2) {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1,I2>::count;
-      return IndexedArray<new_rank,Type,IsActive,FixedArray,
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1,I2>::count;
+      return internal::IndexedArray<new_rank,Type,IsActive,FixedArray,
 			  I0,I1,I2>(*this, i0, i1, i2);
     }
     template <typename I0, typename I1, typename I2>
-    typename enable_if<rank == 3 && is_irreg_indexed<rank,I0,I1,I2>::value,
-		       const IndexedArray<is_irreg_indexed<rank,
+    typename internal::enable_if<rank == 3 && internal::is_irreg_indexed<rank,I0,I1,I2>::value,
+		       const internal::IndexedArray<internal::is_irreg_indexed<rank,
 							   I0,I1,I2>::count,
 				    Type,IsActive,FixedArray,I0,I1,I2> >::type
     operator()(const I0& i0, const I1& i1, const I2& i2) const {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1,I2>::count;
-      return IndexedArray<new_rank,Type,IsActive,FixedArray,
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1,I2>::count;
+      return internal::IndexedArray<new_rank,Type,IsActive,FixedArray,
 			  I0,I1,I2>(*const_cast<FixedArray*>(this), i0, i1, i2);
     }
 
     // Indexing a 4D array
     template <typename I0, typename I1, typename I2, typename I3>
-    typename enable_if<rank == 4 && is_irreg_indexed<rank,I0,I1,I2,I3>::value,
-		       IndexedArray<is_irreg_indexed<rank,I0,I1,I2,I3>::count,
+    typename internal::enable_if<rank == 4 && internal::is_irreg_indexed<rank,I0,I1,I2,I3>::value,
+		       internal::IndexedArray<internal::is_irreg_indexed<rank,I0,I1,I2,I3>::count,
 				    Type,IsActive,FixedArray,I0,I1,I2,I3> >::type
     operator()(const I0& i0, const I1& i1, const I2& i2, const I3& i3) {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1,I2,I3>::count;
-      return IndexedArray<new_rank,Type,IsActive,FixedArray,
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1,I2,I3>::count;
+      return internal::IndexedArray<new_rank,Type,IsActive,FixedArray,
 			  I0,I1,I2,I3>(*this, i0, i1, i2, i3);
     }
     template <typename I0, typename I1, typename I2, typename I3>
-    typename enable_if<rank == 4 && is_irreg_indexed<rank,I0,I1,I2,I3>::value,
-		       const IndexedArray<is_irreg_indexed<rank,I0,I1,
+    typename internal::enable_if<rank == 4 && internal::is_irreg_indexed<rank,I0,I1,I2,I3>::value,
+		       const internal::IndexedArray<internal::is_irreg_indexed<rank,I0,I1,
 							   I2,I3>::count,
 				    Type,IsActive,FixedArray,I0,I1,I2,I3> >::type
     operator()(const I0& i0, const I1& i1, const I2& i2, const I3& i3) const {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1,I2,I3>::count;
-      return IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1,I2,I3>::count;
+      return internal::IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,
 			  I3>(*const_cast<FixedArray*>(this), i0, i1, i2, i3);
     }
 
     // Indexing a 5D array
     template <typename I0, typename I1, typename I2, typename I3, typename I4>
-    typename enable_if<rank == 5
-		       && is_irreg_indexed<rank,I0,I1,I2,I3,I4>::value,
-		       IndexedArray<is_irreg_indexed<rank,I0,I1,I2,
+    typename internal::enable_if<rank == 5
+		       && internal::is_irreg_indexed<rank,I0,I1,I2,I3,I4>::value,
+		       internal::IndexedArray<internal::is_irreg_indexed<rank,I0,I1,I2,
 						     I3,I4>::count,
 			    Type,IsActive,FixedArray,I0,I1,I2,I3,I4> >::type
     operator()(const I0& i0, const I1& i1, const I2& i2, 
 	       const I3& i3, const I4& i4) {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1,I2,I3,
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1,I2,I3,
 						   I4>::count;
-      return IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,
+      return internal::IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,
 			  I4>(*this, i0, i1, i2, i3, i4);
     }
     template <typename I0, typename I1, typename I2, typename I3, typename I4>
-    typename enable_if<rank == 5
-		       && is_irreg_indexed<rank,I0,I1,I2,I3,I4>::value,
-		       const IndexedArray<is_irreg_indexed<rank,I0,I1,I2,
+    typename internal::enable_if<rank == 5
+		       && internal::is_irreg_indexed<rank,I0,I1,I2,I3,I4>::value,
+		       const internal::IndexedArray<internal::is_irreg_indexed<rank,I0,I1,I2,
 							   I3,I4>::count,
 				  Type,IsActive,FixedArray,I0,I1,I2,I3,I4> >::type
     operator()(const I0& i0, const I1& i1, const I2& i2, 
 	       const I3& i3, const I4& i4) const {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1,I2,I3,
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1,I2,I3,
 						   I4>::count;
-      return IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,
+      return internal::IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,
 			  I4>(*const_cast<FixedArray*>(this), i0, i1, i2, i3, i4);
     }
 
     // Indexing a 6D array
     template <typename I0, typename I1, typename I2,
 	      typename I3, typename I4, typename I5>
-    typename enable_if<rank == 6
-		       && is_irreg_indexed<rank,I0,I1,I2,I3,I4,I5>::value,
-		       IndexedArray<is_irreg_indexed<rank,I0,I1,I2,I3,
+    typename internal::enable_if<rank == 6
+		       && internal::is_irreg_indexed<rank,I0,I1,I2,I3,I4,I5>::value,
+		       internal::IndexedArray<internal::is_irreg_indexed<rank,I0,I1,I2,I3,
 							   I4,I5>::count,
 			  Type,IsActive,FixedArray,I0,I1,I2,I3,I4,I5> >::type
     operator()(const I0& i0, const I1& i1, const I2& i2, 
 	       const I3& i3, const I4& i4, const I5& i5) {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1,I2,I3,
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1,I2,I3,
 						   I4,I5>::count;
-      return IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,I4,
+      return internal::IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,I4,
 			  I5>(*this,i0,i1,i2,i3,i4,i5);
     }
     template <typename I0, typename I1, typename I2,
 	      typename I3, typename I4, typename I5>
-    typename enable_if<rank == 6
-		       && is_irreg_indexed<rank,I0,I1,I2,I3,I4,I5>::value,
-		       const IndexedArray<is_irreg_indexed<rank,I0,I1,I2,I3,
+    typename internal::enable_if<rank == 6
+		       && internal::is_irreg_indexed<rank,I0,I1,I2,I3,I4,I5>::value,
+		       const internal::IndexedArray<internal::is_irreg_indexed<rank,I0,I1,I2,I3,
 							   I4,I5>::count,
 			  Type,IsActive,FixedArray,I0,I1,I2,I3,I4,I5> >::type
     operator()(const I0& i0, const I1& i1, const I2& i2, 
 	       const I3& i3, const I4& i4, const I5& i5) const {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1,I2,I3,
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1,I2,I3,
 						   I4,I5>::count;
-      return IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,I4,
+      return internal::IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,I4,
 			  I5>(*const_cast<FixedArray*>(this),i0,i1,i2,i3,i4,i5);
     }
 
     // Indexing a 7D array
     template <typename I0, typename I1, typename I2,
 	      typename I3, typename I4, typename I5, typename I6>
-    typename enable_if<rank == 7
-		       && is_irreg_indexed<rank,I0,I1,I2,I3,I4,I5>::value,
-		       IndexedArray<is_irreg_indexed<rank,I0,I1,I2,I3,
+    typename internal::enable_if<rank == 7
+		       && internal::is_irreg_indexed<rank,I0,I1,I2,I3,I4,I5>::value,
+		       internal::IndexedArray<internal::is_irreg_indexed<rank,I0,I1,I2,I3,
 						     I4,I5,I6>::count,
 			  Type,IsActive,FixedArray,I0,I1,I2,I3,I4,I5,I6> >::type
     operator()(const I0& i0, const I1& i1, const I2& i2, const I3& i3,
 	       const I4& i4, const I5& i5, const I6& i6) {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1,I2,I3,
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1,I2,I3,
 						   I4,I5,I6>::count;
-      return IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,I4,I5,
+      return internal::IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,I4,I5,
 			  I6>(*this,i0,i1,i2,i3,i4,i5,i6);
     }
     template <typename I0, typename I1, typename I2,
 	      typename I3, typename I4, typename I5, typename I6>
-    typename enable_if<rank == 7
-		       && is_irreg_indexed<rank,I0,I1,I2,I3,I4,I5>::value,
-		       const IndexedArray<is_irreg_indexed<rank,I0,I1,I2,I3,
+    typename internal::enable_if<rank == 7
+		       && internal::is_irreg_indexed<rank,I0,I1,I2,I3,I4,I5>::value,
+		       const internal::IndexedArray<internal::is_irreg_indexed<rank,I0,I1,I2,I3,
 							   I4,I5,I6>::count,
 			  Type,IsActive,FixedArray,I0,I1,I2,I3,I4,I5,I6> >::type
     operator()(const I0& i0, const I1& i1, const I2& i2, const I3& i3,
 	       const I4& i4, const I5& i5, const I6& i6) const {
-      static const int new_rank = is_irreg_indexed<rank,I0,I1,I2,I3,
+      static const int new_rank = internal::is_irreg_indexed<rank,I0,I1,I2,I3,
 						   I4,I5,I6>::count;
-      return IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,I4,I5,
+      return internal::IndexedArray<new_rank,Type,IsActive,FixedArray,I0,I1,I2,I3,I4,I5,
 			  I6>(*const_cast<FixedArray*>(this),i0,i1,i2,i3,i4,i5,i6);
     }
 
@@ -1205,10 +1204,10 @@ namespace adept {
     // this will be slower than A(1,2,3) because each operator[]
     // creates a new array (although does not copy the data).
     template <typename T>
-    typename enable_if<is_scalar_int<T>::value && (rank > 1),
+    typename internal::enable_if<internal::is_scalar_int<T>::value && (rank > 1),
       Array<rank-1,Type,IsActive> >::type
     operator[](T i) {
-      int index = get_index_with_len(i,J0)*offset_<0>::value;
+      int index = internal::get_index_with_len(i,J0)*offset_<0>::value;
       ExpressionSize<rank-1> new_dim;
       ExpressionSize<rank-1> new_offset;
       ExpressionSize<rank> dims = dimensions();
@@ -1218,13 +1217,13 @@ namespace adept {
 	new_offset[j-1] = offs[j];
       }
       return Array<rank-1,Type,IsActive>(data_, index, new_dim, new_offset,
-					  GradientIndex<IsActive>::get());
+					  internal::GradientIndex<IsActive>::get());
     }
     
     // diag_matrix(), where *this is a 1D array, returns a DiagMatrix
     // containing the data as the diagonal pointing to the original
     // data, Can be used as an lvalue.  Defined in SpecialMatrix.h
-    SpecialMatrix<Type, internal::BandEngine<internal::ROW_MAJOR,0,0>, IsActive>
+    SpecialMatrix<Type, internal::BandEngine<ROW_MAJOR,0,0>, IsActive>
     diag_matrix();
     
     Array<1,Type,IsActive>
@@ -1243,14 +1242,14 @@ namespace adept {
 	return Array<1,Type,IsActive>(data_, offset_<1>::value*offdiag,  
 				      ExpressionSize<1>(new_dim),
 				      ExpressionSize<1>(offset_<0>::value+offset_<1>::value),
-				      GradientIndex<IsActive>::get());
+				      internal::GradientIndex<IsActive>::get());
       }
       else {
 	Index new_dim = std::min(J0+offdiag, J1);
 	return Array<1,Type,IsActive>(data_,-offset_<0>::value*offdiag,  
 				      ExpressionSize<1>(new_dim),
 				      ExpressionSize<1>(offset_<0>::value+offset_<1>::value),
-				      GradientIndex<IsActive>::get());
+				      internal::GradientIndex<IsActive>::get());
       }
     }
   
@@ -1271,7 +1270,7 @@ namespace adept {
 	Index len = iend-ibegin+1;
 	ExpressionSize<2> dim(len,len);
 	return Array<2,Type,IsActive>(data_, ibegin*(offset_<0>::value + offset_<1>::value),
-				      dim, offset(), GradientIndex<IsActive>::get());
+				      dim, offset(), internal::GradientIndex<IsActive>::get());
       }
     }
 
@@ -1637,7 +1636,7 @@ namespace adept {
 
     std::string expression_string_() const {
       if (true) {
-	std::string a = fixed_array_helper<rank,IsActive>().name();
+	std::string a = internal::fixed_array_helper<rank,IsActive>().name();
 	a += dimensions().str();
 	return a;
       }
@@ -1651,7 +1650,7 @@ namespace adept {
     // The same as operator=(inactive scalar) but does not put
     // anything on the stack
     template <typename RType>
-    typename enable_if<is_not_expression<RType>::value, FixedArray&>::type
+    typename internal::enable_if<internal::is_not_expression<RType>::value, FixedArray&>::type
     set_value(RType x) {
       if (!empty()) {
 	assign_inactive_scalar_<rank,false>(x);
@@ -1663,7 +1662,7 @@ namespace adept {
     // Return the gradient index for the first element in the array,
     // or -1 if not active
     Index gradient_index() const {
-      return GradientIndex<IsActive>::get();
+      return internal::GradientIndex<IsActive>::get();
     }
 
     std::ostream& print(std::ostream& os) const {
@@ -1708,13 +1707,13 @@ namespace adept {
     // Return inactive array linked to original data
     Array<rank, Type, false> inactive_link() {
       return Array<rank, Type, false>(data_, 0, dimensions(), offset(),
-				       GradientIndex<IsActive>::get());
+				       internal::GradientIndex<IsActive>::get());
     }
 
     // Transpose helper functions
   protected:
     template<int MyRank>
-    typename enable_if<MyRank == 2, Array<2,Type,IsActive> >::type
+    typename internal::enable_if<MyRank == 2, Array<2,Type,IsActive> >::type
     my_T() {
       // Transpose 2D array: create output array initially as link
       // to input array
@@ -1723,7 +1722,7 @@ namespace adept {
       return out.in_place_transpose();
     }
     template<int MyRank>
-    typename enable_if<MyRank == 2, const Array<2,Type,IsActive> >::type
+    typename internal::enable_if<MyRank == 2, const Array<2,Type,IsActive> >::type
     my_T() const {
       // Transpose 2D array: create output array initially as link
       // to input array
@@ -1780,7 +1779,7 @@ namespace adept {
 	}
       }
       return Array<rank,Type,IsActive>(data_, 0, new_dims, new_offset,
-					GradientIndex<IsActive>::get());
+					internal::GradientIndex<IsActive>::get());
     }
 
     Array<rank,Type,IsActive> permute(const ExpressionSize<rank>& idim) {
@@ -1789,7 +1788,7 @@ namespace adept {
 
     // Up to 7 dimensions we can specify the dimensions as separate
     // arguments
-    typename enable_if<(rank < 7), Array<rank,Type,IsActive> >::type
+    typename internal::enable_if<(rank < 7), Array<rank,Type,IsActive> >::type
     permute(Index i0, Index i1, Index i2 = -1, Index i3 = -1, Index i4 = -1,
 	    Index i5 = -1, Index i6 = -1) {
       Index idim[7] = {i0, i1, i2, i3, i4, i5, i6};
@@ -1895,14 +1894,14 @@ namespace adept {
 
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
-				  ScratchVector<NScratch>& scratch) const {
+				  internal::ScratchVector<NScratch>& scratch) const {
       return data_[loc[MyArrayNum]];
 
     }
 
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     Type value_stored_(const ExpressionSize<NArrays>& loc,
-		       const ScratchVector<NScratch>& scratch) const {
+		       const internal::ScratchVector<NScratch>& scratch) const {
       return data_[loc[MyArrayNum]];
     }
 
@@ -1916,12 +1915,12 @@ namespace adept {
     // to the operation stack (or 1.0 if no multiplier is specified
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     void calc_gradient_(Stack& stack, const ExpressionSize<NArrays>& loc,
-			const ScratchVector<NScratch>& scratch) const {
+			const internal::ScratchVector<NScratch>& scratch) const {
       stack.push_rhs(1.0, gradient_index() + loc[MyArrayNum]);
     }
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, typename MyType>
     void calc_gradient_(Stack& stack, const ExpressionSize<NArrays>& loc,
-			const ScratchVector<NScratch>& scratch,
+			const internal::ScratchVector<NScratch>& scratch,
 			const MyType& multiplier) const {
       stack.push_rhs(multiplier, gradient_index() + loc[MyArrayNum]);
     }
@@ -1972,7 +1971,7 @@ namespace adept {
     // array. This is a generic one that copies the number but treats
     // the present array as passive.
     template <int LocalRank, bool LocalIsActive, typename X>
-    typename enable_if<!LocalIsActive,void>::type
+    typename internal::enable_if<!LocalIsActive,void>::type
     assign_inactive_scalar_(X x) {
       ExpressionSize<LocalRank> i(0);
       Index index = 0;
@@ -1992,7 +1991,7 @@ namespace adept {
 
     // An active array being assigned the value of an inactive scalar
     template <int LocalRank, bool LocalIsActive, typename X>
-    typename enable_if<LocalIsActive,void>::type
+    typename internal::enable_if<LocalIsActive,void>::type
     assign_inactive_scalar_(X x) {
       // If not recording we call the inactive version instead
 #ifdef ADEPT_RECORDING_PAUSABLE
@@ -2025,11 +2024,11 @@ namespace adept {
     // advantage in specialist behaviour depending on the rank of the
     // array
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
-    typename enable_if<!LocalIsActive,void>::type
+    typename internal::enable_if<!LocalIsActive,void>::type
     assign_expression_(const E& rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<LocalRank> i(0);
-      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
+      ExpressionSize<internal::expr_cast<E>::n_arrays> ind(0);
       Index index = 0;
       int my_rank;
       static const int last = LocalRank-1;
@@ -2046,7 +2045,7 @@ namespace adept {
     }
 
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
-    typename enable_if<LocalIsActive && EIsActive,void>::type
+    typename internal::enable_if<LocalIsActive && EIsActive,void>::type
     assign_expression_(const E& rhs) {
       // If recording has been paused then call the inactive version
 #ifdef ADEPT_RECORDING_PAUSABLE
@@ -2056,12 +2055,12 @@ namespace adept {
       }
 #endif
       ExpressionSize<LocalRank> i(0);
-      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
+      ExpressionSize<internal::expr_cast<E>::n_arrays> ind(0);
       Index index = 0;
       int my_rank;
       static const int last = LocalRank-1;
 
-      ADEPT_ACTIVE_STACK->check_space(expr_cast<E>::n_active * size());
+      ADEPT_ACTIVE_STACK->check_space(internal::expr_cast<E>::n_active * size());
       do {
 	i[last] = 0;
 	rhs.set_location(i, ind);
@@ -2076,7 +2075,7 @@ namespace adept {
     }
 
     template<int LocalRank, bool LocalIsActive, bool EIsActive, class E>
-    typename enable_if<LocalIsActive && !EIsActive,void>::type
+    typename internal::enable_if<LocalIsActive && !EIsActive,void>::type
     assign_expression_(const E& rhs) {
       // If recording has been paused then call the inactive version
 #ifdef ADEPT_RECORDING_PAUSABLE
@@ -2086,7 +2085,7 @@ namespace adept {
       }
 #endif
       ExpressionSize<LocalRank> i(0);
-      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
+      ExpressionSize<internal::expr_cast<E>::n_arrays> ind(0);
       Index index = 0;
       int my_rank;
       Index gradient_ind = gradient_index();
@@ -2108,10 +2107,10 @@ namespace adept {
 
 
     template<bool LocalIsActive, class B, typename C>
-    typename enable_if<!LocalIsActive,void>::type
+    typename internal::enable_if<!LocalIsActive,void>::type
     assign_conditional_inactive_scalar_(const B& bool_expr, C rhs) {
       ExpressionSize<rank> i(0);
-      ExpressionSize<expr_cast<B>::n_arrays> bool_ind(0);
+      ExpressionSize<internal::expr_cast<B>::n_arrays> bool_ind(0);
       Index index = 0;
       int my_rank;
       static const int last = rank-1;
@@ -2131,7 +2130,7 @@ namespace adept {
     }
 
     template<bool LocalIsActive, class B, typename C>
-    typename enable_if<LocalIsActive,void>::type
+    typename internal::enable_if<LocalIsActive,void>::type
     assign_conditional_inactive_scalar_(const B& bool_expr, C rhs) {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (! ADEPT_ACTIVE_STACK->is_recording()) {
@@ -2141,7 +2140,7 @@ namespace adept {
 #endif
 
       ExpressionSize<rank> i(0);
-      ExpressionSize<expr_cast<B>::n_arrays> bool_ind(0);
+      ExpressionSize<internal::expr_cast<B>::n_arrays> bool_ind(0);
       Index index = 0;
       int my_rank;
       static const int last = rank-1;
@@ -2162,11 +2161,11 @@ namespace adept {
     }
 
     template<bool LocalIsActive, class B, class C>
-    typename enable_if<!LocalIsActive,void>::type
+    typename internal::enable_if<!LocalIsActive,void>::type
     assign_conditional_(const B& bool_expr, const C& rhs) {
       ExpressionSize<rank> i(0);
-      ExpressionSize<expr_cast<B>::n_arrays> bool_ind(0);
-      ExpressionSize<expr_cast<C>::n_arrays> rhs_ind(0);
+      ExpressionSize<internal::expr_cast<B>::n_arrays> bool_ind(0);
+      ExpressionSize<internal::expr_cast<C>::n_arrays> rhs_ind(0);
       Index index = 0;
       int my_rank;
       static const int last = rank-1;
@@ -2196,7 +2195,7 @@ namespace adept {
 
 
     template<bool LocalIsActive, class B, class C>
-    typename enable_if<LocalIsActive,void>::type
+    typename internal::enable_if<LocalIsActive,void>::type
     assign_conditional_(const B& bool_expr, const C& rhs) {
       // If recording has been paused then call the inactive version
 #ifdef ADEPT_RECORDING_PAUSABLE
@@ -2206,14 +2205,14 @@ namespace adept {
       }
 #endif
       ExpressionSize<rank> i(0);
-      ExpressionSize<expr_cast<B>::n_arrays> bool_ind(0);
-      ExpressionSize<expr_cast<C>::n_arrays> rhs_ind(0);
+      ExpressionSize<internal::expr_cast<B>::n_arrays> bool_ind(0);
+      ExpressionSize<internal::expr_cast<C>::n_arrays> rhs_ind(0);
       Index index = 0;
       int my_rank;
       static const int last = rank-1;
       bool is_gap = false;
 
-      ADEPT_ACTIVE_STACK->check_space(expr_cast<C>::n_active * size());
+      ADEPT_ACTIVE_STACK->check_space(internal::expr_cast<C>::n_active * size());
       do {
 	i[last] = 0;
 	rhs.set_location(i, rhs_ind);
@@ -2257,7 +2256,7 @@ namespace adept {
   inline
   std::ostream&
   operator<<(std::ostream& os, const FixedArray<Type,IsActive,J0,J1,J2,J3,J4,J5,J6>& A) {
-    const Array<fixed_array<J0,J1,J2,J3,J4,J5,J6>::rank,Type,IsActive> B = A; // link to original data
+    const Array<internal::fixed_array<J0,J1,J2,J3,J4,J5,J6>::rank,Type,IsActive> B = A; // link to original data
     return B.print(os);
   }
 

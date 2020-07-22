@@ -24,8 +24,6 @@
 
 namespace adept {
 
-  using namespace internal;
-
   // ---------------------------------------------------------------------
   // Definition of ActiveReference class
   // ---------------------------------------------------------------------
@@ -49,7 +47,7 @@ namespace adept {
     // expression to be discerned at compile time
     static const bool is_active = true;
     static const int  rank      = 0;
-    static const int  n_active  = 1 + is_complex<Type>::value;
+    static const int  n_active  = 1 + internal::is_complex<Type>::value;
     static const int  n_arrays  = 0;
     static const int  n_scratch = 0;
 
@@ -90,7 +88,7 @@ namespace adept {
 	   
     // Assignment operator with an inactive variable on the rhs
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value,
+    typename internal::enable_if<internal::is_not_expression<PType>::value,
 		       ActiveReference&>::type
     operator=(const PType& rhs) {
       val_ = rhs;
@@ -155,7 +153,7 @@ namespace adept {
     
     // Assignment operator with an expression on the rhs
     template <typename AType, class E>
-    typename enable_if<E::is_active && E::rank==0, ActiveReference&>::type
+    typename internal::enable_if<E::is_active && E::rank==0, ActiveReference&>::type
     operator=(const Expression<AType, E>& rhs) {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (ADEPT_ACTIVE_STACK->is_recording()) {
@@ -177,46 +175,46 @@ namespace adept {
     // All the compound assignment operators are unpacked, i.e. a+=b
     // becomes a=a+b; first for an Expression on the rhs
     template<typename AType, class E>
-    typename enable_if<E::rank==0, ActiveReference&>::type
+    typename internal::enable_if<E::rank==0, ActiveReference&>::type
     operator+=(const Expression<AType,E>& rhs) {
       return *this = (*this + rhs);
     }
     template<typename AType, class E>
-    typename enable_if<E::rank==0, ActiveReference&>::type
+    typename internal::enable_if<E::rank==0, ActiveReference&>::type
     operator-=(const Expression<AType,E>& rhs) {
       return *this = (*this - rhs);
     }
     template<typename AType, class E>
-    typename enable_if<E::rank==0, ActiveReference&>::type
+    typename internal::enable_if<E::rank==0, ActiveReference&>::type
     operator*=(const Expression<AType,E>& rhs) {
       return *this = (*this * rhs);
     }
     template<typename AType, class E>
-    typename enable_if<E::rank==0, ActiveReference&>::type
+    typename internal::enable_if<E::rank==0, ActiveReference&>::type
     operator/=(const Expression<AType,E>& rhs) {
       return *this = (*this / rhs);
     }
 
     // And likewise for a passive scalar on the rhs
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, ActiveReference&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, ActiveReference&>::type
     operator+=(const PType& rhs) {
       val_ += rhs;
       return *this;
     }
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, ActiveReference&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, ActiveReference&>::type
     operator-=(const PType& rhs) {
       val_ -= rhs;
       return *this;
     }
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, ActiveReference&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, ActiveReference&>::type
     operator*=(const PType& rhs) {
       return *this = (*this * rhs);
     }
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, ActiveReference&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, ActiveReference&>::type
     operator/=(const PType& rhs) {
       return *this = (*this / rhs);
     }
@@ -395,18 +393,18 @@ namespace adept {
     
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
-				ScratchVector<NScratch>& scratch) const
+				internal::ScratchVector<NScratch>& scratch) const
     { return val_; }
 
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     Type value_stored_(const ExpressionSize<NArrays>& loc,
-		     const ScratchVector<NScratch>& scratch) const
+		     const internal::ScratchVector<NScratch>& scratch) const
     { return val_; }
 
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     void calc_gradient_(Stack& stack, 
 			const ExpressionSize<NArrays>& loc,
-			const ScratchVector<NScratch>& scratch) const {
+			const internal::ScratchVector<NScratch>& scratch) const {
       stack.push_rhs(1.0, gradient_index_);
     }
 
@@ -414,7 +412,7 @@ namespace adept {
 	      int NArrays, int NScratch, typename MyType>
     void calc_gradient_(Stack& stack, 
 			const ExpressionSize<NArrays>& loc,
-			const ScratchVector<NScratch>& scratch,
+			const internal::ScratchVector<NScratch>& scratch,
 			const MyType& multiplier) const {
       stack.push_rhs(multiplier, gradient_index_);
     }

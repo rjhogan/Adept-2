@@ -29,16 +29,15 @@
 #include <adept/FixedArray.h>
 
 namespace adept {
-  using namespace adept::internal;
+
+  // -------------------------------------------------------------------
+  // SpecialMatrix Engine helper classes
+  // -------------------------------------------------------------------
+  enum SymmMatrixOrientation {
+    ROW_LOWER_COL_UPPER=0, ROW_UPPER_COL_LOWER=1
+  };
 
   namespace internal {
-
-    // -------------------------------------------------------------------
-    // SpecialMatrix Engine helper classes
-    // -------------------------------------------------------------------
-    enum SymmMatrixOrientation {
-      ROW_LOWER_COL_UPPER=0, ROW_UPPER_COL_LOWER=1
-    };
 
     // -------------------------------------------------------------------
     // Conventional matrix storage engine
@@ -93,14 +92,14 @@ namespace adept {
       // Return value at row i, column j as an rvalue, first in the
       // case of an inactive array...
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type>::type
+      typename internal::enable_if<!IsActive,Type>::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		 Index gradient_index, const Type* data) const {
 	return data[index(i,j,offset)]; 
       }
       // ...now in the case of an active array.
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,Active<Type> >::type
+      typename internal::enable_if<IsActive,Active<Type> >::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, const Type* data) const {
 	return Active<Type>(data[index(i,j,offset)]);
@@ -108,14 +107,14 @@ namespace adept {
       // Return value at row i, column j as an lvalue, first in the
       // case of an inactive array...
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type&>::type
+      typename internal::enable_if<!IsActive,Type&>::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	return data[index(i,j,offset)]; 
       }
       // ...now in the case of an active array.
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,ActiveReference<Type> >::type
+      typename internal::enable_if<IsActive,ActiveReference<Type> >::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	Index ind = index(i,j,offset);
@@ -189,25 +188,25 @@ namespace adept {
       }
 
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type>::type
+      typename internal::enable_if<!IsActive,Type>::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		 Index gradient_index, const Type* data) const {
 	return data[index(i,j,offset)]; 
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,Active<Type> >::type
+      typename internal::enable_if<IsActive,Active<Type> >::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, const Type* data) const {
 	return Active<Type>(data[index(i,j,offset)]);
       }
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type&>::type
+      typename internal::enable_if<!IsActive,Type&>::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	return data[index(i,j,offset)]; 
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,ActiveReference<Type> >::type
+      typename internal::enable_if<IsActive,ActiveReference<Type> >::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	Index ind = index(i,j,offset);
@@ -282,7 +281,7 @@ namespace adept {
       }
       typedef BandEngine<COL_MAJOR,UDiags,LDiags> transpose_engine;
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type>::type
+      typename internal::enable_if<!IsActive,Type>::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		 Index gradient_index, const Type* data) const {
 	Index off = j-i;
@@ -296,7 +295,7 @@ namespace adept {
 	return val;
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,Active<Type> >::type
+      typename internal::enable_if<IsActive,Active<Type> >::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, const Type* data) const {
 	Index off = j-i;
@@ -308,7 +307,7 @@ namespace adept {
 	}
       }
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type&>::type
+      typename internal::enable_if<!IsActive,Type&>::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	Index off = j-i;
@@ -321,7 +320,7 @@ namespace adept {
 	}
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,ActiveReference<Type> >::type
+      typename internal::enable_if<IsActive,ActiveReference<Type> >::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	Index off = j-i;
@@ -416,7 +415,7 @@ namespace adept {
       }
       typedef BandEngine<ROW_MAJOR,UDiags,LDiags> transpose_engine;
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type>::type
+      typename internal::enable_if<!IsActive,Type>::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		 Index gradient_index, const Type* data) const {
 	Index off = j-i;
@@ -430,7 +429,7 @@ namespace adept {
 	return val;
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,Active<Type> >::type
+      typename internal::enable_if<IsActive,Active<Type> >::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, const Type* data) const {
 	Index off = j-i;
@@ -442,7 +441,7 @@ namespace adept {
 	}
       }
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,ActiveReference<Type> >::type
+      typename internal::enable_if<!IsActive,ActiveReference<Type> >::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	Index off = j-i;
@@ -455,7 +454,7 @@ namespace adept {
 	}
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,ActiveReference<Type> >::type
+      typename internal::enable_if<IsActive,ActiveReference<Type> >::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	Index off = j-i;
@@ -526,25 +525,25 @@ namespace adept {
       }
       typedef SymmEngine<ROW_LOWER_COL_UPPER> transpose_engine;
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type>::type
+      typename internal::enable_if<!IsActive,Type>::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		 Index gradient_index, const Type* data) const {
 	return data[index(i,j,offset)]; 
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,Active<Type> >::type
+      typename internal::enable_if<IsActive,Active<Type> >::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, const Type* data) const {
 	return Active<Type>(data[index(i,j,offset)]);
       }
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type&>::type
+      typename internal::enable_if<!IsActive,Type&>::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	return data[index(i,j,offset)]; 
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,ActiveReference<Type> >::type
+      typename internal::enable_if<IsActive,ActiveReference<Type> >::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	Index ind = index(i,j,offset);
@@ -607,25 +606,25 @@ namespace adept {
 	return -offdiag;
       }
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type>::type
+      typename internal::enable_if<!IsActive,Type>::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		 Index gradient_index, const Type* data) const {
 	return data[index(i,j,offset)]; 
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,Active<Type> >::type
+      typename internal::enable_if<IsActive,Active<Type> >::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, const Type* data) const {
 	return Active<Type>(data[index(i,j,offset)]);
       }
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type&>::type
+      typename internal::enable_if<!IsActive,Type&>::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	return data[index(i,j,offset)]; 
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,ActiveReference<Type> >::type
+      typename internal::enable_if<IsActive,ActiveReference<Type> >::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	Index ind = index(i,j,offset);
@@ -684,7 +683,7 @@ namespace adept {
 	}
       }
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type>::type
+      typename internal::enable_if<!IsActive,Type>::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		 Index gradient_index, const Type* data) const {
 	if (i >= j) {
@@ -695,7 +694,7 @@ namespace adept {
 	}
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,Active<Type> >::type
+      typename internal::enable_if<IsActive,Active<Type> >::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, const Type* data) const {
 	if (i >= j) {
@@ -706,7 +705,7 @@ namespace adept {
 	}
       }
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type&>::type
+      typename internal::enable_if<!IsActive,Type&>::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	if (i >= j) {
@@ -718,7 +717,7 @@ namespace adept {
 	}
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,ActiveReference<Type> >::type
+      typename internal::enable_if<IsActive,ActiveReference<Type> >::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	if (i >= j) {
@@ -812,7 +811,7 @@ namespace adept {
       }
 
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type>::type
+      typename internal::enable_if<!IsActive,Type>::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		 Index gradient_index, const Type* data) const {
 	if (i <= j) {
@@ -823,7 +822,7 @@ namespace adept {
 	}
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,Active<Type> >::type
+      typename internal::enable_if<IsActive,Active<Type> >::type
       get_scalar(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, const Type* data) const {
 	if (i <= j) {
@@ -834,7 +833,7 @@ namespace adept {
 	}
       }
       template <bool IsActive, typename Type>
-      typename enable_if<!IsActive,Type&>::type
+      typename internal::enable_if<!IsActive,Type&>::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	if (i <= j) {
@@ -846,7 +845,7 @@ namespace adept {
 	}
       }
       template <bool IsActive, typename Type>
-      typename enable_if<IsActive,ActiveReference<Type> >::type
+      typename internal::enable_if<IsActive,ActiveReference<Type> >::type
       get_reference(Index i, Index j, Index dim, Index offset, 
 		    Index gradient_index, Type* data) {
 	if (i <= j) {
@@ -934,7 +933,7 @@ namespace adept {
     static const bool is_active  = IsActive;
     static const bool is_lvalue  = true;
     static const int  rank       = 2;
-    static const int  n_active   = IsActive * (1 + is_complex<Type>::value);
+    static const int  n_active   = IsActive * (1 + internal::is_complex<Type>::value);
     static const int  n_scratch  = 0;
     static const int  n_arrays   = Engine::my_n_arrays;
     static const bool is_vectorizable = false;
@@ -960,19 +959,19 @@ namespace adept {
       : data_(data), storage_(s), dimension_(dim), offset_(offset) {
       if (storage_) {
 	storage_->add_link(); 
-	GradientIndex<IsActive>::set(data_, storage_);
+	internal::GradientIndex<IsActive>::set(data_, storage_);
       }
       else {
 	// It is an error if an active object gets here since it will
 	// not have a valid gradient index
-	GradientIndex<IsActive>::assert_inactive();
+	internal::GradientIndex<IsActive>::assert_inactive();
       }
     }
     // Similar to the above, but with the gradient index supplied explicitly,
     // needed when an active FixedArray is being sliced
     SpecialMatrix(const Type* data0, Index data_offset, Index dim, Index offset,
 		  Index gradient_index0)
-      : GradientIndex<IsActive>(gradient_index0, data_offset),
+      : internal::GradientIndex<IsActive>(gradient_index0, data_offset),
 	data_(const_cast<Type*>(data0)+data_offset), storage_(0), dimension_(dim), offset_(offset) { }
 
 
@@ -994,7 +993,7 @@ namespace adept {
     // data, and the responsibility for deallocating the data will
     // then pass to the SpecialMatrix in the calling function.
     SpecialMatrix(SpecialMatrix& rhs) 
-      : GradientIndex<IsActive>(rhs.gradient_index()),
+      : internal::GradientIndex<IsActive>(rhs.gradient_index()),
         data_(rhs.data()), storage_(rhs.storage()), 
 	dimension_(rhs.dimension()), offset_(rhs.offset()) 
     { if (storage_) storage_->add_link(); }
@@ -1002,7 +1001,7 @@ namespace adept {
     // Copy constructor with const argument does exactly the same
     // thing
     SpecialMatrix(const SpecialMatrix& rhs) 
-      : GradientIndex<IsActive>(rhs.gradient_index()),
+      : internal::GradientIndex<IsActive>(rhs.gradient_index()),
         dimension_(rhs.dimension()), offset_(rhs.offset())
     { link_(const_cast<SpecialMatrix&>(rhs)); }
   private:
@@ -1021,7 +1020,7 @@ namespace adept {
     template<typename EType, class E>
     explicit
     SpecialMatrix(const Expression<EType, E>& rhs,
-	  typename enable_if<E::rank == 2,int>::type = 0)
+	  typename internal::enable_if<E::rank == 2,int>::type = 0)
       : data_(0), storage_(0), dimension_(0)
     { *this = rhs; }
 
@@ -1047,7 +1046,7 @@ namespace adept {
 
     // Assignment to an array expression of the same rank
     template <typename EType, class E>
-    typename enable_if<E::rank == 2, SpecialMatrix&>::type
+    typename internal::enable_if<E::rank == 2, SpecialMatrix&>::type
     operator=(const Expression<EType,E>& rhs) {
 #ifndef ADEPT_NO_DIMENSION_CHECKING
       ExpressionSize<2> dims;
@@ -1059,7 +1058,7 @@ namespace adept {
       else if (empty()) {
 	resize(dims[0], dims[1]);
       }
-      else if (!compatible(dims, dimensions())) {
+      else if (!internal::compatible(dims, dimensions())) {
 	std::string str = "Expr";
 	str += dims.str() + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
@@ -1106,7 +1105,7 @@ namespace adept {
     // Assignment to an array expression of the same rank in which the
     // activeness of the right-hand-side is ignored
     template <typename EType, class E>
-    typename enable_if<E::rank == 2, SpecialMatrix&>::type
+    typename internal::enable_if<E::rank == 2, SpecialMatrix&>::type
     assign_inactive(const Expression<EType,E>& rhs) {
       ExpressionSize<2> dims;
       if (!rhs.get_dimensions(dims)) {
@@ -1117,7 +1116,7 @@ namespace adept {
       else if (empty()) {
 	resize(dims[0], dims[1]);
       }
-      else if (!compatible(dims, dimensions())) {
+      else if (!internal::compatible(dims, dimensions())) {
 	std::string str = "Expr";
 	str += dims.str() + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
@@ -1144,7 +1143,7 @@ namespace adept {
 
     // Assignment to a single value copies to every element
     template <typename RType>
-    typename enable_if<is_not_expression<RType>::value, SpecialMatrix&>::type
+    typename internal::enable_if<internal::is_not_expression<RType>::value, SpecialMatrix&>::type
     operator=(RType rhs) {
       if (!empty()) {
 	assign_inactive_scalar<IsActive>(rhs);
@@ -1155,7 +1154,7 @@ namespace adept {
     // Assign active scalar expression to an active array by first
     // converting the RHS to an active scalar
     template <typename EType, class E>
-    typename enable_if<E::rank == 0 && IsActive && !E::is_lvalue,
+    typename internal::enable_if<E::rank == 0 && IsActive && !E::is_lvalue,
       SpecialMatrix&>::type
       operator=(const Expression<EType,E>& rhs) {
       Active<EType> x = rhs;
@@ -1166,7 +1165,7 @@ namespace adept {
   
     // An active array being assigned to an active scalar
     template <typename PType>
-    typename enable_if<!internal::is_active<PType>::value && IsActive, SpecialMatrix&>::type
+    typename internal::enable_if<!internal::is_active<PType>::value && IsActive, SpecialMatrix&>::type
     operator=(const Active<PType>& rhs) {
       // If not recording we call the inactive version instead
 #ifdef ADEPT_RECORDING_PAUSABLE
@@ -1216,22 +1215,22 @@ namespace adept {
 
     // And likewise for a passive scalar on the rhs
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, SpecialMatrix&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, SpecialMatrix&>::type
     operator+=(const PType& rhs) {
       return *this = (noalias(*this) + rhs);
     }
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, SpecialMatrix&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, SpecialMatrix&>::type
     operator-=(const PType& rhs) {
       return *this = (noalias(*this) - rhs);
     }
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, SpecialMatrix&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, SpecialMatrix&>::type
     operator*=(const PType& rhs) {
       return *this = (noalias(*this) * rhs);
     }
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, SpecialMatrix&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, SpecialMatrix&>::type
     operator/=(const PType& rhs) {
       return *this = (noalias(*this) / rhs);
     }
@@ -1242,19 +1241,19 @@ namespace adept {
     // -------------------------------------------------------------------
   
     // Get l-value of the element at the specified coordinates
-    typename active_reference<Type,IsActive>::type
+    typename internal::active_reference<Type,IsActive>::type
     get_lvalue(const ExpressionSize<2>& i) {
       return get_lvalue_<IsActive>(Engine::index(i[0],i[1],offset_));
     }
     
   protected:
     template <bool MyIsActive>
-    typename enable_if<MyIsActive, ActiveReference<Type> >::type
+    typename internal::enable_if<MyIsActive, ActiveReference<Type> >::type
     get_lvalue_(const Index& loc) {
       return ActiveReference<Type>(data_[loc], gradient_index()+loc);
     }
     template <bool MyIsActive>
-    typename enable_if<!MyIsActive, Type&>::type
+    typename internal::enable_if<!MyIsActive, Type&>::type
     get_lvalue_(const Index& loc) {
       return data_[loc];
     }
@@ -1266,21 +1265,21 @@ namespace adept {
     // element, while active arrays return an ActiveReference<Type>
     // object.
     template <typename I0, typename I1>
-    typename enable_if<all_scalar_ints<2,I0,I1>::value,
-		       typename active_reference<Type,IsActive>::type>::type
+    typename internal::enable_if<internal::all_scalar_ints<2,I0,I1>::value,
+		       typename internal::active_reference<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1) {
       return Engine::template 
-	get_reference<IsActive>(get_index_with_len(i0,dimension_),
-				get_index_with_len(i1,dimension_),
+	get_reference<IsActive>(internal::get_index_with_len(i0,dimension_),
+				internal::get_index_with_len(i1,dimension_),
 				dimension_, offset_, 
 				gradient_index(), data_);
     }
     template <typename I0, typename I1>
-    typename enable_if<all_scalar_ints<2,I0,I1>::value,
-		       typename active_scalar<Type,IsActive>::type>::type
+    typename internal::enable_if<internal::all_scalar_ints<2,I0,I1>::value,
+				 typename internal::active_scalar<Type,IsActive>::type>::type
     operator()(I0 i0, I1 i1) const {
-      return Engine::template get_scalar<IsActive>(get_index_with_len(i0,dimension_),
-						   get_index_with_len(i1,dimension_),
+      return Engine::template get_scalar<IsActive>(internal::get_index_with_len(i0,dimension_),
+						   internal::get_index_with_len(i1,dimension_),
 						   dimension_, offset_, 
 						   gradient_index(), data_);
     }
@@ -1291,12 +1290,12 @@ namespace adept {
     // for all possible numbers of arguments
   
     template <typename I0, typename I1>
-    typename enable_if<is_indexed<Rank,I0,I1>::value
-                       && !is_ranged<Rank,I0,I1>::value,
-		       IndexedSpecialMatrix<is_indexed<Rank,I0,I1>::count,
+    typename internal::enable_if<internal::is_indexed<Rank,I0,I1>::value
+                       && !internal::is_ranged<Rank,I0,I1>::value,
+		       IndexedSpecialMatrix<internal::is_indexed<Rank,I0,I1>::count,
 				    Type,IsActive,SpecialMatrix,I0,I1> >::type
     operator()(const I0& i0, const I1& i1) {
-      static const int new_rank = is_indexed<Rank,I0,I1>::count;
+      static const int new_rank = internal::is_indexed<Rank,I0,I1>::count;
       return IndexedSpecialMatrix<new_rank,Type,IsActive,SpecialMatrix,I0,I1>(*this, i0, i1);
     }
     */
@@ -1490,7 +1489,7 @@ namespace adept {
       data_ = 0;
       dimension_ = 0;
       offset_ = 0;
-      GradientIndex<IsActive>::clear();
+      internal::GradientIndex<IsActive>::clear();
     }
 
     // Resize an array
@@ -1516,7 +1515,7 @@ namespace adept {
 	offset_ = Engine::pack_offset(dim);
 	storage_ = new Storage<Type>(Engine::data_size(dimension_,offset_), IsActive);
 	data_ = storage_->data();
-	GradientIndex<IsActive>::set(data_, storage_);
+	internal::GradientIndex<IsActive>::set(data_, storage_);
       }
     }
 
@@ -1559,7 +1558,7 @@ namespace adept {
     // The same as operator=(inactive scalar) but does not put
     // anything on the stack
     template <typename RType>
-    typename enable_if<is_not_expression<RType>::value, SpecialMatrix&>::type
+    typename internal::enable_if<internal::is_not_expression<RType>::value, SpecialMatrix&>::type
     set_value(RType x) {
       if (!empty()) {
 	assign_inactive_scalar<false>(x);
@@ -1575,7 +1574,7 @@ namespace adept {
     // Return the gradient index for the first element in the array,
     // or -1 if not active
     Index gradient_index() const {
-      return GradientIndex<IsActive>::get();
+      return internal::GradientIndex<IsActive>::get();
     }
 
     /*
@@ -1698,14 +1697,14 @@ namespace adept {
 
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
-				  ScratchVector<NScratch>& scratch) const {
+				  internal::ScratchVector<NScratch>& scratch) const {
       return Engine::template value_at_location<MyArrayNum>(data_, loc);
 
     }
 
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     Type value_stored_(const ExpressionSize<NArrays>& loc,
-		       const ScratchVector<NScratch>& scratch) const {
+		       const internal::ScratchVector<NScratch>& scratch) const {
       return Engine::template value_at_location<MyArrayNum>(data_, loc);
     }
 
@@ -1719,13 +1718,13 @@ namespace adept {
     // to the operation stack (or 1.0 if no multiplier is specified
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     void calc_gradient_(Stack& stack, const ExpressionSize<NArrays>& loc,
-			const ScratchVector<NScratch>& scratch) const {
+			const internal::ScratchVector<NScratch>& scratch) const {
       Engine::template push_rhs<MyArrayNum>(stack, static_cast<Type>(1.0), 
 					    gradient_index(), loc);
     }
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch, typename MyType>
     void calc_gradient_(Stack& stack, const ExpressionSize<NArrays>& loc,
-			const ScratchVector<NScratch>& scratch,
+			const internal::ScratchVector<NScratch>& scratch,
 			const MyType& multiplier) const {
       Engine::template push_rhs<MyArrayNum>(stack, multiplier, gradient_index(), loc);
     }
@@ -1742,7 +1741,7 @@ namespace adept {
     // array. This is a generic one that copies the number but treats
     // the present array as passive.
     template <bool LocalIsActive, typename X>
-    typename enable_if<!LocalIsActive,void>::type
+    typename internal::enable_if<!LocalIsActive,void>::type
     assign_inactive_scalar(X x) {
       Index j_start, j_end_plus_1, index, index_stride;
       for (Index i = 0 ; i < dimension_; ++i) {
@@ -1756,7 +1755,7 @@ namespace adept {
 
     // An active array being assigned the value of an inactive scalar
     template <bool LocalIsActive, typename X>
-    typename enable_if<LocalIsActive,void>::type
+    typename internal::enable_if<LocalIsActive,void>::type
     assign_inactive_scalar(X x) {
       // If not recording we call the inactive version instead
 #ifdef ADEPT_RECORDING_PAUSABLE
@@ -1782,11 +1781,11 @@ namespace adept {
     // advantage in specialist behaviour depending on the rank of the
     // array
     template<bool LocalIsActive, bool EIsActive, class E>
-    typename enable_if<!LocalIsActive,void>::type
+    typename internal::enable_if<!LocalIsActive,void>::type
     assign_expression_(const E& rhs) {
       ADEPT_STATIC_ASSERT(!EIsActive, CANNOT_ASSIGN_ACTIVE_EXPRESSION_TO_INACTIVE_ARRAY);
       ExpressionSize<2> i(0);
-      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
+      ExpressionSize<internal::expr_cast<E>::n_arrays> ind(0);
       Index j_start, j_end_plus_1, index, index_stride;
       for ( ; i[0] < dimension_; ++i[0]) {
 	Engine::get_row_range(i[0], dimension_, offset_, 
@@ -1801,7 +1800,7 @@ namespace adept {
     }
 
     template<bool LocalIsActive, bool EIsActive, class E>
-    typename enable_if<LocalIsActive,void>::type
+    typename internal::enable_if<LocalIsActive,void>::type
     assign_expression_(const E& rhs) {
       // If recording has been paused then call the inactive version
 #ifdef ADEPT_RECORDING_PAUSABLE
@@ -1811,8 +1810,8 @@ namespace adept {
       }
 #endif
       ExpressionSize<2> i(0);
-      ExpressionSize<expr_cast<E>::n_arrays> ind(0);
-      ADEPT_ACTIVE_STACK->check_space(expr_cast<E>::n_active * size());
+      ExpressionSize<internal::expr_cast<E>::n_arrays> ind(0);
+      ADEPT_ACTIVE_STACK->check_space(internal::expr_cast<E>::n_active * size());
       Index j_start, j_end_plus_1, index, index_stride;
       for ( ; i[0] < dimension_; ++i[0]) {
 	Engine::get_row_range(i[0], dimension_, offset_, 
@@ -1873,20 +1872,20 @@ namespace adept {
   // after DiagMatrix.
   template <int Rank, typename Type, bool IsActive>
   inline
-  SpecialMatrix<Type, internal::BandEngine<internal::ROW_MAJOR,0,0>, IsActive>
+  SpecialMatrix<Type, internal::BandEngine<ROW_MAJOR,0,0>, IsActive>
   Array<Rank,Type,IsActive>::diag_matrix() {
-    return SpecialMatrix<Type, internal::BandEngine<internal::ROW_MAJOR,0,0>,
+    return SpecialMatrix<Type, internal::BandEngine<ROW_MAJOR,0,0>,
       IsActive> (data_, storage_, dimensions_[0], offset_[0]-1);
   }
 
   template <typename Type, bool IsActive, Index J0, Index J1, Index J2,
 	    Index J3, Index J4, Index J5, Index J6>
   inline
-  SpecialMatrix<Type, internal::BandEngine<internal::ROW_MAJOR,0,0>, IsActive>
+  SpecialMatrix<Type, internal::BandEngine<ROW_MAJOR,0,0>, IsActive>
   FixedArray<Type,IsActive,J0,J1,J2,J3,J4,J5,J6>::diag_matrix() {
-    return SpecialMatrix<Type, internal::BandEngine<internal::ROW_MAJOR,0,0>, 
+    return SpecialMatrix<Type, internal::BandEngine<ROW_MAJOR,0,0>, 
       IsActive> (data_, 0, dimension_<0>::value, offset_<0>::value-1,
-		 GradientIndex<IsActive>::get());
+		 internal::GradientIndex<IsActive>::get());
   }
 
 } // End namespace adept

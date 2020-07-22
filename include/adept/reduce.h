@@ -104,12 +104,12 @@ namespace adept {
     struct numeric_limits { };
 
     template <typename T>
-    struct numeric_limits<T, typename enable_if<!std::numeric_limits<T>::has_infinity>::type> {
+    struct numeric_limits<T, typename internal::enable_if<!std::numeric_limits<T>::has_infinity>::type> {
       static T min_inf() { return std::numeric_limits<T>::min(); }
       static T max_inf() { return std::numeric_limits<T>::max(); }
     };
     template <typename T>
-    struct numeric_limits<T, typename enable_if<std::numeric_limits<T>::has_infinity>::type> {
+    struct numeric_limits<T, typename internal::enable_if<std::numeric_limits<T>::has_infinity>::type> {
       static T min_inf() { return -std::numeric_limits<T>::infinity(); }
       static T max_inf() { return  std::numeric_limits<T>::infinity(); }
     };
@@ -442,7 +442,7 @@ namespace adept {
     // Reduce an entire inactive array, unvectorized
     template <class Func, typename Type, class E>
     inline
-    typename enable_if<!(E::is_vectorizable
+    typename internal::enable_if<!(E::is_vectorizable
 			 &&Packet<Type>::is_vectorized
 			 &&is_same<Type,typename Func::total_type>::value),
 		       typename Func::total_type>::type
@@ -493,7 +493,7 @@ namespace adept {
     // Reduce an entire inactive array, vectorized
     template <class Func, typename Type, class E>
     inline
-    typename enable_if<E::is_vectorizable
+    typename internal::enable_if<E::is_vectorizable
                        &&Packet<Type>::is_vectorized
                        &&is_same<Type,typename Func::total_type>::value,
 		       typename Func::total_type>::type
@@ -691,7 +691,7 @@ namespace adept {
 	}
       }
     }
-  
+
     // Reduce the entirety of an active array
     template <class Func, typename Type, class E>
     inline
@@ -873,40 +873,40 @@ namespace adept {
   /* function(inactive) */				\
   template <typename Type, class E>			\
   inline						\
-  typename enable_if<!E::is_active && E::rank != 0,	\
+  typename internal::enable_if<!E::is_active && E::rank != 0,	\
 		     Type>::type			\
   NAME(const Expression<Type, E>& rhs) {		\
-    return reduce_inactive<CLASSNAME<Type> >(rhs);	\
+    return internal::reduce_inactive<internal:: CLASSNAME<Type> >(rhs);	\
   }							\
   							\
   /* function(active) */				\
   template <typename Type, class E>			\
   inline						\
-  typename enable_if<E::is_active && E::rank != 0,	\
+  typename internal::enable_if<E::is_active && E::rank != 0,	\
 		     Active<Type> >::type		\
   NAME(const Expression<Type, E>& rhs) {		\
     Active<Type> result;				\
-    reduce_active<CLASSNAME<Type> >(rhs, result);		\
+    internal::reduce_active<internal:: CLASSNAME<Type> >(rhs, result);	\
     return result;					\
   }							\
 							\
   /* function(active[rank=1], dim) */			\
   template <typename Type, class E>			\
   inline						\
-  typename enable_if<!E::is_active && E::rank == 1,	\
+  typename internal::enable_if<!E::is_active && E::rank == 1,	\
 				     Type>::type	\
   NAME(const Expression<Type, E>& rhs, int dim) {	\
     if (dim != 0) {					\
       throw invalid_dimension("Two-argument reduce function applied to vector must have zero as second argument" \
 			      ADEPT_EXCEPTION_LOCATION);		\
     }							\
-    return reduce_inactive<CLASSNAME<Type> >(rhs);	\
+    return internal::reduce_inactive<internal:: CLASSNAME<Type> >(rhs);	\
   }							\
   							\
   /* function(active[rank=1], dim) */			\
   template <typename Type, class E>			\
   inline						\
-  typename enable_if<E::is_active && E::rank == 1,	\
+  typename internal::enable_if<E::is_active && E::rank == 1,	\
 		     Active<Type> >::type		\
   NAME(const Expression<Type, E>& rhs, int dim) {	\
     if (dim != 0) {					\
@@ -914,7 +914,7 @@ namespace adept {
 			    ADEPT_EXCEPTION_LOCATION);			\
     }							\
     Active<Type> result;				\
-    reduce_active<CLASSNAME<Type> >(rhs, result);		\
+    internal::reduce_active<internal:: CLASSNAME<Type> >(rhs, result);	\
     return result;					\
   }							\
 							\
@@ -922,11 +922,11 @@ namespace adept {
   /* function(active[rank>1], dim) */			\
   template <typename Type, class E>			\
   inline						\
-  typename enable_if<(E::rank > 1),			\
+  typename internal::enable_if<(E::rank > 1),			\
 	     Array<E::rank-1,Type,E::is_active> >::type	\
   NAME(const Expression<Type, E>& rhs, int dim) {	\
     Array<E::rank-1,Type,E::is_active> result;		\
-    reduce_dimension<CLASSNAME<Type> >(rhs, dim, result);		\
+    internal::reduce_dimension<internal:: CLASSNAME<Type> >(rhs, dim, result); \
     return result;					\
   }
 
@@ -946,14 +946,14 @@ namespace adept {
 #define DEFINE_BOOL_REDUCE_FUNCTION(NAME, CLASSNAME)	 \
   template <class E>					 \
   inline bool NAME(const Expression<bool, E>& rhs)	 \
-  { return reduce_inactive<CLASSNAME>(rhs); }		 \
+  { return internal::reduce_inactive<internal:: CLASSNAME>(rhs); }	\
   							 \
   template <class E>					 \
   inline						 \
   Array<E::rank-1,bool,false>				 \
   NAME(const Expression<bool, E>& rhs, int dim) {	 \
     Array<E::rank-1,bool,false> result;			 \
-    reduce_dimension<CLASSNAME>(rhs, dim, result);		 \
+    internal::reduce_dimension<internal:: CLASSNAME>(rhs, dim, result);	\
     return result;					 \
   }
 
@@ -965,13 +965,13 @@ namespace adept {
   // Index
   template <class E>
   inline Index count(const Expression<bool, E>& rhs)
-  { return reduce_inactive<Count>(rhs); }
+  { return internal::reduce_inactive<internal::Count>(rhs); }
 
   template <class E>
   inline Array<E::rank-1,Index,false>
   count(const Expression<bool, E>& rhs, int dim) {
     Array<E::rank-1,Index,false> result;
-    reduce_dimension<Count>(rhs, dim, result);
+    internal::reduce_dimension<internal::Count>(rhs, dim, result);
     return result;
   }
 
@@ -1088,7 +1088,7 @@ namespace adept {
   // lvalue.
   template <typename Type, class E>
   typename internal::enable_if<E::rank == 1,
-       SpecialMatrix<Type, internal::BandEngine<internal::ROW_MAJOR,0,0>,
+       SpecialMatrix<Type, internal::BandEngine<ROW_MAJOR,0,0>,
 		    E::is_active> >::type
   diag_matrix(const Expression<Type,E>& arg) {
     Array<1,Type,E::is_active> v = arg;
@@ -1099,7 +1099,7 @@ namespace adept {
   // Section 6. dot_product
   // -------------------------------------------------------------------
   template <typename LType, typename RType, class L, class R>
-  typename enable_if<L::rank == 1 && R::rank == 1,
+  typename internal::enable_if<L::rank == 1 && R::rank == 1,
 	     typename internal::active_scalar<typename internal::promote<LType,RType>::type,
 				     L::is_active || R::is_active>::type>::type
   dot_product(const Expression<LType,L>& l,

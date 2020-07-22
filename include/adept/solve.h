@@ -36,7 +36,7 @@ namespace adept {
   // -------------------------------------------------------------------
   template <typename T, SymmMatrixOrientation Orient>
   Array<1,T,false>
-  solve(const SpecialMatrix<T,SymmEngine<Orient>,false>& A,
+  solve(const SpecialMatrix<T,internal::SymmEngine<Orient>,false>& A,
 	const Array<1,T,false>& b);
 
   // -------------------------------------------------------------------
@@ -44,7 +44,7 @@ namespace adept {
   // -------------------------------------------------------------------
   template <typename T, SymmMatrixOrientation Orient>
   Array<2,T,false>
-  solve(const SpecialMatrix<T,SymmEngine<Orient>,false>& A,
+  solve(const SpecialMatrix<T,internal::SymmEngine<Orient>,false>& A,
 	const Array<2,T,false>& B);
 
   // -------------------------------------------------------------------
@@ -55,8 +55,8 @@ namespace adept {
     SymmMatrixOrientation ROrient>
   inline
   Array<2,T,false>
-  solve(const SpecialMatrix<T,SymmEngine<LOrient>,false>& A,
-	const SpecialMatrix<T,SymmEngine<ROrient>,false>& B) {
+  solve(const SpecialMatrix<T,internal::SymmEngine<LOrient>,false>& A,
+	const SpecialMatrix<T,internal::SymmEngine<ROrient>,false>& B) {
     Array<2,T,false> B_array = B;
     return solve(A,B_array);
   }

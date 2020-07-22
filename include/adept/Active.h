@@ -29,9 +29,6 @@
 
 namespace adept {
 
-  using namespace internal;
-
-
   // ---------------------------------------------------------------------
   // Definition of Active class
   // ---------------------------------------------------------------------
@@ -56,7 +53,7 @@ namespace adept {
     static const bool is_active = true;
     static const bool is_lvalue = true;
     static const int  rank      = 0;
-    static const int  n_active  = 1 + is_complex<Type>::value;
+    static const int  n_active  = 1 + internal::is_complex<Type>::value;
     static const int  n_arrays  = 0;
     static const int  n_scratch = 0;
     typedef Type T; // Needed so that ADEPT_INIT_REAL_SNAN works
@@ -85,7 +82,7 @@ namespace adept {
     //   aReal x(1.0);
     template <typename PType>
     Active(const PType& rhs,
-	   typename enable_if<is_not_expression<PType>::value>::type* dummy = 0)
+	   typename internal::enable_if<internal::is_not_expression<PType>::value>::type* dummy = 0)
       : val_(rhs), gradient_index_(ADEPT_ACTIVE_STACK->register_gradient())
     {
       // By pushing this to the statement stack without pushing
@@ -142,7 +139,7 @@ namespace adept {
     template<typename AType, class E>
     //          explicit
     Active(const Expression<AType, E>& rhs,
-	   typename enable_if<E::rank==0
+	   typename internal::enable_if<E::rank==0
 			      && E::is_active>::type* dummy = 0)
       : gradient_index_(ADEPT_ACTIVE_STACK->register_gradient())
     {
@@ -188,7 +185,7 @@ namespace adept {
 	   
     // Assignment operator with an inactive variable on the rhs
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value,
+    typename internal::enable_if<internal::is_not_expression<PType>::value,
 		       Active&>::type
     operator=(const PType& rhs) {
       val_ = rhs;
@@ -255,7 +252,7 @@ namespace adept {
     // Assignment operator with an expression on the rhs: very similar
     // to construction with an expression (defined above)
     template <typename AType, class E>
-    typename enable_if<E::is_active && E::rank==0, Active&>::type
+    typename internal::enable_if<E::is_active && E::rank==0, Active&>::type
     operator=(const Expression<AType, E>& rhs) {
 #ifdef ADEPT_RECORDING_PAUSABLE
       if (ADEPT_ACTIVE_STACK->is_recording()) {
@@ -277,46 +274,46 @@ namespace adept {
     // All the compound assignment operators are unpacked, i.e. a+=b
     // becomes a=a+b; first for an Expression on the rhs
     template<typename AType, class E>
-    typename enable_if<E::rank==0, Active&>::type
+    typename internal::enable_if<E::rank==0, Active&>::type
     operator+=(const Expression<AType,E>& rhs) {
       return *this = (*this + rhs);
     }
     template<typename AType, class E>
-    typename enable_if<E::rank==0, Active&>::type
+    typename internal::enable_if<E::rank==0, Active&>::type
     operator-=(const Expression<AType,E>& rhs) {
       return *this = (*this - rhs);
     }
     template<typename AType, class E>
-    typename enable_if<E::rank==0, Active&>::type
+    typename internal::enable_if<E::rank==0, Active&>::type
     operator*=(const Expression<AType,E>& rhs) {
       return *this = (*this * rhs);
     }
     template<typename AType, class E>
-    typename enable_if<E::rank==0, Active&>::type
+    typename internal::enable_if<E::rank==0, Active&>::type
     operator/=(const Expression<AType,E>& rhs) {
       return *this = (*this / rhs);
     }
 
     // And likewise for a passive scalar on the rhs
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, Active&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, Active&>::type
     operator+=(const PType& rhs) {
       val_ += rhs;
       return *this;
     }
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, Active&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, Active&>::type
     operator-=(const PType& rhs) {
       val_ -= rhs;
       return *this;
     }
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, Active&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, Active&>::type
     operator*=(const PType& rhs) {
       return *this = (*this * rhs);
     }
     template <typename PType>
-    typename enable_if<is_not_expression<PType>::value, Active&>::type
+    typename internal::enable_if<internal::is_not_expression<PType>::value, Active&>::type
     operator/=(const PType& rhs) {
       return *this = (*this / rhs);
     }
@@ -499,18 +496,18 @@ namespace adept {
     
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     Type value_at_location_store_(const ExpressionSize<NArrays>& loc,
-				ScratchVector<NScratch>& scratch) const
+				internal::ScratchVector<NScratch>& scratch) const
     { return val_; }
 
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     Type value_stored_(const ExpressionSize<NArrays>& loc,
-		     const ScratchVector<NScratch>& scratch) const
+		     const internal::ScratchVector<NScratch>& scratch) const
     { return val_; }
 
     template <int MyArrayNum, int MyScratchNum, int NArrays, int NScratch>
     void calc_gradient_(Stack& stack, 
 			const ExpressionSize<NArrays>& loc,
-			const ScratchVector<NScratch>& scratch) const {
+			const internal::ScratchVector<NScratch>& scratch) const {
       stack.push_rhs(1.0, gradient_index_);
     }
 
@@ -518,7 +515,7 @@ namespace adept {
 	      int NArrays, int NScratch, typename MyType>
     void calc_gradient_(Stack& stack, 
 			const ExpressionSize<NArrays>& loc,
-			const ScratchVector<NScratch>& scratch,
+			const internal::ScratchVector<NScratch>& scratch,
 			const MyType& multiplier) const {
       stack.push_rhs(multiplier, gradient_index_);
     }
@@ -627,7 +624,7 @@ namespace adept {
   // Print an active scalar expression to a stream
   template <typename Type, class E>
   inline
-  typename enable_if<E::rank == 0 && E::is_active, std::ostream&>::type
+  typename internal::enable_if<E::rank == 0 && E::is_active, std::ostream&>::type
   operator<<(std::ostream& os, const Expression<Type,E>& expr) {
     os << expr.scalar_value();
     return os;

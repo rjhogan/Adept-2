@@ -597,10 +597,10 @@ namespace adept {
   inline
   typename internal::enable_if<(L::rank == 1 || L::rank == 2) && (R::rank == 1 || R::rank == 2)
                       && (L::rank+R::rank > 2),
-    Array<L::rank+R::rank-2,typename promote<LType,RType>::type,
+    Array<L::rank+R::rank-2,typename internal::promote<LType,RType>::type,
     L::is_active||R::is_active> >::type
   matmul(const Expression<LType,L>& left, const Expression<RType,R>& right) {
-    typedef typename promote<typename L::type,typename R::type>::type type;
+    typedef typename internal::promote<typename L::type,typename R::type>::type type;
     return internal::matmul_(internal::promote_array<type>(left.cast()),
 			     internal::promote_array<type>(right.cast()));
   }
@@ -653,7 +653,7 @@ namespace adept {
   // will call the matmul function
   template <typename LType, class L, class R>
   inline
-  Array<L::rank+R::rank-2,typename promote<LType,typename R::type>::type,
+  Array<L::rank+R::rank-2,typename internal::promote<LType,typename R::type>::type,
 	(L::is_active||R::is_active)>
   operator*(const Expression<LType,L>& left, const internal::MatmulRHS<R>& right) {
     return matmul(left.cast(),right.array.cast());
