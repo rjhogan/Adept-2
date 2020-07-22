@@ -14,11 +14,6 @@
 
 #include <adept/ArrayWrapper.h>
 
-#ifdef ADEPT_CXX11_FEATURES
-#include <type_traits> // for std::is_floating_point
-#endif
-
-
 namespace adept {
   namespace internal {
 
@@ -1123,15 +1118,15 @@ namespace adept {
       // For C++11 use the (hopefully faster) fmax function for floating-point functions
       template <class LType, class RType>
       typename enable_if<!is_packet<LType>::value &&
-                         (!std::is_floating_point<LType>::value
-			  || !std::is_floating_point<RType>::value),
+                         (!is_floating_point<LType>::value
+			  || !is_floating_point<RType>::value),
 			 typename promote<LType, RType>::type>::type
       operation(const LType& left, const RType& right) const { return left < right ? right : left; }
 
       template <class LType, class RType>
       typename enable_if<!is_packet<LType>::value &&
-                         (std::is_floating_point<LType>::value
-			  && std::is_floating_point<RType>::value),
+                         (is_floating_point<LType>::value
+			  && is_floating_point<RType>::value),
 			 typename promote<LType, RType>::type>::type
       operation(const LType& left, const RType& right) const { return std::fmax(left,right); }
 #endif
@@ -1203,15 +1198,15 @@ namespace adept {
       // For C++11 use the (hopefully faster) fmin function for floating-point functions
       template <class LType, class RType>
       typename enable_if<!is_packet<LType>::value &&
-                         (!std::is_floating_point<LType>::value
-			  || !std::is_floating_point<RType>::value),
+                         (!is_floating_point<LType>::value
+			  || !is_floating_point<RType>::value),
 			 typename promote<LType, RType>::type>::type
       operation(const LType& left, const RType& right) const { return left < right ? left : right; }
 
       template <class LType, class RType>
       typename enable_if<!is_packet<LType>::value &&
-                         (std::is_floating_point<LType>::value
-			  && std::is_floating_point<RType>::value),
+                         (is_floating_point<LType>::value
+			  && is_floating_point<RType>::value),
 			 typename promote<LType, RType>::type>::type
       operation(const LType& left, const RType& right) const { return std::fmin(left,right); }
 #endif
@@ -1345,7 +1340,7 @@ namespace adept {
   template<class L, typename RType>
   inline
   typename internal::enable_if<internal::is_not_expression<RType>::value 
-                               && (is_floating_point<RType>::value || L::is_active),
+                               && (internal::is_floating_point<RType>::value || L::is_active),
 			       internal::BinaryOpScalarRight<typename internal::promote<typename L::type,
 											RType>::type,
 							     L, internal::Multiply, 
@@ -1364,7 +1359,7 @@ namespace adept {
   template<class L, typename RType>
   inline
   typename internal::enable_if<internal::is_not_expression<RType>::value
-                               && (!is_floating_point<RType>::value && !L::is_active),
+                               && (!internal::is_floating_point<RType>::value && !L::is_active),
 			       internal::BinaryOpScalarRight<typename internal::promote<typename L::type,
 											RType>::type,
 							     L, internal::Divide, 

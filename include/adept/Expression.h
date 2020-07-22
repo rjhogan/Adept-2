@@ -16,7 +16,6 @@
 #include <adept/ExpressionSize.h>
 #include <adept/traits.h>
 #include <adept/exception.h>
-#include <adept/Stack.h>
 #include <adept/ScratchVector.h>
 #include <adept/Packet.h>
 
@@ -28,7 +27,7 @@ namespace adept {
   // SECTION 0: Forward declarations 
   // ---------------------------------------------------------------------
   
-  template <int Rank, typename Type, bool IsActive> class Array;
+  class Stack;
 
   // ---------------------------------------------------------------------
   // SECTION 1: Definition of Expression type
@@ -43,6 +42,7 @@ namespace adept {
     // Static information about the expression
   public:
     typedef Type type;
+    typedef Type value_type; // STL-style
 
     // There are several "static const" members in the derived
     // classes, some of which require fall-back values, defined here:
@@ -156,7 +156,7 @@ namespace adept {
       internal::ScratchVector<A::n_scratch> scratch;
       ExpressionSize<0> dummy_index;
       Type val = cast().template value_at_location_store_<0,0>(dummy_index, scratch);
-      cast().template calc_gradient_<0,0>(*ADEPT_ACTIVE_STACK, dummy_index, scratch);
+      cast().template calc_gradient_<0,0>(stack, dummy_index, scratch);
       return val;
     }
  

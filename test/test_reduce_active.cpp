@@ -41,7 +41,8 @@ main(int argc, const char** argv)
 {
   Stack stack;
 
-  aVector x = {-2.0, -3.0, -1.0, -50.0, 7.0};
+  aVector x(5);
+  x << -2.0, -3.0, -1.0, -50.0, 7.0;
 
   std::cout << "x = " << x << "\n";
 

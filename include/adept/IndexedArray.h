@@ -33,8 +33,15 @@
 
 namespace adept {
 
-  namespace internal {
+  // ---------------------------------------------------------------------
+  // Section 0: Forward declarations 
+  // ---------------------------------------------------------------------
+  
+  template <int Rank, typename Type, bool IsActive> class Array;
 
+  
+  namespace internal {
+    
     // ---------------------------------------------------------------------
     // Section 1. get_size_with_len
     // ---------------------------------------------------------------------

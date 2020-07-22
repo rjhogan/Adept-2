@@ -25,6 +25,7 @@
 #include <adept/Expression.h>
 #include <adept/exception.h>
 #include <adept/ExpressionSize.h>
+#include <adept/Stack.h>
 
 namespace adept {
 

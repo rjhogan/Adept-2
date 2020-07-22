@@ -11,9 +11,13 @@
 #ifndef AdeptArrayWrapper_H
 #define AdeptArrayWrapper_H 1
 
-#include <adept/Array.h>
+//#include <adept/Array.h>
 
 namespace adept {
+
+  // Forward declaration of Array class
+  template <int Rank, typename Type, bool IsActive> class Array;
+  
   namespace internal {
 
     template<int Rank, typename Type, bool IsActive>
