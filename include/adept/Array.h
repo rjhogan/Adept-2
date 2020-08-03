@@ -2663,7 +2663,7 @@ namespace adept {
 			       const internal::ScratchVector<NScratch,Packet<Real> >& scratch,
 			       internal::ScratchVector<NActive,Packet<Real> >& gradients) const {
       stack.push_rhs_indices<Packet<Real>::size,NActive>(gradient_index() + loc[MyArrayNum]);
-      gradients[MyActiveNum] = Packet<Real>(1.0);
+      gradients[MyActiveNum] = Packet<Real>(static_cast<Real>(1.0));
     }
 
     template <int MyArrayNum, int MyScratchNum, int MyActiveNum,

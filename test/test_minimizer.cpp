@@ -8,7 +8,8 @@
   without any warranty.
 */
 
-#include <string>
+//#include <string> // for std::stoi in C++11
+#include <cstdio>  // for std::sscanf in C++98
 #include <iostream>
 #include <adept_optimize.h>
 
@@ -97,14 +98,19 @@ main(int argc, const char* argv[])
   Minimizer minimizer(MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT);
   int nx = 2;
   if (argc > 1) {
-    nx = std::stoi(argv[1]);
+    // nx = std::stoi(argv[1]);
+    std::sscanf(argv[1], "%d", &nx);
     if (argc > 2) {
       minimizer.set_algorithm(argv[2]);
       if (argc > 3) {
-	Real max_it = std::stof(argv[3]);
+	int max_it;
+	// max_it = std::stof(argv[3]);
+	std::sscanf(argv[3], "%d", &max_it);
 	minimizer.set_max_iterations(max_it);
 	if (argc > 4) {
-	  Real converged_grad_norm = std::stof(argv[4]);
+	  double converged_grad_norm;
+	  //converged_grad_norm = std::stof(argv[4]);
+	  std::sscanf(argv[4], "%lf", &converged_grad_norm);
 	  minimizer.set_converged_gradient_norm(converged_grad_norm);
 	}
       }

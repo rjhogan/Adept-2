@@ -7,6 +7,9 @@ version 2.0.8
 	- The Stack member function "jacobian" can now operate on or
 	return Adept matrices, rather than solely on raw pointers which
 	had to point to data in column-major order
+	- Removed "using namespace internal" from several header files so
+	that adept namespace is clean
+	- Fixed C++98 compatibility
 
 version 2.0.7 (23 June 2020)
 	- Added fast, vectorizable exponential function "fastexp", or can

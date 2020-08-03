@@ -70,8 +70,32 @@ namespace adept {
 
   public:
 
-    Minimizer(MinimizerAlgorithm algo) : algorithm_(algo) { }
-    Minimizer(const std::string& algo) { set_algorithm(algo); }
+    // Tedious C++98 initializations
+    Minimizer(MinimizerAlgorithm algo)
+      : algorithm_(algo),
+	max_iterations_(100), // <=0 means no limit
+	max_step_size_(-1.0),
+	converged_gradient_norm_(0.1),
+	ensure_updated_state_(-1),
+	levenberg_damping_min_(1.0/128.0),
+	levenberg_damping_max_(100000.0),
+	levenberg_damping_multiplier_(2.0),
+	levenberg_damping_divider_(5.0),
+	levenberg_damping_start_(0.0),
+	levenberg_damping_restart_(1.0/4.0) { }
+
+    Minimizer(const std::string& algo)
+      : max_iterations_(100), // <=0 means no limit
+	max_step_size_(-1.0),
+	converged_gradient_norm_(0.1),
+	ensure_updated_state_(-1),
+	levenberg_damping_min_(1.0/128.0),
+	levenberg_damping_max_(100000.0),
+	levenberg_damping_multiplier_(2.0),
+	levenberg_damping_divider_(5.0),
+	levenberg_damping_start_(0.0),
+	levenberg_damping_restart_(1.0/4.0)
+    { set_algorithm(algo); }
 
     // Unconstrained minimization
     MinimizerStatus minimize(Optimizable& optimizable, Vector x);
@@ -142,19 +166,19 @@ namespace adept {
 
     // Variables controling the general behaviour of the minimizer,
     // used by all gradient-based algorithms
-    int max_iterations_ = 100; // <=0 means no limit
-    Real max_step_size_ = -1.0;
-    Real converged_gradient_norm_ = 0.1;
-    int ensure_updated_state_ = -1;
+    int max_iterations_; // <=0 means no limit
+    Real max_step_size_;
+    Real converged_gradient_norm_;
+    int ensure_updated_state_;
 
     // Variables controling the specific behaviour of the
     // Levenberg-Marquardt minimizer
-    Real levenberg_damping_min_        = 1.0/128.0;
-    Real levenberg_damping_max_        = 100000.0;
-    Real levenberg_damping_multiplier_ = 2.0;
-    Real levenberg_damping_divider_    = 5.0;
-    Real levenberg_damping_start_      = 0.0;
-    Real levenberg_damping_restart_    = 1.0/4.0;
+    Real levenberg_damping_min_;
+    Real levenberg_damping_max_;
+    Real levenberg_damping_multiplier_;
+    Real levenberg_damping_divider_;
+    Real levenberg_damping_start_;
+    Real levenberg_damping_restart_;
 
     // Variables set during the running of an algorithm and available
     // to the user afterwards

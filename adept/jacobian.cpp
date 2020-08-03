@@ -135,8 +135,6 @@ namespace adept {
       / MULTIPASS_SIZE;
     uIndex n_extra = n_independent() % MULTIPASS_SIZE;
     
-    int iblock;
-    
 #pragma omp parallel
     {
       //      std::vector<Block<MULTIPASS_SIZE,Real> > 
@@ -146,7 +144,7 @@ namespace adept {
 	= alloc_aligned<Real>(gradient_multipass_size);
       
 #pragma omp for schedule(static)
-      for (iblock = 0; iblock < n_block; iblock++) {
+      for (int iblock = 0; iblock < n_block; iblock++) {
 	// Set the index to the dependent variables for this block
 	uIndex i_independent =  MULTIPASS_SIZE * iblock;
 	
@@ -342,8 +340,6 @@ namespace adept {
       / MULTIPASS_SIZE;
     uIndex n_extra = n_dependent() % MULTIPASS_SIZE;
     
-    int iblock;
-
     // Inside the OpenMP loop, the "this" pointer may be NULL if the
     // adept::Stack pointer is declared as thread-local and if the
     // OpenMP memory model uses thread-local storage for private
@@ -359,7 +355,7 @@ namespace adept {
 	gradient_multipass_b(max_gradient_);
       
 #pragma omp for schedule(static)
-      for (iblock = 0; iblock < n_block; iblock++) {
+      for (int iblock = 0; iblock < n_block; iblock++) {
 	// Set the index to the dependent variables for this block
 	uIndex i_dependent =  MULTIPASS_SIZE * iblock;
 	

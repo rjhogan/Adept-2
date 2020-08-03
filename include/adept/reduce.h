@@ -1113,7 +1113,7 @@ namespace adept {
 
   template <typename Type, class E>
   inline
-  typename enable_if<E::rank == 1, Index>::type
+  typename internal::enable_if<E::rank == 1, Index>::type
   minloc(const Expression<Type, E>& rhs) {
     ExpressionSize<1> length;
     // Check the argument of the function is a valid expression
@@ -1146,7 +1146,7 @@ namespace adept {
 
   template <typename Type, class E>
   inline
-  typename enable_if<E::rank == 1, Index>::type
+  typename internal::enable_if<E::rank == 1, Index>::type
   maxloc(const Expression<Type, E>& rhs) {
     ExpressionSize<1> length;
     // Check the argument of the function is a valid expression

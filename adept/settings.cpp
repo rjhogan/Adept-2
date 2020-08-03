@@ -91,7 +91,7 @@ namespace adept {
     s << "  Compiler flags \"" << adept::compiler_flags() << "\"\n";
 #ifdef BLAS_LIBS
     if (std::strlen(BLAS_LIBS) > 2) {
-      const char* blas_libs = BLAS_LIBS + 2;
+      const char* blas_libs = &BLAS_LIBS[2];
       s << "  BLAS support from " << blas_libs << " library\n";
     }
     else {
