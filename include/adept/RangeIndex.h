@@ -387,8 +387,6 @@ namespace adept {
 				       StrideType>(begin, end, stride);
   }
 
-
-
 } // End namespace adept
 
 #endif

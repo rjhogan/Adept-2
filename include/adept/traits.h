@@ -28,7 +28,9 @@ namespace adept {
   template <typename T> class Active;
 
 
-  // All traits are in the adept::internal namespace
+  // All traits are in the adept::internal namespace.  Note that many
+  // of these are part of the STL in C++11 but are needed so that
+  // Adept can be used with C++98 compilers.
   namespace internal {
 
     // ----- CONTENTS -----

@@ -17,7 +17,7 @@ namespace adept {
   // Copy an expression to an Array of the same rank, type and
   // activeness
   template <typename EType, class E>
-  typename enable_if<(E::rank > 0), Array<E::rank,EType,E::is_active> >::type
+  typename internal::enable_if<(E::rank > 0), Array<E::rank,EType,E::is_active> >::type
   eval(const Expression<EType,E>& e) {
     Array<E::rank,EType,E::is_active> a;
     a = e.cast();
@@ -27,13 +27,13 @@ namespace adept {
   // Equivalent for scalar expressions; not really needed
   /*
   template <typename EType, class E>
-  typename enable_if<E::rank==0 && !E::is_active, EType>::type
+  typename internal::enable_if<E::rank==0 && !E::is_active, EType>::type
   eval(const Expression<EType,E>& e) {
     return static_cast<EType>(e);
   }
 
   template <typename EType, class E>
-  typename enable_if<E::rank==0 && E::is_active, Active<EType> >::type
+  typename internal::enable_if<E::rank==0 && E::is_active, Active<EType> >::type
   eval(const Expression<EType,E>& e) {
     return static_cast<Active<EType> >(e);
   }

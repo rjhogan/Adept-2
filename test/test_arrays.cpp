@@ -235,18 +235,18 @@ main(int argc, const char** argv) {
   typedef aTridiagMatrix myTridiagMatrix;
   typedef aLowerMatrix myLowerMatrix;
   typedef aUpperMatrix myUpperMatrix;
-  typedef SpecialMatrix<Real,BandEngine<ROW_MAJOR,2,1>,true> myOddBandMatrix;
+  typedef SpecialMatrix<Real,internal::BandEngine<ROW_MAJOR,2,1>,true> myOddBandMatrix;
   typedef aArray3D myArray3D;
 #else
   typedef aReal myReal;
   typedef Array<2,aReal,false> myMatrix;
   typedef Array<1,aReal,false> myVector;
-  typedef SpecialMatrix<aReal,SquareEngine<ROW_MAJOR>,false> mySymmMatrix;
-  typedef SpecialMatrix<aReal,BandEngine<ROW_MAJOR,0,0>,false> myDiagMatrix;
-  typedef SpecialMatrix<aReal,BandEngine<ROW_MAJOR,1,1>,false> myTridiagMatrix;
+  typedef SpecialMatrix<aReal,internal::SquareEngine<ROW_MAJOR>,false> mySymmMatrix;
+  typedef SpecialMatrix<aReal,internal::BandEngine<ROW_MAJOR,0,0>,false> myDiagMatrix;
+  typedef SpecialMatrix<aReal,internal::BandEngine<ROW_MAJOR,1,1>,false> myTridiagMatrix;
   typedef SpecialMatrix<aReal,internal::LowerEngine<ROW_MAJOR>, false> myLowerMatrix;
   typedef SpecialMatrix<aReal,internal::UpperEngine<ROW_MAJOR>, false> myUpperMatrix;
-  typedef SpecialMatrix<aReal,BandEngine<ROW_MAJOR,2,1>,false> myOddBandMatrix;
+  typedef SpecialMatrix<aReal,internal::BandEngine<ROW_MAJOR,2,1>,false> myOddBandMatrix;
 
 #endif
 #else
@@ -262,13 +262,13 @@ main(int argc, const char** argv) {
   typedef TridiagMatrix myTridiagMatrix;
   typedef LowerMatrix myLowerMatrix;
   typedef UpperMatrix myUpperMatrix;
-  typedef SpecialMatrix<Real,BandEngine<ROW_MAJOR,2,1>,false> myOddBandMatrix;
+  typedef SpecialMatrix<Real,internal::BandEngine<ROW_MAJOR,2,1>,false> myOddBandMatrix;
 
   /*    
   typedef SpecialMatrix<Real,SymmEngine<ROW_UPPER_COL_LOWER>,false> mySymmMatrix;
-  typedef SpecialMatrix<Real,BandEngine<COL_MAJOR,0,0>,false> myDiagMatrix;
-  typedef SpecialMatrix<Real,BandEngine<COL_MAJOR,1,1>,false> myTridiagMatrix;
-  typedef SpecialMatrix<Real,BandEngine<COL_MAJOR,2,1>,false> myOddBandMatrix;
+  typedef SpecialMatrix<Real,internal::BandEngine<COL_MAJOR,0,0>,false> myDiagMatrix;
+  typedef SpecialMatrix<Real,internal::BandEngine<COL_MAJOR,1,1>,false> myTridiagMatrix;
+  typedef SpecialMatrix<Real,internal::BandEngine<COL_MAJOR,2,1>,false> myOddBandMatrix;
   */
 
 #endif
@@ -279,12 +279,12 @@ main(int argc, const char** argv) {
   typedef Array<1,std::complex<Real>,IsActive> myVector;
   typedef Array<2,std::complex<Real>,IsActive> myMatrix;
   typedef Array<3,std::complex<Real>,IsActive> myArray3D;
-  typedef SpecialMatrix<std::complex<Real>,SquareEngine<ROW_MAJOR>,IsActive> mySymmMatrix;
-  typedef SpecialMatrix<std::complex<Real>,BandEngine<ROW_MAJOR,0,0>,IsActive> myDiagMatrix;
-  typedef SpecialMatrix<std::complex<Real>,BandEngine<ROW_MAJOR,1,1>,IsActive> myTridiagMatrix;
+  typedef SpecialMatrix<std::complex<Real>,internal::SquareEngine<ROW_MAJOR>,IsActive> mySymmMatrix;
+  typedef SpecialMatrix<std::complex<Real>,internal::BandEngine<ROW_MAJOR,0,0>,IsActive> myDiagMatrix;
+  typedef SpecialMatrix<std::complex<Real>,internal::BandEngine<ROW_MAJOR,1,1>,IsActive> myTridiagMatrix;
   typedef SpecialMatrix<std::complex<Real>,internal::LowerEngine<ROW_MAJOR>, IsActive> myLowerMatrix;
   typedef SpecialMatrix<std::complex<Real>,internal::UpperEngine<ROW_MAJOR>, IsActive> myUpperMatrix;
-  typedef SpecialMatrix<std::complex<Real>,BandEngine<ROW_MAJOR,2,1>,IsActive> myOddBandMatrix;
+  typedef SpecialMatrix<std::complex<Real>,internal::BandEngine<ROW_MAJOR,2,1>,IsActive> myOddBandMatrix;
 
 #endif
 

@@ -205,9 +205,9 @@ namespace adept {
 
   // Define outer_product function
   template <typename LType, class L, typename RType, class R>
-  internal::OuterProduct<typename promote<LType,RType>::type,LType,L,RType,R>
+  internal::OuterProduct<typename internal::promote<LType,RType>::type,LType,L,RType,R>
   outer_product(const Expression<LType,L>& l, const Expression<RType,R>& r) {
-    return internal::OuterProduct<typename promote<LType,RType>::type,
+    return internal::OuterProduct<typename internal::promote<LType,RType>::type,
 				  LType,L,RType,R>(l,r);
   }
 

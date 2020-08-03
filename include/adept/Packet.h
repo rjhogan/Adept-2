@@ -76,10 +76,42 @@ namespace adept {
     // -------------------------------------------------------------------
     // Define packet type
     // -------------------------------------------------------------------
+
+    // Unfortunately, with C++98, unions cannot contain std::complex
+    // because ith as a constructor... therefore Packet inherits from
+    // PacketData to contain the data in order that union is only used
+    // for Packets of types that are actually vectorized (which are
+    // floats and doubles).
+    template <typename T, class Enable = void>
+    struct PacketData {
+      // Static definitions
+      static const int size = packet_traits<T>::size;
+      typedef typename quick_e::packet<T,size>::type intrinsic_type;
+      PacketData(intrinsic_type d) : data(d) { }
+      union {
+	intrinsic_type data;
+	T value_[size];
+      };
+      T value() const { return value_[0]; }
+      T& operator[](int i) { return value_[i]; }
+      const T& operator[](int i) const { return value_[i]; }
+    };
+    template <typename T>
+    struct PacketData<T, typename enable_if<packet_traits<T>::size == 1>::type>
+    {
+      // Static definitions
+      static const int size = 1;
+      typedef T intrinsic_type;
+      PacketData(intrinsic_type d) : data(d) { }
+      T data;
+      T value() const { return data; }
+      T& operator[](int i) { return data; }
+      const T& operator[](int i) const { return data; }
+    };
     
     template <typename T>
-    struct Packet {
-      // Static definitions
+    struct Packet : public PacketData<T> {
+      using PacketData<T>::data;
       static const int size = packet_traits<T>::size;
       typedef typename quick_e::packet<T,size>::type intrinsic_type;
       //      static const int intrinsic_size = 1; // What is this for?
@@ -87,22 +119,17 @@ namespace adept {
        // T=float/double -> all bits = 1
       static const std::size_t align_mask = (size == 1) ? -1 : alignment_bytes-1;
       static const bool        is_vectorized = (size > 1);
-      // Data
-      union {
-	intrinsic_type data;
-	T value_[size];
-      };
       // Constructors
-      Packet() : data(quick_e::set0<intrinsic_type>()) { }
-      Packet(const Packet& d) : data(d.data) { }
+      Packet() : PacketData<T>(quick_e::set0<intrinsic_type>()) { }
+      Packet(const Packet& d) : PacketData<T>(d.data) { }
       template <typename TT>
       Packet(TT d, typename enable_if<is_same<TT,intrinsic_type>::value,int>::type = 0)
-	: data(d) { }
-      explicit Packet(const T* d) : data(quick_e::load<intrinsic_type>(d)) { }
-      //      explicit Packet(T d) : data(quick_e::set1<intrinsic_type>(d)) { }
+	: PacketData<T>(d) { }
+      explicit Packet(const T* d) : PacketData<T>(quick_e::load<intrinsic_type>(d)) { }
+      //      explicit Packet(T d) : PacketData<T>(quick_e::set1<intrinsic_type>(d)) { }
       template <typename TT>
       explicit Packet(TT d, typename enable_if<is_same<TT,T>::value&&is_vectorized,int>::type = 0)
-	: data(quick_e::set1<intrinsic_type>(d)) { }
+	: PacketData<T>(quick_e::set1<intrinsic_type>(d)) { }
       // Member functions
       void put(T* __restrict d) const { quick_e::store(d, data); }
       void put_unaligned(T* __restrict d) const { quick_e::storeu(d, data); }
@@ -117,9 +144,6 @@ namespace adept {
       void operator/=(const Packet& d) { data = quick_e::div(data, d.data); }
       Packet operator-() const         { return quick_e::neg(data); }
       Packet operator+() const         { return *this; }
-      T value() const { return value_[0]; }
-      T& operator[](int i) { return value_[i]; }
-      const T& operator[](int i) const { return value_[i]; }
     };
 
     //#define QE_PACKET_ARG Packet<T>
@@ -165,7 +189,7 @@ namespace adept {
     std::ostream& operator<<(std::ostream& os, QE_PACKET_ARG x) {
       os << "{";
       for (int i = 0; i < Packet<T>::size; ++i) {
-	os << " " << x.value_[i];
+	os << " " << x[i];
       }
       os << "}";
       return os;

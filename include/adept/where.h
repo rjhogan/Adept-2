@@ -123,8 +123,8 @@ namespace adept {
 
 
   template <class C, class D>
-  EitherOr<C,D> either_or(const C& c, const D& d) {
-    return EitherOr<C,D>(c, d);
+  internal::EitherOr<C,D> either_or(const C& c, const D& d) {
+    return internal::EitherOr<C,D>(c, d);
   }
 
 } // end namespace adept
