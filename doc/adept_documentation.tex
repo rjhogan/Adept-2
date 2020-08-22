@@ -66,7 +66,7 @@
   xleftmargin=0cm,
   xrightmargin=0cm,
   basicstyle=\footnotesize\ttfamily,
-  emph={adouble,xdouble,Stack,adept,Array,FixedArray,Vector,aVector,Matrix,aMatrix,Array3D,aArray3D,intVector,boolVector,floatVector,SpecialMatrix,SquareMatrix,aSquareMatrix,SymmMatrix,aSymmMatrix,UpperMatrix,LowerMatrix,IndexVector,adept_arrays},
+  emph={adouble,xdouble,Stack,adept,Array,FixedArray,Vector,aVector,aReal,Optimizable,Real,Minimizer,MinimizerStatus,Matrix,aMatrix,Array3D,aArray3D,intVector,boolVector,floatVector,floatMatrix,intMatrix,FortranArray,SpecialMatrix,SquareMatrix,aSquareMatrix,SymmMatrix,aSymmMatrix,UpperMatrix,LowerMatrix,IndexVector,adept_arrays,adept_optimize,adept_fortran},
   emphstyle=\bfseries\color{red}}
 \lstset{showstringspaces=false}
 
@@ -182,10 +182,10 @@ directory of the \Adept\ software package.  Section
 \ref{sec:installing} outlines how to install \Adept\ on your system
 and how to compile your own code to use it. Chapter \ref{chap:ad}
 describes how to use the automatic differentiation capability of the
-library, while chapter \ref{chap:arrays} describes how to use its
-array capability. Chapter \ref{chap:gen} then describes general
-aspects such as exception handling, configuration options and license
-terms.
+library, chapter \ref{chap:arrays} its array capability and chapter
+\ref{chap:optimize} its optimization capability. Chapter
+\ref{chap:gen} then describes general aspects such as exception
+handling, configuration options and license terms.
 
 \section{Installing \Adept\ and compiling your code to use it}
 \label{sec:installing}
@@ -431,7 +431,7 @@ automatic-differentiation functionality:
   minimized but the state vector $\x$ is too large for it to make
   sense to compute the full Jacobian matrix. Atmospheric data
   assimilation is the canonical example in the field of
-  meteorology. Given a nonlinear function $J(\x)$ relating the
+  meteorology. Given a non-linear function $J(\x)$ relating the
   scalar to be minimized $J$ to vector $\x$, \Adept\ will compute the
   vector of adjoints $\partial J/\partial\x$. Moreover, for a
   component of the code that may be expressed as a multi-dimensional
@@ -482,10 +482,10 @@ require:
 
 \begin{itemize}
 \item Differentiation is first-order only: it cannot directly compute
-  higher-order derivatives such as the Hessian matrix (although one of
-  the Frequently Asked Questions in section \ref{sec:faq} describes
-  how \Adept\ can help compute the Hessian of a certain category of
-  algorithms).
+  higher-order derivatives such as the Hessian matrix, although
+  section \ref{sec:optimize} describes how \Adept\ can help compute
+  the Hessian if the cost function (also known as the penalty function
+  or objective function) is in a particular commonly used form.
 \item It has limited support for complex numbers; no support for
   mathematical functions of complex numbers, and expressions involving
   operations (addition, subtraction, multiplication and division) on
@@ -620,7 +620,7 @@ respect to its inputs, you would do this:
    adouble x[2] = {x_val[0], x_val[1]};     // Initialize active input variables
    stack.new_recording();                   // Start recording
    adouble y = algorithm(x);                // Call version overloaded for adouble args
-   y.set_gradient(1.0);                     // Defines y as the objective function 
+   y.set_gradient(1.0);                     // Defines y as the cost function 
    stack.compute_adjoint();                 // Run the adjoint algorithm
    dy_dx[0] = x[0].get_gradient();          // Store the first gradient
    dy_dx[1] = x[1].get_gradient();          // Store the second gradient
@@ -742,7 +742,7 @@ this example, we want the output gradients to be the derivatives of
 this, the initial gradient of \code{y} must be unity.
 
 More generally, if \code{y} was only an intermediate value in the
-computation of objective function $J$, then for the outputs of the
+computation of cost function $J$, then for the outputs of the
 function to be the derivatives of $J$ with respect to each of the
 independent variables, we would need to set the gradient of
 \code{y} to $\partial J/\partial$\code{y}. In the case of multiple
@@ -768,7 +768,7 @@ the first such call initializes the list of gradients for
  dy_dx[0] = x[0].get_gradient();
  dy_dx[1] = x[1].get_gradient();
 \end{lstlisting}
-These lines simply extract the gradients of the objective function
+These lines simply extract the gradients of the cost function
 with respect to the two independent variables. Alternatively we could
 have extracted them simultaneously using
 \begin{lstlisting}
@@ -880,7 +880,7 @@ of these objects, which could be done as follows:
 
 \section{Real-world usage: interfacing \Adept\ to a minimization library}
 \label{sec:realworld}
-Suppose we want to find the vector $\x$ that minimizes an objective function
+Suppose we want to find the vector $\x$ that minimizes an cost function
 $J(\x)$ that consists of a large algorithm coded using the
 \Adept\ library and encapsulated within a C++ class.  In this section
 we illustrate how it may be interfaced to a third-party minimization
@@ -3135,6 +3135,357 @@ functions for querying its properties:
  the data, cast to the specified type.
 \end{description}
 
+\chapter{Using \Adept's optimization functionality}
+\label{chap:optimize}
+
+\emph{Note that this is a recently added capability in Adept, and so
+  only a small number of minimizations algorithms are currently
+  available.}
+
+\section{Background}
+Since version 2.0.8, \Adept\ provides functionality for solving
+non-linear optimization problems, specifically finding the state
+vector ${\bf x}$ that minimizes the scalar cost function $J({\bf
+  x})$ (also known as a penalty function or objective function).
+%
+A \emph{gradient-free} minimization algorithm (e.g.\ Nelder-Mead)
+requires simply a user-supplied function for computing $J$, calling it
+multiple times for different ${\bf x}$ to find the minimum $J$.
+%
+A \emph{first-order} minimization algorithm requires also a
+user-supplied function returning the gradient of the cost function
+$\partial J/{\bf x}$ (a vector). Examples are the Conjugate Gradient
+method and the Limited-Memory Broyden-Fletcher-Goldfarb-Shanno
+(L-BFGS) method. Knowing the gradient enables such algorithms to find
+the minimum with far fewer function calls, although a function call
+returning $\partial J/{\bf x}$ is slower than one returning only
+$J$. \Adept's optimization interface is in terms of passive array
+types, so the user is not obliged to use \Adept's automatic
+differentiation capability to compute these gradients, although the
+examples in this chapter assume that they do.
+%
+A \emph{second-order} minimization algorithm makes use of not only $J$
+and $\partial J/{\bf x}$, but also a user-supplied function for the
+Hessian ${\bf A}=\partial^2J({\bf x})/\partial{\bf x}^2=\nabla_{\bf
+  x}^2J$ (a symmetric matrix).  Examples are the Gauss-Newton and
+Levenberg-Marquardt methods. Knowing the second derivative means that
+even fewer iterations should be required to find the minimum of $J$,
+but ${\bf A}$ is more expensive to compute than $\partial J/{\bf x}$.
+
+\Adept\ does not have the ability to automatically compute Hessian
+matrices for an arbitrary cost function, but frequently the
+cost function has a specific form that makes it possible to
+compute the Hessian from the Jacobian matrix.  Consider the
+optimization problem of finding the parameters $\x$ of non-linear
+model $\y(\x)$ that provides the closest match to a set of
+``observations'' $\y^o$ in a least-squares sense.  For maximum
+generality we add constraints that penalize differences between $\x$
+and a set of \emph{a~priori} values $\x^a$, as well as a
+regularization term.  In this case the cost function could be
+written as \def\myspace{~~}
+\begin{equation}
+J(\x) \myspace =\myspace \frac12\left[\y(\x)-\y^o\right]^\mathrm{T}{\bf
+  R}^{-1}\left[\y(\x)-\y^o\right]
+\myspace+\myspace\frac12\left[\x-\x^a\right]^\mathrm{T}{\bf
+  B}^{-1}\left[\x-\x^a\right]
+\myspace+\myspace\frac12\x^\mathrm{T}{\bf T}\x.\nonumber
+\label{eq:objective}
+\end{equation}
+Here, all vectors are treated as column vectors, ${\bf R}$ is the
+error covariance matrix of the observations, ${\bf B}$ is the error
+covariance matrix of the \emph{a~priori} values, and ${\bf T}$ is a
+Twomey-Tikhonov matrix that penalizes either spatial gradients or
+curvature in $\x$.  The Hessian matrix is then given by
+\begin{equation}
+{\bf A} \myspace=\myspace {\bf H}^\mathrm{T}{\bf
+  R}^{-1}{\bf H}\nonumber
+\myspace+\myspace {\bf B}^{-1} \myspace+\myspace {\bf T},
+\label{eq:hessian}
+\end{equation}
+which can be coded up using \Adept\ to compute the Jacobian matrix
+${\bf H}=\partial\y/\partial\x$. Each term on the right-hand-side of
+(\ref{eq:hessian}) has its corresponding term in (\ref{eq:objective}),
+so it is easy to work out what the Hessian would look like if only a
+subset of the terms in (\ref{eq:objective}) were present.
+
+\section{\Adept\ interface}
+\label{sec:minimizer_interface}
+For the purposes of demonstrating how this would be implemented in
+\Adept\ we simplify (\ref{eq:objective}) down to the case of
+minimizing a quadratic function, in which case $J={\bf
+  y}^\mathrm{T}{\bf y}/2$ and ${\bf y}={\bf x}$.  The former of these
+two equations means that the Hessian matrix is simply ${\bf A}={\bf
+  H}^\mathrm{T}{\bf H}$. The latter we implement using active
+variables:
+%
+\begin{lstlisting}
+ adept::aVector calc_y(const adept::aVector& x) { return x; }
+\end{lstlisting}
+%
+The test program \code{test/test\_minimizer.cpp} uses a ${\bf y}({\bf
+  x})$ function for the much more intersting case of the
+$N$-dimensional Rosenbrock function.  To set up the problem ready for
+minimizing, we use create a class that derives from \Adept's
+\code{Optimizable} class and overrides five of its virtual functions:
+%
+\begin{lstlisting}
+ // Include this header file for the functionality described in this chapter
+ #include <adept_optimize.h>
+
+ class SimpleOptimizable : public adept::Optimizable {
+ public:
+   // Return the cost function for a given state vector x
+   virtual adept::Real calc_cost_function(const adept::Vector& x) {
+     adept::Vector y = value(calc_y(x)); // "value" throws away the activeness
+     return 0.5*sum(y*y);
+   }
+
+   // Calculate the cost function and its gradient from x
+   virtual adept::Real calc_cost_function_gradient(const adept::Vector& x,
+					           adept::Vector gradient) {
+     adept::aVector xactive = x;           // Copy x to an active variable
+     stack.new_recording();
+     adept::aVector y = calc_y(xactive);   // Calculate y from x
+     adept::aReal cost = 0.5*sum(y*y);     // Calculate cost function as an active variable
+     cost.set_gradient(1.0);               // Use reverse-mode differentiation to
+     stack.reverse();                      //   compute the gradient
+     gradient = xactive.get_gradient();
+     return value(cost);                   // Return cost function as passive variable
+   }
+
+   // Calculate the cost function, its gradient and the Hessian matrix
+   virtual adept::Real calc_cost_function_gradient_hessian(const adept::Vector& x,
+			   adept::Vector gradient, adept::SymmMatrix& hessian) {
+     adept::aVector xactive = x;           // Copy x to an active variable
+     stack.new_recording();
+     adept::aVector y = calc_y(xactive);   // Calculate y from x
+     adept::aReal cost = 0.5*sum(y*y);     // Calculate cost function as an active variable
+     stack.independent(xactive);           // Define independent variables
+     stack.dependent(y);                   // Define dependent variables
+     adept::Matrix jac = stack.jacobian(); // Compute Jacobian matrix dy/dx
+     hessian  = jac.T() ** jac;            // Hessian is a simple matrix product of Jacobian
+     gradient = jac.T() ** value(y);       // Gradient is a matrix-vector product
+     return value(cost);                   // Return cost function as passive variable
+   }
+
+   // Every iteration this function is called: here simply report progress to standard output
+   virtual void report_progress(int niter, const adept::Vector& x,
+                                adept::Real cost, adept::Real gnorm) {
+     std::cout << "Iteration " << niter << ": cost function = " << cost << "\n";
+   }
+ 
+   // Minimization algorithm may want to check what derivatives are available: here we 
+   // provide 0th (cost function alone) 1st (gradient) and 2nd (Hessian), so return true
+   // for 0, 1 or 2, false otherwise
+   virtual bool provides_derivative(int order) { return (order >= 0 && order <= 2); }
+
+ // Keep an instance of the Adept stack within the class: avoids the initialization costs
+ // incurred each iteration if it was inside calc_cost_function_gradient and
+ // calc_cost_function_gradient_hessian 
+ private:
+   adept::Stack stack;
+ };
+\end{lstlisting}
+Note that if you plan to use a first-order minimization algorithm, you
+do not need to provide a
+\code{calc\_cost\_function\_gradient\_hessian} function.
+
+\Adept's \code{Minimizer} class can minimize the cost function
+held in an \code{Optimizable} object by calling the user-supplied
+virtual functions, as follows:
+\begin{lstlisting}
+ SimpleOptimizable quadratic_function;
+ adept::Minimizer minimizer(MINIMIZER_ALGORITHM_LEVENBERG); // Select minimization algorithm
+ int nx = 10;         // Number of state variables
+ adept::Vector x(nx); // Declare state vector
+ x = 3.0;             // Initialize state vector to first guess values, all 3.0
+ // Minimize the cost function:
+ adept::MinimizerStatus status = minimizer.minimize(quadratic_function, x);
+ // Report the convergence status:
+ std::cout << "Convergence status: " << adept::minimizer_status_string(status) << "\n";
+\end{lstlisting}
+%
+After the \code{minimize} member function is called, \code{x} contains
+the state vector that minimizes the cost function.
+
+The available minimization algorithms are:
+\begin{description}
+\citem{MINIMIZER\_ALGORITHM\_LEVENBERG} The second-order Levenberg
+algorithm tries to perform a Gauss-Newton step using the Hessian
+matrix and assuming that the curvature of $J$ is locally constant. If
+$J$ at the new ${\bf x}$ is not reduced by this step then a damping
+parameter $\lambda$ is used to scale between Gauss-Newton and a
+steepest-descent algorithm.
+%
+\citem{MINIMIZER\_ALGORITHM\_LEVENBERG\_MARQUARDT} The second-order
+Levenberg-Marquardt algorithm is similar to the Levenberg algorithm,
+but scales such that the step sizes are changed in each dimension
+according to the curvature of the cost function in that dimension
+(i.e.\ the diagonal of the Hessian matrix). This generally, but not
+always, results in faster convergence than the Levenberg algorithm.
+\end{description}
+Later versions of \Adept\ will include more minimization algorithms,
+particularly first-order. The minimizer can be configured in detail by
+calling its member functions listed in section
+\ref{sec:minimizer_options}.  The possible values for the return
+status are given in section \ref{sec:minimizer_status}.
+
+The case above is an example of \emph{unconstrained minimization}: the
+minimizer is free to try any values of ${\bf x}$. This can lead to it
+trying unphysical values, such as negative values for a quantity that
+cannot be negative.  To prevent this, all the minimization algorithms
+allow the user to specify simple box constraints on the elements of
+the state vector.  Suppose we wanted to constrain element 0 to be
+positive and element 1 to lie in the range 10--20, we would add these
+lines:
+\begin{lstlisting}
+ // Declare vectors containing the lower and upper bounds on x
+ adept::Vector x_lower, x_upper;
+ // Set them to the minimum and maximum possible values for their element type (e.g. double)
+ adept::minimizer_initialize_bounds(nx, x_lower, x_upper);
+ // Set a lower bound on element 0 and both bounds on element 1
+ x_lower(0) = 0.0;
+ x_lower(1) = 10.0;
+ x_upper(1) = 20.0;
+ // Call the minimize function with two extra arguments specifying the bounds
+ status = minimizer.minimize(quadratic_function, x, x_lower, x_upper);
+\end{lstlisting}
+
+% minimizer.set_max_iterations(100);
+% minimizer.set_converged_gradient_norm(0.1);
+
+\section{Other member functions of the \code{Minimizer} class}
+\label{sec:minimizer_options}
+In addition to the \code{minimize} member function described in
+section \ref{sec:minimizer_interface}, the following
+\code{adept::Minimizer} member functions may be called to configure
+the behaviour of the minimization algorithm:
+\begin{description}
+\citem{void set\_algorithm(MinimizerAlgorithm algo)} Set the algorithm
+to one of the available minimization algorithm,
+e.g.\ \code{MINIMIZER\_ALGORITHM\_LEVENBERG}. This is an alternative
+to providing it as an argument to the \code{Minimizer} constructor.
+%
+\citem{void set\_algorithm(const std::string\&\ algo)} Set the algorithm
+using a string, currently either ``\code{Levenberg}'' or
+``\code{Levenberg-Marquardt}''.
+%
+\citem{void set\_max\_iterations(int max\_it)} Set the maximum number
+of iterations (default 100).
+%
+\citem{void set\_converged\_gradient\_norm(Real cgn)} The L2-norm of
+the $\partial J/\partial{\bf x}$ vector is computed each iteration,
+and convergence is deemed to have been achieved when it falls below
+the value specified here (default 0.1).
+%
+\citem{void set\_max\_step\_size(Real mss)} Set the maximum step size
+each iteration (default: no maximum). A negative or zero value
+indicates that no maximum step size is to be used.
+%
+\citem{void ensure\_updated\_state(int order = 2)} Often the user will
+require the Hessian matrix to compute errors in the solution, and will
+store the Hessian matrix each time the
+\code{calc\_cost\_function\_gradient\_hessian} function is
+called. However, by default there is no guarantee that when the
+minimization has completed this function will have been called with the
+final version of the state vector.  Calling the member function here
+requests that after minimization is complete, the derivatives of at
+least the specified \code{order} are consistent with the final state
+vector (e.g.\ 2 for both the Hessian and the gradient vector).
+%
+\citem{void set\_levenberg\_damping\_limits(Real damp\_min, Real
+  damp\_max)} Set the minimum and maximum postive values of the
+damping parameter $\lambda$ used by both the Levenberg and
+Levenberg-Marquardt algorithms (default $1/128$ and
+$10^5$). Internally the algorithm can still use zero when each
+iteration is reducing the cost function.
+%
+\citem{void set\_levenberg\_damping\_start(Real damp\_start)} Set the
+initial damping factor for the Levenberg and Levenberg-Marquardt
+algorithms (default 0).
+%
+\citem{void set\_levenberg\_damping\_restart(Real damp\_restart)} Set
+the value of the damping factor $\lambda$ in the Levenberg and
+Levenberg-Marquardt algorithms that is used when a value of
+$\lambda=0$ does not result in the cost function being reduced
+(default $1/4$).
+%
+\citem{void set\_levenberg\_damping\_multiplier(Real damp\_multiply,
+  Real damp\_divide)} Set the multiplier and divider that will be used
+to scale the damping factor when an iteration does not and does reduce
+the cost function, respectively (default 2.0 and 5.0).
+\end{description}
+The following member functions return the minimizer algorithm that the
+\code{Minimizer} is currently configured to use:
+\begin{description}
+\citem{MinimizerAlgorithm algorithm()} Return the enumeration
+representing the minimization algorithm.
+\citem{std::string algorithm\_name()} Return a string representing the
+minimization algorithm.
+\end{description}
+The following member functions extract information about the progress
+of the minimization after it has completed:
+\begin{description}
+\citem{int n\_iterations()} Return the number of iterations performed.
+Only iterations that successfully reduced the cost function are
+counted.
+%
+\citem{int n\_samples()} Return the number of times the cost
+function was computed, including times when this did not reduce the
+cost function.
+%
+\citem{Real cost\_function()} Return the final value of the cost
+function.
+%
+\citem{Real gradient\_norm()} Return the final value of the norm of
+the $\partial J/\partial{\bf x}$ vector.
+%
+\citem{Real start\_cost\_function()} Return the cost function for the
+first guess of the state vector provided by the user.
+%
+\citem{MinimizerStatus status()} Return the convergence status.
+\end{description}
+
+
+\section{Return status for minimization}
+\label{sec:minimizer_status}
+The following enumerations may be returned by \code{Minimizer}'s
+\code{minimize} member function representing the status of the
+minimization. The \code{adept::minimizer\_status\_string} function
+converts a status to a user-readable string, as demonstrated
+in one of the examples in section \ref{sec:minimizer_interface}.
+\begin{description}
+\citem{MINIMIZER\_STATUS\_SUCCESS} Minimization was successful.
+%
+\citem{MINIMIZER\_STATUS\_EMPTY\_STATE}  The state vector provided is empty.
+%
+\citem{MINIMIZER\_STATUS\_MAX\_ITERATIONS\_REACHED} The maximum number
+of iterations was reached.
+%
+\citem{MINIMIZER\_STATUS\_FAILED\_TO\_CONVERGE} Convergence was not
+achieved, even though some progress may have been made in minimizing
+the cost function. This usually occurs when, in the vicinity of the
+minimum, the $J({\bf x})$ terrain is quite flat and numerical errors
+mean that the gradient returned from the user-supplied function does
+not point uphill as it should.  This means that when the algorithm
+uses the gradient to try to go downhill it finds the cost function
+increasing.
+%
+\citem{MINIMIZER\_STATUS\_INVALID\_COST\_FUNCTION} The cost function
+returned is NaN or infinity. This is usually solved by using bounded
+minimization to ensure that the values of ${\bf x}$ are kept within
+physically reasonable bounds.
+\citem{MINIMIZER\_STATUS\_INVALID\_GRADIENT} The gradient vector
+returned contains NaN or infinity values. Use bounded minimization.
+%
+\citem{MINIMIZER\_STATUS\_INVALID\_BOUNDS} The bounds requested are
+not valid, for instance a maximum bound was requested that is less
+than the minimum bound.
+%\citem{MINIMIZER\_STATUS\_NUMBER\_AVAILABLE}
+%\citem{MINIMIZER\_STATUS\_NOT\_YET\_CONVERGED
+\end{description}
+
+
 \chapter{General considerations}
 \label{chap:gen}
 
@@ -3144,7 +3495,7 @@ functions for querying its properties:
 \code{adept} namespace:
 \begin{description}
 \citem{std::string version()} Returns a string containing the version
-number of the \Adept\ library (e.g. ``\code{1.9.8}'').
+number of the \Adept\ library (e.g. ``\code{2.0.8}'').
 \citem{std::string compiler\_version()} Returns a string containing
 the compiler name and version used to compile the \Adept\ library.
 \citem{std::string compiler\_flags()} Returns a string containing the
@@ -3724,45 +4075,11 @@ default behaviour, define this variable yourself in
   functionality with automatic differentiation in a single
   expression-template framework.
 \item[Do you have plans to enable \Adept\ to produce Hessian
-  matrices?]  Not in the near future; refining the array functionality
-  is a higher priority at the moment.  However, if your objective
-  function $J(\x)$ (also known as a cost function or penalty function)
-  has a quadratic dependence on each of the elements of $\y(\x)$,
-  where $\y$ is a nonlinear function of the independent variables
-  $\x$, then the Hessian matrix $\nabla_\x^2 J$ can be computed from
-  the Jacobian matrix ${\bf H}=\partial\y/\partial\x$. This is the
-  essence of the Gauss-Newton and Levenberg-Marquardt
-  algorithms. Consider the optimization problem of finding the
-  parameters $\x$ of nonlinear model $\y(\x)$ that provides the
-  closest match to a set of ``observations'' $\y^o$ in a least-squares
-  sense.  For maximum generality we add constraints that penalize
-  differences between $\x$ and a set of \emph{a~priori} values $\x^a$,
-  as well as a regularization term.  In this case the objective
-  function could be written as \def\myspace{~~}
-\begin{equation}
-J(\x) \myspace =\myspace \left[\y(\x)-\y^o\right]^\mathrm{T}{\bf
-  R}^{-1}\left[\y(\x)-\y^o\right]
-\myspace+\myspace\left[\x-\x^a\right]^\mathrm{T}{\bf
-  B}^{-1}\left[\x-\x^a\right]
-\myspace+\myspace\x^\mathrm{T}{\bf T}\x.\nonumber
-\label{eq:objective}
-\end{equation}
-  Here, all vectors are treated as column vectors, ${\bf R}$ is the
-  error covariance matrix of the observations, ${\bf B}$ is the error
-  covariance matrix of the \emph{a~priori} values, and ${\bf T}$ is a
-  Twomey-Tikhonov matrix that penalizes either spatial gradients or
-  curvature in $\x$.  The Hessian matrix is then given by
-\begin{equation}
-\nabla_\x^2J \myspace=\myspace {\bf H}^\mathrm{T}{\bf
-  R}^{-1}{\bf H}\nonumber
-\myspace+\myspace {\bf B}^{-1} \myspace+\myspace {\bf T},
-\label{eq:hessian}
-\end{equation}
-  which can be coded up using \Adept\ to compute ${\bf H}$. Each term
-  on the right-hand-side of (\ref{eq:hessian}) has its corresponding
-  term in (\ref{eq:objective}), so it is easy to work out what the
-  Hessian would look like if only a subset of the terms in
-  (\ref{eq:objective}) were present.
+  matrices?]  Not in the near future as this is a huge change.
+  However, if your cost function $J(\x)$ (also known as a cost
+  function or penalty function) has a specific form then the Hessian
+  matrix can be computed from the Jacobian matrix, as described in
+  chapter \ref{chap:optimize}.
 \item[Why doesn't the ternary operator work?] Some compilers will fail
   to compile the following function:
 \begin{lstlisting}

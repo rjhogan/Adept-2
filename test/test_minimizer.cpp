@@ -16,6 +16,7 @@
 using namespace adept;
 
 class RosenbrockN : public Optimizable {
+public:
 
   // N-dimensional Rosenbrock function can be expressed as the sum of
   // the squared elements of vector y(x) defined as follows.  This
