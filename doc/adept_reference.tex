@@ -45,6 +45,8 @@ All functions and types are placed in the \code{adept} namespace.
 \begin{tabular}{ll}
 \code{adept.h} & Include if only scalar automatic differentiation is required\\
 \code{adept\_arrays.h} & Include if array capabilities are needed as well\\
+\code{adept\_fortran.h} & Interface to Fortran 2018 array descriptors\\
+\code{adept\_optimize.h} & Minimization algorithms, e.g.\ Levenberg-Marquardt\\
 \code{adept\_source.h} & Include entire Adept library, so linking to library not required \\
 \end{tabular}
 
@@ -62,10 +64,10 @@ All functions and types are placed in the \code{adept} namespace.
 \code{Stack stack;} & Object to store derivative information\\
 \code{aVector x = \{1.0, 2.0\};} & Initialize independent (input) variables (C++11)\\
 \code{stack.new\_recording();} & Start a new recording\\
-\code{aReal y = algorithm(x);} & Any complicated algorithm here\\
-\code{y.set\_gradient(1.0);} & Seed adjoint of objective function\\
+\code{aReal J = algorithm(x);} & Any complicated algorithm here\\
+\code{J.set\_gradient(1.0);} & Seed adjoint of cost function\\
 \code{stack.reverse();} & Perform reverse-mode differentiation\\
-\code{Vector dy\_dx = x.get\_gradient();} & Return gradients of output with respect to inputs\\
+\code{Vector dJ\_dx = x.get\_gradient();} & Return gradients of output with respect to inputs\\
 \end{tabular}
 
 
@@ -202,6 +204,7 @@ Define new fixed array types as follows:\\
 \code{.resize\_row\_major(3,4)} & Resize with row-major storage (default)\\
 \code{.resize\_column\_major(3,4)} & Resize with column-major storage\\
 \code{.resize(M.dimensions())} & Resize to same as \code{M}\\
+\code{.resize\_contiguous(...)} & Resize guaranteeing contiguous storage\\
 \code{N >{}>= M;} & Discard existing data and link to array on right-hand-side\\
 \end{tabular}
 \subsection*{Array query member functions}
@@ -248,11 +251,11 @@ will modify the original array, but if passed into a function
 receiving an \code{Array} type then any modifications inside the
 function will not affect the original array.
 \subsection*{Passing arrays to and from functions}
-There are three ways an array can be passed to a function:\\
+There are three ways an array can be received as an argument to a function:\\
 \begin{tabular}{ll}
-\code{const Matrix\&} \\
-\code{Matrix\&} \\
-\code{Matrix}
+\code{Matrix\&} & For an array that might be resized in the function\\
+\code{Matrix} & For an array or array slice to be modified inside the function\\
+\code{const Matrix\&} & For a read-only array, array slice or array expression\\
 \end{tabular}
 
 \subsection*{Member functions returning lvalue}
@@ -280,7 +283,7 @@ matrices\\
 \code{.submatrix\_on\_diagonal(ibeg,iend)} & Return square matrix lying on diagonal\\
 \end{tabular}
 \subsection*{Elemental mathematical functions}
-\code{value(x)}
+Return passive part of active object: \code{value(x)}
 
 \hangingpar
 Binary operators: \code{+}, \code{-},
@@ -295,8 +298,8 @@ Unary functions: \code{sqrt}, \code{exp},
   \code{asin}, \code{acos}, \code{atan}, \code{sinh}, \code{cosh},
   \code{tanh}, \code{abs}, \code{asinh}, \code{acosh}, \code{atanh},
   \code{expm1}, \code{log1p}, \code{cbrt}, \code{erf}, \code{erfc},
-  \code{exp2}, \code{log2}, \code{round}, \code{trunc}, \code{rint}
-  and \code{nearbyint}.
+  \code{exp2}, \code{log2}, \code{round}, \code{trunc}, \code{rint},
+  \code{nearbyint} and \code{fastexp}.
 
 \hangingpar
 Binary functions: \code{pow}, \code{atan2}, \code{min},
@@ -312,8 +315,8 @@ Binary operators returning \code{bool} expressions: \code{==},
 
 \subsection*{Alias-related functions}
 \begin{tabular}{ll}
-\code{eval(M)} \\
-\code{noalias(M)}\\
+\code{eval(E)} & Avoid aliasing by evaluating expression \code{E} into an array\\
+\code{noalias(E)} & Turn off alias checking for expression \code{E}\\
 \end{tabular}
 \subsection*{Reduction functions}
 \begin{tabular}{ll}
@@ -337,6 +340,7 @@ rank-1 arguments\\
 \end{tabular}
 \subsection*{Matrix multiplication and linear algebra}
 \begin{tabular}{ll}
+\code{transpose(M)} & Transpose matrix or 2D matrix expression\\
 \code{matmul(M,N)} & Matrix multiply, where at least one argument must
 be a matrix, and \\
 &orientation of any vector arguments is inferred\\
@@ -355,11 +359,19 @@ The following can be defined to change the behaviour of your code:\\
 \code{ADEPT\_TRACK\_NON\_FINITE\_GRADIENTS} & Exception thrown if derivative non-finite\\
 \code{ADEPT\_BOUNDS\_CHECKING} & Check array bounds (slower)\\
 \code{ADEPT\_NO\_ALIAS\_CHECKING} & Turn off alias checking (faster)\\
+\code{ADEPT\_NO\_DIMENSION\_CHECKING} & Turn off dimension checking (faster)\\
+\code{ADEPT\_INIT\_REAL\_SNAN} & Initialize real numbers to signaling NaN\\
+\code{ADEPT\_INIT\_REAL\_ZERO} & Initialize real numbers to zero\\
+\code{ADEPT\_FAST\_EXPONENTIAL} & Use faster vectorizable exponential\\
+\code{ADEPT\_FAST\_SCALAR\_EXPONENTIAL} & Provide faster \code{adept::exp} for scalars\\
+\code{ADEPT\_FAST} & Enable bit-reproducible options\\
 \code{ADEPT\_STORAGE\_THREAD\_SAFE} & Thread-safe array storage (slower)\\
+\code{ADEPT\_SUPPORT\_HUGE\_ARRAYS} & Use \code{std::size\_t} for array dimensions\\
+\code{ADEPT\_REAL\_TYPE\_SIZE} & Size of \code{Real}: 4 or 8 (default 8)
 \end{tabular}
-
 The \code{ADEPT\_VERSION} variable contains version number as an
-integer, e.g.\ \code{20103} for ``2.0.3''.
+integer, e.g.\ \code{20108}, while \code{ADEPT\_VERSION\_STR} contains
+it as a string, e.g.\ ``2.0.8''.
 \onecolumn
 
 \newpage
@@ -551,7 +563,7 @@ Matrix subset &
 Extract row &
 \code{A(i,:)} &
 \code{A(i,:)} &
-\code{A(i,\_\_)} &
+\code{A(i,\_\_)}, \code{A[i]} &
 \code{A.row(i)}
 \\
 Matrix end block &
@@ -694,7 +706,7 @@ Maximum of all elements &
 Maximum of two arrays &
 \code{max(A,B)} &
 (Complicated) &
-\code{max(A,B)} &
+\code{max(A,B)}, \code{fmax(A,B)} &
 \code{A.max(B)}
 \\
 Spread along new dimension &
