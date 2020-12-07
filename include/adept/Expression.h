@@ -134,6 +134,8 @@ namespace adept {
 	return val;
       }
       else {
+	// Note that if an object returns val==Packet<Type>::size then
+	// it indicates that alignment does not matter for this object
 	return 0;
       }
     }

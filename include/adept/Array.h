@@ -2072,11 +2072,15 @@ namespace adept {
 
     // Return the number of unaligned elements before reaching the
     // first element on an alignment boundary, which is in units of
-    // "n" Types.
+    // "n" Types. The first "%" argument finds how many elements the
+    // first element is above an alignment boundary; the following bit
+    // then works out how many elements to the next alignment
+    // boundary.
     template <int n>
     int alignment_offset_() const {
       // This is rather slow!
-      return (reinterpret_cast<std::size_t>(reinterpret_cast<void*>(data_))/sizeof(Type)) % n;
+      return (n - (reinterpret_cast<std::size_t>(reinterpret_cast<void*>(data_))/sizeof(Type))
+	      % n) % n;
     }
 
     Type value_with_len_(const Index& j, const Index& len) const {
@@ -2889,11 +2893,12 @@ namespace adept {
 	Index iendvec = 0;
 
 	istartvec = rhs.alignment_offset();
-	
 	if (istartvec < 0 || istartvec != alignment_offset_<Packet<Type>::size>()) {
 	  istartvec = iendvec = 0;
 	}
 	else  {
+	  // Adjust iendvec such that iendvec-istartvec is a multiple
+	  // of the packet size
 	  iendvec = (dimensions_[0]-istartvec);
 	  iendvec -= (iendvec % Packet<Type>::size);
 	  iendvec += istartvec;

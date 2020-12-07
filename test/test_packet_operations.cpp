@@ -74,6 +74,34 @@ void test_vector_operations(int N) {
   std::cout << "maxval(v) = " << maxval(v) << "\n";
 }
 
+template <typename Type>
+void test_unaligned_reduce(int N) {
+  std::cout << "\nUNALIGNED REDUCE\n";
+  std::cout << "Type: " << sizeof(Type) << "-byte floating point numbers\n";
+  std::cout << "Packet size: " << internal::Packet<Type>::size << "\n";
+  Array<1,Type> v(N);
+  v = range(1,N);
+  std::cout << "v = " << v << "\n";
+  std::cout << "sum(v(range(1,end-1))) = " << sum(v(range(1,end-1))) << "\n";
+}
+
+template <typename Type>
+void test_unaligned_assign(int N) {
+  std::cout << "\nUNALIGNED ASSIGN\n";
+  std::cout << "Type: " << sizeof(Type) << "-byte floating point numbers\n";
+  std::cout << "Packet size: " << internal::Packet<Type>::size << "\n";
+  Array<1,Type> v(N), w(N), x(N);
+  v = range(1,N);
+  w = 2.0;
+  x = 0.0;
+  std::cout << "v = " << v << "\n";
+  std::cout << "w = " << w << "\n";
+  std::cout << "x = " << x << "\n";
+  std::cout << "x(range(1,end-1)) = v(range(1,end-1))+w(range(1,end-1)) ->\n";
+  x(range(1,end-1)) = v(range(1,end-1))+w(range(1,end-1));
+  std::cout << "x = " << x << "\n";
+
+}
 
 int
 main(int argc, const char** argv)
@@ -89,9 +117,14 @@ main(int argc, const char** argv)
   Packet<double> e = fastexp(d);
   std::cout << "e=" << e << "\n";
   
-  
   test_vector_operations<float>(N);
   test_vector_operations<double>(N);
+
+  test_unaligned_reduce<float>(2*N);
+  test_unaligned_reduce<double>(2*N);
+
+  test_unaligned_assign<float>(2*N);
+  test_unaligned_assign<double>(2*N);
 
   return 0;
 }

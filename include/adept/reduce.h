@@ -528,6 +528,8 @@ namespace adept {
 	  istartvec = iendvec = 0;
 	}
 	else {
+	  // Adjust iendvec such that iendvec-istartvec is a multiple
+	  // of the packet size
 	  iendvec = (dims[last]-istartvec);
 	  iendvec -= (iendvec % Packet<Type>::size);
 	  iendvec += istartvec;
