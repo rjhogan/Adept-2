@@ -144,7 +144,6 @@ namespace adept {
 		       const Index& len) {
       Index i = ind.value_with_len(j, len);
       if (i < 0 || i >= len) {
-	abort();
 	throw index_out_of_bounds("Index out of bounds in IndexedArray"
 				  ADEPT_EXCEPTION_LOCATION);
       }
