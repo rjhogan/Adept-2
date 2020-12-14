@@ -217,6 +217,8 @@ namespace adept {
 
 namespace adept {
   
+  using namespace internal;
+  
   // -------------------------------------------------------------------
   // Solve Ax = b for general square matrix A
   // -------------------------------------------------------------------

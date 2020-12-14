@@ -95,6 +95,13 @@ public:
 int
 main(int argc, const char* argv[])
 {
+
+  if (!adept::have_linear_algebra()) {
+    std::cout << "Adept compiled without linear-algebra support: minimizer not available\n";
+    return 0;
+  }
+
+
   RosenbrockN rosenbrock;
   Minimizer minimizer(MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT);
   int nx = 2;
