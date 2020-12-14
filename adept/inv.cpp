@@ -123,6 +123,8 @@ namespace adept {
     
 namespace adept {
 
+  using namespace internal;
+
   // -------------------------------------------------------------------
   // Invert general square matrix A
   // -------------------------------------------------------------------
