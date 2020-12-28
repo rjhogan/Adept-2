@@ -1,4 +1,4 @@
-/* minimize_limited_memory_bfgs.cpp -- Minimize function using Limited-Memory BFGS algorithm
+/* minimize_conjugate_gradient.cpp -- Minimize function using Conjugate Gradient algorithm
 
     Copyright (C) 2020 European Centre for Medium-Range Weather Forecasts
 
@@ -13,9 +13,9 @@
 namespace adept {
 
   MinimizerStatus
-  Minimizer::minimize_limited_memory_bfgs(Optimizable& optimizable, Vector x)
+  Minimizer::minimize_conjugate_gradient(Optimizable& optimizable, Vector x)
   {
-    throw optimization_exception("Limited-memory BFGS algorithm not yet implemented");
+    throw optimization_exception("Conjugate Gradient algorithm not yet implemented");
     //return MINIMIZER_STATUS_SUCCESS;
   }
 

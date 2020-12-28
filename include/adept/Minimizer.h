@@ -17,6 +17,7 @@ namespace adept {
 
   enum MinimizerAlgorithm {
     MINIMIZER_ALGORITHM_LIMITED_MEMORY_BFGS = 0,
+    MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT,
     MINIMIZER_ALGORITHM_LEVENBERG,
     MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT,
     MINIMIZER_ALGORITHM_NUMBER_AVAILABLE
@@ -44,6 +45,7 @@ namespace adept {
   inline int minimizer_algorithm_order(MinimizerAlgorithm algo) {
     switch (algo) {
     case MINIMIZER_ALGORITHM_LIMITED_MEMORY_BFGS:
+    case MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT:
       return 1;
       break;
     case MINIMIZER_ALGORITHM_LEVENBERG:
@@ -147,6 +149,9 @@ namespace adept {
 
     MinimizerStatus
     minimize_limited_memory_bfgs(Optimizable& optimizable, Vector x);
+
+    MinimizerStatus
+    minimize_conjugate_gradient(Optimizable& optimizable, Vector x);
 
     // Call the Levenberg-Marquardt algorithm; if use_additive_damping
     // is true then the Levenberg algorithm is used instead

@@ -1,4 +1,4 @@
-/* minimize_levenberg_marquardt.h -- Minimize function using Levenberg-Marquardt algorithm
+/* minimize_levenberg_marquardt.cpp -- Minimize function using Levenberg-Marquardt algorithm
 
     Copyright (C) 2020 European Centre for Medium-Range Weather Forecasts
 

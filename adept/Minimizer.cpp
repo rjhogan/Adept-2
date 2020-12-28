@@ -16,6 +16,7 @@ namespace adept {
 
   static const char* minimizer_algorithm_names_[]
     = {"L-BFGS",
+       "Conjugate-Gradient",
        "Levenberg",
        "Levenberg-Marquardt"};
 
