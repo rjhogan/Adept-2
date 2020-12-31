@@ -36,6 +36,9 @@ namespace adept {
     case MINIMIZER_STATUS_FAILED_TO_CONVERGE:
       return "Failed to converge";
       break;
+    case MINIMIZER_STATUS_DIRECTION_UPHILL:
+      return "Search direction points uphill";
+      break;
     case MINIMIZER_STATUS_INVALID_COST_FUNCTION:
       return "Non-finite cost function";
       break;
@@ -86,6 +89,9 @@ namespace adept {
     }
     else if (algorithm_ == MINIMIZER_ALGORITHM_LIMITED_MEMORY_BFGS) {
       return minimize_limited_memory_bfgs(optimizable, x);
+    }
+    else if (algorithm_ == MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT) {
+      return minimize_conjugate_gradient(optimizable, x);
     }
     else if (algorithm_ == MINIMIZER_ALGORITHM_LEVENBERG) {
       return minimize_levenberg_marquardt(optimizable, x, true);

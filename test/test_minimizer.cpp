@@ -125,7 +125,7 @@ main(int argc, const char* argv[])
     }
   }
   else {
-    std::cout << "Usage: " << argv[0] << " [nx] [Levenberg|Levenberg-Marquardt|L-BFGS] [max_iterations] [converged_gradient_norm]\n";
+    std::cout << "Usage: " << argv[0] << " [nx] [Levenberg|Levenberg-Marquardt|L-BFGS|Conjugate-Gradient] [max_iterations] [converged_gradient_norm]\n";
   }
 
   //minimizer.set_levenberg_damping_start(0.0);

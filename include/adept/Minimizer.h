@@ -28,6 +28,7 @@ namespace adept {
     MINIMIZER_STATUS_EMPTY_STATE,
     MINIMIZER_STATUS_MAX_ITERATIONS_REACHED,
     MINIMIZER_STATUS_FAILED_TO_CONVERGE,
+    MINIMIZER_STATUS_DIRECTION_UPHILL,
     MINIMIZER_STATUS_INVALID_COST_FUNCTION,
     MINIMIZER_STATUS_INVALID_GRADIENT,
     MINIMIZER_STATUS_INVALID_BOUNDS,
@@ -163,6 +164,17 @@ namespace adept {
 					 const Vector& min_x,
 					 const Vector& max_x,
 					 bool use_additive_damping = false);
+    MinimizerStatus
+    line_search(Optimizable& optimizable, Vector x, const Vector& direction,
+		Vector test_x, Real& abs_step_size,
+		Vector gradient, int& state_up_to_date);
+
+    bool
+    line_search_gradient_check(Optimizable& optimizable, Vector x, Vector direction,
+			       Vector test_x, Real& abs_step_size,
+			       Vector gradient, int& state_up_to_date,
+			       Real step_size, Real grad0, Real dir_scaling,
+			       Real& cost_funcction, Real& grad);
 
     // DATA
 
@@ -176,6 +188,10 @@ namespace adept {
     Real converged_gradient_norm_;
     int ensure_updated_state_;
 
+    // Armijo condition determined by this coefficient, the first of
+    // the two Wolfe conditions
+    Real armijo_coeff_ = 1.0e-4;
+
     // Variables controling the specific behaviour of the
     // Levenberg-Marquardt minimizer
     Real levenberg_damping_min_;
@@ -184,6 +200,18 @@ namespace adept {
     Real levenberg_damping_divider_;
     Real levenberg_damping_start_;
     Real levenberg_damping_restart_;
+
+    // Variables controlling the specific behaviour of the Conjugate
+    // Gradient minimizer
+
+    int cg_max_line_search_iterations_ = 30;
+
+    // Search direction from: true = Fletcher-Reeves, false =
+    // Polak-Ribiere
+    bool cg_use_fletcher_reeves_ = false;
+
+    // Gradient in search direction must reduce by this amount
+    Real cg_curvature_coeff_ = 0.1;
 
     // Variables set during the running of an algorithm and available
     // to the user afterwards
