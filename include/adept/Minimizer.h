@@ -204,7 +204,7 @@ namespace adept {
     // Variables controlling the specific behaviour of the Conjugate
     // Gradient minimizer
 
-    int cg_max_line_search_iterations_ = 30;
+    int cg_max_line_search_iterations_ = 10;
 
     // Search direction from: true = Fletcher-Reeves, false =
     // Polak-Ribiere

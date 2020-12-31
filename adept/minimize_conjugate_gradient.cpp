@@ -25,7 +25,6 @@ namespace adept {
     status_ = MINIMIZER_STATUS_NOT_YET_CONVERGED;
     cost_function_ = std::numeric_limits<Real>::infinity();
 
-    Real new_cost;
     Vector new_x(nx);
     Vector gradient(nx);
     Vector previous_gradient(nx);
@@ -38,15 +37,16 @@ namespace adept {
     }
     bool do_restart = true;
 
+    int iteration_at_last_restart = n_iterations_;
+
     do {
-      // At this point we have either just started or have just
-      // reduced the cost function
-      if (!do_restart) {
-	previous_gradient = gradient;
+
+      if (state_up_to_date < 1) {
+	cost_function_ = optimizable.calc_cost_function_gradient(x, gradient);
+	state_up_to_date = 1;
+	++n_samples_;
       }
-      cost_function_ = optimizable.calc_cost_function_gradient(x, gradient);
-      state_up_to_date = 1;
-      ++n_samples_;
+
       if (n_iterations_ == 0) {
 	start_cost_function_ = cost_function_;
       }
@@ -72,10 +72,15 @@ namespace adept {
 	break;
       }
 
+      if (n_iterations_ - iteration_at_last_restart > nx) {
+	do_restart = true;
+      }
+
       // Find search direction
       if (do_restart) {
 	direction = -gradient;
 	do_restart = false;
+	iteration_at_last_restart = n_iterations_;
       }
       else {
 	Real beta;
@@ -88,14 +93,19 @@ namespace adept {
 			  / dot_product(previous_gradient, previous_gradient),
 			  0.0);
 	}
+	if (beta <= 0) {
+	  iteration_at_last_restart = n_iterations_;
+	}
 	direction = beta*direction - gradient;
       }
+
+      previous_gradient = gradient;
 
       // Perform line search
       status_ = line_search(optimizable, x, direction,
 			   new_x, step_size, gradient, state_up_to_date);
 
-      n_iterations_++;
+      ++n_iterations_;
       if (n_iterations_ >= max_iterations_) {
 	status_ = MINIMIZER_STATUS_MAX_ITERATIONS_REACHED;
       }
