@@ -30,13 +30,24 @@ namespace adept {
     cost_function_ = std::numeric_limits<Real>::infinity();
 
     Real new_cost;
+
+    // The main memory storage for the Levenberg family of methods
+    // consists of the following three vectors...
     Vector new_x(nx);
     Vector gradient(nx);
     Vector dx(nx);
+
+    // ...and the Hessian matrix, which is stored explicitly
     SymmMatrix hessian(nx);
     hessian = 0.0;
+
     Real damping = levenberg_damping_start_;
     gradient_norm_ = -1.0;
+
+    // Does the last calculation of the cost function in "optimizable"
+    // match the current contents of the state vector x? -1=no, 0=yes,
+    // 1=yes and the last calculation included the gradient, 2=yes and
+    // the last calculation included gradient and Hessian.
     int state_up_to_date = -1;
 
     do {

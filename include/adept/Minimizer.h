@@ -164,13 +164,36 @@ namespace adept {
 					 const Vector& min_x,
 					 const Vector& max_x,
 					 bool use_additive_damping = false);
+
+    // Perform line search starting at state vector "x" with gradient
+    // vector "gradient", and initial step "step_size" in
+    // un-normalized direction "direction". Successful minimization of
+    // the function (according to Wolfe conditions) will lead to
+    // MINIMIZER_STATUS_NOT_YET_CONVERGED being returned, the new
+    // state stored in "x", and if state_up_to_date >= 1 then the
+    // gradient stored in "gradient". Other possible return values are
+    // MINIMIZER_STATUS_FAILED_TO_CONVERGE and
+    // MINIMIZER_STATUS_DIRECTION_UPHILL if the initial direction
+    // points uphill. First the minimum is bracketed, then a cubic
+    // polynomial is fitted to the values and gradients of the
+    // function at the two points in order to select the next test
+    // point.
     MinimizerStatus
     line_search(Optimizable& optimizable, Vector x, const Vector& direction,
 		Vector test_x, Real& abs_step_size,
 		Vector gradient, int& state_up_to_date);
 
+    // Compute the cost function "cf" and gradient vector "gradient",
+    // along with the scalar gradient "grad" in the search direction
+    // "direction" (normalized with "dir_scaling"), from the state
+    // vector "x" plus a step "step_size" in the search direction. If
+    // the resulting cost function and gradient satisfy the Wolfe
+    // conditions for sufficient convergence, copy the new state
+    // vector to "x" and the step size to "final_step_size", and
+    // return true.  Otherwise, return false.
     bool
-    line_search_gradient_check(Optimizable& optimizable, Vector x, Vector direction,
+    line_search_gradient_check(Optimizable& optimizable, Vector x, 
+			       const Vector& direction,
 			       Vector test_x, Real& abs_step_size,
 			       Vector gradient, int& state_up_to_date,
 			       Real step_size, Real grad0, Real dir_scaling,
