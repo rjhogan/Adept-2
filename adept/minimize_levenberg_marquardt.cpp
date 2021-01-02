@@ -44,6 +44,12 @@ namespace adept {
     Real damping = levenberg_damping_start_;
     gradient_norm_ = -1.0;
 
+    // Original Levenberg is additive to the diagonal of the Hessian
+    // so to make the performance insensitive to an arbitrary scaling
+    // of the cost function, we scale the damping factor by the mean
+    // of the diagonal of the Hessian
+    Real diag_scaling;
+
     // Does the last calculation of the cost function in "optimizable"
     // match the current contents of the state vector x? -1=no, 0=yes,
     // 1=yes and the last calculation included the gradient, 2=yes and
@@ -54,6 +60,7 @@ namespace adept {
       // At this point we have either just started or have just
       // reduced the cost function
       cost_function_ = optimizable.calc_cost_function_gradient_hessian(x, gradient, hessian);
+      diag_scaling = mean(hessian.diag_vector());
       state_up_to_date = 2;
       ++n_samples_;
       if (n_iterations_ == 0) {
@@ -94,8 +101,8 @@ namespace adept {
 	}
 	else {
 	  // Older Levenberg approach: add to the diagonal instead
-	  hessian.diag_vector() += damping - previous_diag_modifier;
-	  previous_diag_modifier = damping;
+	  hessian.diag_vector() += damping*diag_scaling - previous_diag_modifier;
+	  previous_diag_modifier = damping*diag_scaling;
 	}
 	dx = -adept::solve(hessian, gradient);
 
@@ -230,12 +237,24 @@ namespace adept {
     int nbound = count(bound_status != 0);
     int nfree  = nx - nbound;
     gradient_norm_ = -1.0;
+
+    // Original Levenberg is additive to the diagonal of the Hessian
+    // so to make the performance insensitive to an arbitrary scaling
+    // of the cost function, we scale the damping factor by the mean
+    // of the diagonal of the Hessian
+    Real diag_scaling;
+
+    // Does the last calculation of the cost function in "optimizable"
+    // match the current contents of the state vector x? -1=no, 0=yes,
+    // 1=yes and the last calculation included the gradient, 2=yes and
+    // the last calculation included gradient and Hessian.
     int state_up_to_date = -1;
 
     do {
       // At this point we have either just started or have just
       // reduced the cost function
       cost_function_ = optimizable.calc_cost_function_gradient_hessian(x, gradient, hessian);
+      diag_scaling = mean(hessian.diag_vector());
       state_up_to_date = 2;
       ++n_samples_;
       if (n_iterations_ == 0) {
@@ -338,8 +357,8 @@ namespace adept {
 	}
 	else {
 	  // Older Levenberg approach: add to the diagonal instead
-	  sub_hessian.diag_vector() += damping - previous_diag_modifier;
-	  previous_diag_modifier = damping;
+	  sub_hessian.diag_vector() += damping*diag_scaling - previous_diag_modifier;
+	  previous_diag_modifier = damping*diag_scaling;
 	}
 	sub_dx = -adept::solve(sub_hessian, sub_gradient);
 
