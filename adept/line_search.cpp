@@ -35,7 +35,8 @@ namespace adept {
 	Real grad0, // Gradient in direction at start of line search
 	Real dir_scaling, // Scaling of direction vector
 	Real& cf, // Returned cost function
-	Real& grad) // Returned gradient in direction
+	Real& grad, // Returned gradient in direction
+	Real curvature_coeff) // Factor by which gradient should reduce (0-1)
   {
     test_x = x + (step_size * dir_scaling) * direction;
     cf = optimizable.calc_cost_function_gradient(test_x, gradient);
@@ -44,7 +45,7 @@ namespace adept {
 
     // Check Wolfe conditions
     if (cf <= cost_function_ + armijo_coeff_*step_size*grad0 // Armijo condition
-	&& std::fabs(grad) <= -cg_curvature_coeff_*grad0) { // Curvature condition
+	&& std::fabs(grad) <= -curvature_coeff*grad0) { // Curvature condition
       x = test_x;
       final_step_size = step_size;
       cost_function_ = cf;
@@ -76,7 +77,8 @@ namespace adept {
 	 Vector test_x, // Test state vector (working memory)
 	 Real& step_size, // Initial and final step size
 	 Vector gradient, // Initial and possibly final gradient
-	 int& state_up_to_date) // 1 if gradient up-to-date, -1 otherwise
+	 int& state_up_to_date, // 1 if gradient up-to-date, -1 otherwise
+	 Real curvature_coeff) // Factor by which gradient should reduce (0-1)
   {
     Real dir_scaling = 1.0 / norm2(direction);
 
@@ -103,7 +105,7 @@ namespace adept {
     Real cf1 = cf0;
     Real cf2, cf3;
 
-    int iterations_remaining = cg_max_line_search_iterations_;
+    int iterations_remaining = max_line_search_iterations_;
 
     if (grad0 >= 0.0) {
       return MINIMIZER_STATUS_DIRECTION_UPHILL;
@@ -115,7 +117,7 @@ namespace adept {
       if (line_search_gradient_check(optimizable, x, direction, test_x,
 				     step_size, gradient, state_up_to_date,
 				     ss2, grad0, dir_scaling,
-				     cf2, grad2)) {
+				     cf2, grad2, curvature_coeff)) {
 	return MINIMIZER_STATUS_NOT_YET_CONVERGED;
       }
      
@@ -127,10 +129,24 @@ namespace adept {
       else {
 	// Reduced cost function but not yet bounded -> look further
 	// ahead
-	ss1 = ss2;
-	cf1 = cf2;
-	grad1 = grad2;
-	ss2 *= 4.0;	  
+	if (cf1 > cf2+grad2*(ss1-ss2)) {
+	  // Positive curvature: fit a quadratic
+	  Real curvature = 2.0*(cf1-cf2-grad2*(ss1-ss2))/((ss1-ss2)*(ss1-ss2));
+	  Real new_step = ss2-grad2/curvature; // Newton's method
+	  // Bounds on actual step size
+	  new_step = std::max(ss1+1.1*(ss2-ss1), std::min(new_step, ss1+10.0*(ss2-ss1)));
+	  ss1 = ss2;
+	  cf1 = cf2;
+	  grad1 = grad2;
+	  ss2 = new_step;
+
+	}
+	else {
+	  ss1 = ss2;
+	  cf1 = cf2;
+	  grad1 = grad2;
+	  ss2 *= 5.0;
+	}
       }
 
     }
@@ -159,7 +175,7 @@ namespace adept {
       if (line_search_gradient_check(optimizable, x, direction, test_x,
 				     step_size, gradient, state_up_to_date,
 				     ss3, grad0, dir_scaling,
-				     cf3, grad3)) {
+				     cf3, grad3, curvature_coeff)) {
 	return MINIMIZER_STATUS_NOT_YET_CONVERGED;
       }
 
@@ -191,11 +207,13 @@ namespace adept {
     if (cf2 < cf1) {
       // Return value at point 2
       x += (ss2 * dir_scaling) * direction;
+      step_size = ss2;
       cost_function_ = cf2;  
     }
     else if (cf1 < cf0) {
       // Return value at point 1
       x += (ss1 * dir_scaling) * direction;
+      step_size = ss1;
       cost_function_ = cf1;  
     }
     else {

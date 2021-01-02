@@ -20,7 +20,8 @@ namespace adept {
   // Polak-Ribiere method is used to compute the new search direction,
   // but Fletcher-Reeves is also available.
   MinimizerStatus
-  Minimizer::minimize_conjugate_gradient(Optimizable& optimizable, Vector x)
+  Minimizer::minimize_conjugate_gradient(Optimizable& optimizable, Vector x,
+					 bool use_fletcher_reeves)
   {
     int nx = x.size();
 
@@ -113,7 +114,7 @@ namespace adept {
 	// generally the Polak-Ribiere method is believed to be
 	// superior to Fletcher-Reeves
 	Real beta;
-	if (cg_use_fletcher_reeves_) {
+	if (use_fletcher_reeves) {
 	  // Fletcher-Reeves method
 	  beta = dot_product(gradient, gradient) 
 	    / dot_product(previous_gradient, previous_gradient);
@@ -138,7 +139,21 @@ namespace adept {
       // Perform line search, storing new state vector in x, and
       // returning MINIMIZER_STATUS_NOT_YET_CONVERGED on success
       status_ = line_search(optimizable, x, direction,
-			    test_x, step_size, gradient, state_up_to_date);
+			    test_x, step_size, gradient, state_up_to_date,
+			    cg_curvature_coeff_);
+
+      if (status_ != MINIMIZER_STATUS_NOT_YET_CONVERGED
+	  && iteration_at_last_restart != n_iterations_) {
+	// Line search made no progress and this was not a restart;
+	// try restarting once
+	do_restart = true;
+	status_ = MINIMIZER_STATUS_NOT_YET_CONVERGED;
+      }
+
+
+      // Better convergence if first step size on next line search is
+      // larger than the actual step size on the last line search
+      step_size *= 2.0;
 
       ++n_iterations_;
       if (n_iterations_ >= max_iterations_) {

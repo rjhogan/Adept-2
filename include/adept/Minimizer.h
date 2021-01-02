@@ -17,7 +17,8 @@ namespace adept {
 
   enum MinimizerAlgorithm {
     MINIMIZER_ALGORITHM_LIMITED_MEMORY_BFGS = 0,
-    MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT,
+    MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT,    // Polak-Ribiere
+    MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT_FR, // Fletcher-Reeves
     MINIMIZER_ALGORITHM_LEVENBERG,
     MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT,
     MINIMIZER_ALGORITHM_NUMBER_AVAILABLE
@@ -47,6 +48,7 @@ namespace adept {
     switch (algo) {
     case MINIMIZER_ALGORITHM_LIMITED_MEMORY_BFGS:
     case MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT:
+    case MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT_FR:
       return 1;
       break;
     case MINIMIZER_ALGORITHM_LEVENBERG:
@@ -152,7 +154,8 @@ namespace adept {
     minimize_limited_memory_bfgs(Optimizable& optimizable, Vector x);
 
     MinimizerStatus
-    minimize_conjugate_gradient(Optimizable& optimizable, Vector x);
+    minimize_conjugate_gradient(Optimizable& optimizable, Vector x,
+				bool use_fletcher_reeves = false);
 
     // Call the Levenberg-Marquardt algorithm; if use_additive_damping
     // is true then the Levenberg algorithm is used instead
@@ -181,7 +184,8 @@ namespace adept {
     MinimizerStatus
     line_search(Optimizable& optimizable, Vector x, const Vector& direction,
 		Vector test_x, Real& abs_step_size,
-		Vector gradient, int& state_up_to_date);
+		Vector gradient, int& state_up_to_date,
+		Real curvature_coeff);
 
     // Compute the cost function "cf" and gradient vector "gradient",
     // along with the scalar gradient "grad" in the search direction
@@ -197,7 +201,8 @@ namespace adept {
 			       Vector test_x, Real& abs_step_size,
 			       Vector gradient, int& state_up_to_date,
 			       Real step_size, Real grad0, Real dir_scaling,
-			       Real& cost_funcction, Real& grad);
+			       Real& cost_funcction, Real& grad,
+			       Real curvature_coeff);
 
     // DATA
 
@@ -211,10 +216,6 @@ namespace adept {
     Real converged_gradient_norm_;
     int ensure_updated_state_;
 
-    // Armijo condition determined by this coefficient, the first of
-    // the two Wolfe conditions
-    Real armijo_coeff_ = 1.0e-4;
-
     // Variables controling the specific behaviour of the
     // Levenberg-Marquardt minimizer
     Real levenberg_damping_min_;
@@ -224,17 +225,22 @@ namespace adept {
     Real levenberg_damping_start_;
     Real levenberg_damping_restart_;
 
+    // Variable used by the Conjugate-Gradient and L-BFGS minimizers
+    int max_line_search_iterations_ = 10;
+    // Armijo condition determined by this coefficient, the first of
+    // the two Wolfe conditions
+    Real armijo_coeff_ = 1.0e-4;
+
     // Variables controlling the specific behaviour of the Conjugate
     // Gradient minimizer
-
-    int cg_max_line_search_iterations_ = 10;
-
-    // Search direction from: true = Fletcher-Reeves, false =
-    // Polak-Ribiere
-    bool cg_use_fletcher_reeves_ = false;
-
     // Gradient in search direction must reduce by this amount
     Real cg_curvature_coeff_ = 0.1;
+
+    // Variables controlling specific behaviour of L-BFGS minimizer
+    // Gradient in search direction must reduce by this amount
+    Real lbfgs_curvature_coeff_ = 0.9;
+    // Number of prevous states to store
+    int lbfgs_n_states_ = 6;
 
     // Variables set during the running of an algorithm and available
     // to the user afterwards
