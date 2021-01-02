@@ -13,10 +13,18 @@
 #include <iostream>
 #include <adept_optimize.h>
 
+// Set this to a large or small number to test if the minimization
+// algorithms are immune to the absolute scaling of the cost function
+#define COST_SCALING 1.0
+
 using namespace adept;
 
 class RosenbrockN : public Optimizable {
 public:
+
+  RosenbrockN() : ls_iteration_(0) {}
+
+  int ls_iteration_; // Line search iteration
 
   // N-dimensional Rosenbrock function can be expressed as the sum of
   // the squared elements of vector y(x) defined as follows.  This
@@ -31,19 +39,26 @@ public:
       y(ix*2)   = 10.0 * (x(ix+1)-x(ix)*x(ix));
       y(ix*2+1) = 1.0 - x(ix);
     }
-    y *= sqrt(2.0);
+    y *= sqrt(2.0 * COST_SCALING);
     return y;
   }
     
   virtual void report_progress(int niter, const adept::Vector& x,
 			       Real cost, Real gnorm) {
+    ls_iteration_ = 0;
     std::cout << "Iteration " << niter
 	      << ": cost=" << cost << ", gnorm=" << gnorm << "\n";
+  }
+
+  void state_to_stderr(const adept::Vector& x, Real cost) {
+    
     // For plotting progress, direct standard error to a text file
+    std::cerr << ls_iteration_ << " ";
     for (int ix = 0; ix < x.size(); ++ix) {
       std::cerr << x(ix) << " ";
     }
     std::cerr << cost << "\n";
+    ++ls_iteration_;
   }
 
   virtual bool provides_derivative(int order) {
@@ -58,7 +73,9 @@ public:
   virtual Real calc_cost_function(const Vector& x) {
     //std::cout << "  test x: " << x << "\n";
     Vector y = calc_y(x);
-    return 0.5*sum(y*y);
+    Real cost = 0.5*sum(y*y);
+    state_to_stderr(x,cost);
+    return cost;
   }
 
   virtual Real calc_cost_function_gradient(const Vector& x,
@@ -71,6 +88,7 @@ public:
     cost.set_gradient(1.0);
     stack.reverse();
     gradient = xactive.get_gradient();
+    state_to_stderr(x,value(cost));
     return value(cost);
   }
 
@@ -87,6 +105,7 @@ public:
     Matrix jac = stack.jacobian();
     hessian  = jac.T() ** jac;
     gradient = jac.T() ** value(y);
+    state_to_stderr(x,value(cost));
     return value(cost);
   }
 
@@ -104,6 +123,9 @@ main(int argc, const char* argv[])
 
   RosenbrockN rosenbrock;
   Minimizer minimizer(MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT);
+  // The convergence criterion should be changed in accordance with
+  // the cost function scaling
+  minimizer.set_converged_gradient_norm(0.1*COST_SCALING);
   int nx = 2;
   if (argc > 1) {
     // nx = std::stoi(argv[1]);
@@ -130,7 +152,7 @@ main(int argc, const char* argv[])
 
   //minimizer.set_levenberg_damping_start(0.0);
   //minimizer.set_max_step_size(1.0);
-  //minimizer.set_levenberg_damping_multiplier(2.0, 5.0);
+  //  minimizer.set_levenberg_damping_multiplier(3.0, 5.0);
   minimizer.ensure_updated_state(2);
 
   std::cout << "Minimizing " << nx << "-dimensional Rosenbrock function\n";
