@@ -17,6 +17,7 @@ namespace adept {
   static const char* minimizer_algorithm_names_[]
     = {"L-BFGS",
        "Conjugate-Gradient",
+       "Conjugate-Gradient-FR",
        "Levenberg",
        "Levenberg-Marquardt"};
 
@@ -92,6 +93,9 @@ namespace adept {
     }
     else if (algorithm_ == MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT) {
       return minimize_conjugate_gradient(optimizable, x);
+    }
+    else if (algorithm_ == MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT_FR) {
+      return minimize_conjugate_gradient(optimizable, x, true);
     }
     else if (algorithm_ == MINIMIZER_ALGORITHM_LEVENBERG) {
       return minimize_levenberg_marquardt(optimizable, x, true);
