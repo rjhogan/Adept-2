@@ -142,7 +142,6 @@ namespace adept {
     void set_levenberg_damping_restart(Real damp_restart);
     void set_levenberg_damping_multiplier(Real damp_multiply, Real damp_divide);
 
-
     // Functions to set parameters used by the L-BFGS and
     // Conjugate-Gradient algorithms
     void set_max_line_search_iterations(int mi) { max_line_search_iterations_ = mi; }
@@ -170,8 +169,6 @@ namespace adept {
 	cg_curvature_coeff_ = cgcc;
       }
     }
-
-
 
     // Query aspects of the algorithm progress after it has completed
     int  n_iterations()        const { return n_iterations_; }

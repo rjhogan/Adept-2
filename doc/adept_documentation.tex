@@ -113,9 +113,9 @@
     Mathematical, Physical and Computational Sciences, University of
     Reading, UK,}}
 
-\date{Document version 2.0.8 (August 2020) applicable to \Adept\ version
-  2.0.8 \thanks{This document is copyright \copyright\ Robin J. Hogan
-    2013--2020.  Permission is granted to copy, distribute and/or
+\date{Document version 2.0.9 (January 2021) applicable to \Adept\ version
+  2.0.9 \thanks{This document is copyright \copyright\ Robin J. Hogan
+    2013--2021.  Permission is granted to copy, distribute and/or
     modify this document under the terms of the GNU Free Documentation
     License, Version 1.3 or any later version published by the Free
     Software Foundation. This license may be found at
@@ -3138,10 +3138,6 @@ functions for querying its properties:
 \chapter{Using \Adept's optimization functionality}
 \label{chap:optimize}
 
-\emph{Note that this is a recently added capability in Adept, and so
-  only a small number of minimizations algorithms are currently
-  available.}
-
 \section{Background}
 Since version 2.0.8, \Adept\ provides functionality for solving
 non-linear optimization problems, specifically finding the state
@@ -3310,6 +3306,31 @@ the state vector that minimizes the cost function.
 
 The available minimization algorithms are:
 \begin{description}
+\citem{MINIMIZER\_ALGORITHM\_CONJUGATE\_GRADIENT} The first-order
+Conjugate-Gradient algorithm performs a line search along the
+steepest-descent direction, then uses the Polak-Ribi\`ere formula to
+compute subsequent search directions that are conjugate to the
+previous $N$ directions, where $N$ is the number of state
+variables. The Conjugate-Gradient method is the most memory efficient,
+so suitable for problems with large $N$. The line search first
+brackets the minimum then fits a cubic polynomial to the values and
+gradients at the bounding points to find the best estimate of the next
+search point. The Wolfe conditions are applied to determine whether
+the cost function along the search direction has been sufficiently
+minimized.
+%
+\citem{MINIMIZER\_ALGORITHM\_CONJUGATE\_GRADIENT\_FR} As above but
+using the Fletcher-Reeves formula to compute new search directions.
+%
+\citem{MINIMIZER\_ALGORITHM\_LIMITED\_MEMORY\_BFGS} The first-order
+Limited-Memory Broyden-Fletcher-Goldfarb-Shanno (L-BFGS) algorithm
+uses a limited number of previous search directions (default 6) to
+build up an approximation to the inverse of the Hessian matrix,
+enabling it to make a better estimate of the location of the minimum
+of the cost function, but with a slightly higher memory
+footprint. Note that the full inverse Hessian is not computed
+explicitly so this method is still efficient in memory for large $N$.
+%
 \citem{MINIMIZER\_ALGORITHM\_LEVENBERG} The second-order Levenberg
 algorithm tries to perform a Gauss-Newton step using the Hessian
 matrix and assuming that the curvature of $J$ is locally constant. If
@@ -3324,11 +3345,10 @@ according to the curvature of the cost function in that dimension
 (i.e.\ the diagonal of the Hessian matrix). This generally, but not
 always, results in faster convergence than the Levenberg algorithm.
 \end{description}
-Later versions of \Adept\ will include more minimization algorithms,
-particularly first-order. The minimizer can be configured in detail by
-calling its member functions listed in section
-\ref{sec:minimizer_options}.  The possible values for the return
-status are given in section \ref{sec:minimizer_status}.
+The minimizer can be configured in detail by calling its member
+functions listed in section \ref{sec:minimizer_options}.  The possible
+values for the return status are given in section
+\ref{sec:minimizer_status}.
 
 The case above is an example of \emph{unconstrained minimization}: the
 minimizer is free to try any values of ${\bf x}$. This can lead to it
@@ -3357,7 +3377,7 @@ lines:
 \section{Other member functions of the \code{Minimizer} class}
 \label{sec:minimizer_options}
 In addition to the \code{minimize} member function described in
-section \ref{sec:minimizer_interface}, the following
+section 3\ref{sec:minimizer_interface}, the following
 \code{adept::Minimizer} member functions may be called to configure
 the behaviour of the minimization algorithm:
 \begin{description}
@@ -3366,9 +3386,10 @@ to one of the available minimization algorithm,
 e.g.\ \code{MINIMIZER\_ALGORITHM\_LEVENBERG}. This is an alternative
 to providing it as an argument to the \code{Minimizer} constructor.
 %
-\citem{void set\_algorithm(const std::string\&\ algo)} Set the algorithm
-using a string, currently either ``\code{Levenberg}'' or
-``\code{Levenberg-Marquardt}''.
+\citem{void set\_algorithm(const std::string\&\ algo)} Set the
+algorithm using a string, which may be one of ``\code{L-BFGS}'',
+``\code{Conjugate-Gradient}'', ``\code{Conjugate-Gradient-FR}'',
+``\code{Levenberg}'' or ``\code{Levenberg-Marquardt}''.
 %
 \citem{void set\_max\_iterations(int max\_it)} Set the maximum number
 of iterations (default 100).
@@ -3392,6 +3413,26 @@ final version of the state vector.  Calling the member function here
 requests that after minimization is complete, the derivatives of at
 least the specified \code{order} are consistent with the final state
 vector (e.g.\ 2 for both the Hessian and the gradient vector).
+%
+\citem{set\_max\_line\_search\_iterations(int mi)} Set the maximum
+number of iterations to perform in a line search (default 10). The
+same value is used by the Conjugate-Gradient and L-BFGS methods.
+%
+\citem{set\_armijo\_coeff(Real ac)} The first of the Wolfe conditions
+determines how much of a decrease in the cost function is satisfactory
+for a line search to complete, controlled by the Armijo coefficient
+(default $10^{-4}$). The same value is used by the Conjugate-Gradient
+and L-BFGS methods.
+%
+\citem{set\_lbfgs\_curvature\_coeff(Real lcc)} The second Wolfe
+condition is that the magnitude of the gradient in the search
+direction is reduced by a certain amount determined by the curvature
+coefficient, the optimum value of which is different for the
+Conjugate-Gradient and L-BFGS methods. The default for the L-BFGS
+method is 0.9.
+%
+\citem{set\_cg\_curvature\_coeff(Real cgcc)} The curvature coefficient
+to use for the Conjugate-Gradient method (default 0.1).
 %
 \citem{void set\_levenberg\_damping\_limits(Real damp\_min, Real
   damp\_max)} Set the minimum and maximum postive values of the
