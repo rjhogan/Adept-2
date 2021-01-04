@@ -190,7 +190,8 @@ namespace adept {
 
   // Minimize the cost function embodied in "optimizable" using the
   // Levenberg-Marquardt algorithm, where "x" is the initial state
-  // vector and also where the solution is stored.
+  // vector and also where the solution is stored, subject to the
+  // constraint that x lies between min_x and max_x.
   MinimizerStatus
   Minimizer::minimize_levenberg_marquardt_bounded(Optimizable& optimizable,
 						  Vector x,
