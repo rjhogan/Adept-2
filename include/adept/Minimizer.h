@@ -234,7 +234,7 @@ namespace adept {
     line_search(Optimizable& optimizable, Vector x, const Vector& direction,
 		Vector test_x, Real& abs_step_size,
 		Vector gradient, int& state_up_to_date,
-		Real curvature_coeff, Real max_step_size = -1.0);
+		Real curvature_coeff, Real bound_step_size = -1.0);
 
     // Compute the cost function "cf" and gradient vector "gradient",
     // along with the scalar gradient "grad" in the search direction
@@ -250,10 +250,10 @@ namespace adept {
     MinimizerStatus
     line_search_gradient_check(Optimizable& optimizable, Vector x, 
 			       const Vector& direction,
-			       Vector test_x, Real& abs_step_size,
+			       Vector test_x, Real& final_step_size,
 			       Vector gradient, int& state_up_to_date,
 			       Real step_size, Real grad0, Real dir_scaling,
-			       Real& cost_funcction, Real& grad,
+			       Real& cost_function, Real& grad,
 			       Real curvature_coeff);
 
     // DATA
