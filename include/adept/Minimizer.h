@@ -30,6 +30,7 @@ namespace adept {
     MINIMIZER_STATUS_MAX_ITERATIONS_REACHED,
     MINIMIZER_STATUS_FAILED_TO_CONVERGE,
     MINIMIZER_STATUS_DIRECTION_UPHILL,
+    MINIMIZER_STATUS_BOUND_REACHED, // Only returned from line-search
     MINIMIZER_STATUS_INVALID_COST_FUNCTION,
     MINIMIZER_STATUS_INVALID_GRADIENT,
     MINIMIZER_STATUS_INVALID_BOUNDS,
@@ -153,12 +154,19 @@ namespace adept {
     MinimizerStatus
     minimize_limited_memory_bfgs(Optimizable& optimizable, Vector x);
 
+    // The Conjugate-Gradient algorithm; Polak-Ribiere by default,
+    // optionally Fletcher-Reeves
     MinimizerStatus
     minimize_conjugate_gradient(Optimizable& optimizable, Vector x,
 				bool use_fletcher_reeves = false);
+    MinimizerStatus
+    minimize_conjugate_gradient_bounded(Optimizable& optimizable, Vector x,
+					const Vector& min_x,
+					const Vector& max_x,
+					bool use_fletcher_reeves = false);
 
-    // Call the Levenberg-Marquardt algorithm; if use_additive_damping
-    // is true then the Levenberg algorithm is used instead
+    // The Levenberg-Marquardt algorithm; if use_additive_damping is
+    // true then the Levenberg algorithm is used instead
     MinimizerStatus
     minimize_levenberg_marquardt(Optimizable& optimizable, Vector x,
 				 bool use_additive_damping = false);
@@ -172,20 +180,22 @@ namespace adept {
     // vector "gradient", and initial step "step_size" in
     // un-normalized direction "direction". Successful minimization of
     // the function (according to Wolfe conditions) will lead to
-    // MINIMIZER_STATUS_NOT_YET_CONVERGED being returned, the new
-    // state stored in "x", and if state_up_to_date >= 1 then the
-    // gradient stored in "gradient". Other possible return values are
+    // MINIMIZER_STATUS_SUCCESS being returned, the new state stored
+    // in "x", and if state_up_to_date >= 1 then the gradient stored
+    // in "gradient". Other possible return values are
     // MINIMIZER_STATUS_FAILED_TO_CONVERGE and
     // MINIMIZER_STATUS_DIRECTION_UPHILL if the initial direction
-    // points uphill. First the minimum is bracketed, then a cubic
-    // polynomial is fitted to the values and gradients of the
-    // function at the two points in order to select the next test
-    // point.
+    // points uphill, or MINIMIZER_STATUS_INVALID_COST_FUNCTION,
+    // MINIMIZER_STATUS_INVALID_GRADIENT or
+    // MINIMIZER_STATUS_BOUND_REACHED. First the minimum is bracketed,
+    // then a cubic polynomial is fitted to the values and gradients
+    // of the function at the two points in order to select the next
+    // test point.
     MinimizerStatus
     line_search(Optimizable& optimizable, Vector x, const Vector& direction,
 		Vector test_x, Real& abs_step_size,
 		Vector gradient, int& state_up_to_date,
-		Real curvature_coeff);
+		Real curvature_coeff, Real max_step_size = -1.0);
 
     // Compute the cost function "cf" and gradient vector "gradient",
     // along with the scalar gradient "grad" in the search direction
@@ -194,8 +204,11 @@ namespace adept {
     // the resulting cost function and gradient satisfy the Wolfe
     // conditions for sufficient convergence, copy the new state
     // vector to "x" and the step size to "final_step_size", and
-    // return true.  Otherwise, return false.
-    bool
+    // return MINIMIZER_STATUS_SUCCESS.  Otherwise, return
+    // MINIMIZER_STATUS_NOT_YET_CONVERGED.  Error conditions
+    // MINIMIZER_STATUS_INVALID_COST_FUNCTION and
+    // MINIMIZER_STATUS_INVALID_GRADIENT are also possible.
+    MinimizerStatus
     line_search_gradient_check(Optimizable& optimizable, Vector x, 
 			       const Vector& direction,
 			       Vector test_x, Real& abs_step_size,

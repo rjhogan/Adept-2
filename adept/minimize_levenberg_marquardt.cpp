@@ -213,9 +213,14 @@ namespace adept {
     cost_function_ = std::numeric_limits<Real>::infinity();
 
     Real new_cost;
+
+    // The main memory storage for the Levenberg family of methods
+    // consists of the following three vectors...
     Vector new_x(nx);
     Vector gradient(nx);
     Vector dx(nx);
+
+    // ...and the Hessian matrix, which is stored explicitly
     SymmMatrix hessian(nx);
     SymmMatrix modified_hessian(nx);
     SymmMatrix sub_hessian;
@@ -284,7 +289,7 @@ namespace adept {
 	  modified_hessian.diag_vector() *= (1.0 + damping);
 	}
 	else {
-	  modified_hessian.diag_vector() += damping;
+	  modified_hessian.diag_vector() += damping*diag_scaling;
 	}
 	dx = -adept::solve(modified_hessian, gradient);
 	// Release points at the minimum bound
@@ -406,7 +411,7 @@ namespace adept {
 	  sub_dx *= frac;
 	}
 
-	// Compute new cost state vector and cost function, but not
+	// Compute new state vector and cost function, but not
 	// gradient or Hessian for efficiency
 	new_x = x;
 	new_x(ifree) += sub_dx;

@@ -40,6 +40,9 @@ namespace adept {
     case MINIMIZER_STATUS_DIRECTION_UPHILL:
       return "Search direction points uphill";
       break;
+    case MINIMIZER_STATUS_BOUND_REACHED:
+      return "Bound reached"; // Should not be returned from a minimize function
+      break;
     case MINIMIZER_STATUS_INVALID_COST_FUNCTION:
       return "Non-finite cost function";
       break;
@@ -115,6 +118,14 @@ namespace adept {
     if (minimizer_algorithm_order(algorithm_) > 1
 	&& !optimizable.provides_derivative(2)) {
       throw optimization_exception("2nd-order minimization algorithm requires optimizable that can provide 2nd derivatives");
+    }
+    if (algorithm_ == MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT) {
+      return minimize_conjugate_gradient_bounded(optimizable, x,
+						 x_lower, x_upper);
+    }
+    else if (algorithm_ == MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT_FR) {
+      return minimize_conjugate_gradient_bounded(optimizable, x,
+						 x_lower, x_upper, true);
     }
     if (algorithm_ == MINIMIZER_ALGORITHM_LEVENBERG) {
       return minimize_levenberg_marquardt_bounded(optimizable, x,

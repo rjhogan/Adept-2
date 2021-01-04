@@ -2,7 +2,7 @@ version 2.0.9
 	- Fix bug in Array::alignment_offset affecting causing occasional
 	crashes reduce and assign operations due to unaligned AVX access,
 	now tested in test_packet_operations
-	- Added Conjugate-Gradient minimization method
+	- Added Conjugate-Gradient and L-BFGS minimization methods
 
 version 2.0.8 (22 August 2020)
 	- Added adept_optimize.h header file providing minimization

@@ -162,13 +162,18 @@ main(int argc, const char* argv[])
 
   // Initial state vector
   Vector x(nx);
+  // Standard start
   x = -3.0;
-  //  x = {-3.0, 10.0};
+  // Trickier start (other end of the banana)
+  //x = -3.0; x(1) = 3.0;
+  // Near other minima in higher dimensions
+  //x = 1.0; x(0) = -1.0;
 
   bool is_bounded = false;
   MinimizerStatus status;
 
   if (is_bounded) {
+    x = -3.0; x(1) = 3.0;
     Vector x_lower, x_upper;
     adept::minimizer_initialize_bounds(nx, x_lower, x_upper);
     x_upper(1) = 2.0;

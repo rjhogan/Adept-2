@@ -20,9 +20,12 @@ namespace adept {
   // vector "x" plus a step "step_size" in the search direction. If
   // the resulting cost function and gradient satisfy the Wolfe
   // conditions for sufficient convergence, copy the new state vector
-  // to "x" and the step size to "final_step_size", and return true.
-  // Otherwise, return false.
-  bool
+  // to "x" and the step size to "final_step_size", and return
+  // MINIMIZER_STATUS_SUCCESS.  Otherwise, return
+  // MINIMIZER_STATUS_NOT_YET_CONVERGED.  Error conditions
+  // MINIMIZER_STATUS_INVALID_COST_FUNCTION and
+  // MINIMIZER_STATUS_INVALID_GRADIENT are also possible.
+  MinimizerStatus
   Minimizer::line_search_gradient_check(
 	Optimizable& optimizable, // Object defining function to be minimized
 	Vector x, // Initial and returned state vector
@@ -41,6 +44,17 @@ namespace adept {
     test_x = x + (step_size * dir_scaling) * direction;
     cf = optimizable.calc_cost_function_gradient(test_x, gradient);
     ++n_samples_;
+    state_up_to_date = -1;
+
+    // Check cost function and gradient are finite
+    if (!std::isfinite(cf)) {
+      return MINIMIZER_STATUS_INVALID_COST_FUNCTION;
+    }
+    else if (any(!isfinite(gradient))) {
+      return MINIMIZER_STATUS_INVALID_GRADIENT;
+    }
+
+    // Calculate gradient in search direction
     grad = dot_product(direction, gradient) * dir_scaling;
 
     // Check Wolfe conditions
@@ -50,10 +64,10 @@ namespace adept {
       final_step_size = step_size;
       cost_function_ = cf;
       state_up_to_date = 1;
-      return true;
+      return MINIMIZER_STATUS_SUCCESS;
     }
     else {
-      return false;
+      return MINIMIZER_STATUS_NOT_YET_CONVERGED;
     }
   }
 
@@ -61,14 +75,17 @@ namespace adept {
   // vector "gradient", and initial step "step_size" in un-normalized
   // direction "direction". Successful minimization of the function
   // (according to Wolfe conditions) will lead to
-  // MINIMIZER_STATUS_NOT_YET_CONVERGED being returned, the new state
-  // stored in "x", and if state_up_to_date >= 1 then the gradient
-  // stored in "gradient". Other possible return values are
+  // MINIMIZER_STATUS_SUCCESS being returned, the new state stored in
+  // "x", and if state_up_to_date >= 1 then the gradient stored in
+  // "gradient". Other possible return values are
   // MINIMIZER_STATUS_FAILED_TO_CONVERGE and
   // MINIMIZER_STATUS_DIRECTION_UPHILL if the initial direction points
-  // uphill. First the minimum is bracketed, then a cubic polynomial
-  // is fitted to the values and gradients of the function at the two
-  // points in order to select the next test point.
+  // uphill, or MINIMIZER_STATUS_INVALID_COST_FUNCTION,
+  // MINIMIZER_STATUS_INVALID_GRADIENT or
+  // MINIMIZER_STATUS_BOUND_REACHED. First the minimum is bracketed,
+  // then a cubic polynomial is fitted to the values and gradients of
+  // the function at the two points in order to select the next test
+  // point.
   MinimizerStatus
   Minimizer::line_search(
 	 Optimizable& optimizable,  // Object defining function to be minimized
@@ -78,7 +95,8 @@ namespace adept {
 	 Real& step_size, // Initial and final step size
 	 Vector gradient, // Initial and possibly final gradient
 	 int& state_up_to_date, // 1 if gradient up-to-date, -1 otherwise
-	 Real curvature_coeff) // Factor by which gradient should reduce (0-1)
+	 Real curvature_coeff, // Factor by which gradient should reduce (0-1)
+	 Real bound_step_size) // Maximum step until bound is reached (-1 for no bound)
   {
     Real dir_scaling = 1.0 / norm2(direction);
 
@@ -107,18 +125,42 @@ namespace adept {
 
     int iterations_remaining = max_line_search_iterations_;
 
+    bool is_bound_step = (bound_step_size > 0.0);
+    bool at_bound = false;
+
     if (grad0 >= 0.0) {
       return MINIMIZER_STATUS_DIRECTION_UPHILL;
+    }
+
+    // Check initial step size is within bounds
+    if (max_step_size_ > 0.0 && ss2 > max_step_size_) {
+      ss2 = max_step_size_;
+    }
+    if (is_bound_step && ss2 >= bound_step_size) {
+      ss2 = bound_step_size;
+      at_bound = true;
     }
 
     // First step: bound the minimum
     while (iterations_remaining > 0) {
 
-      if (line_search_gradient_check(optimizable, x, direction, test_x,
+      MinimizerStatus status
+	= line_search_gradient_check(optimizable, x, direction, test_x,
 				     step_size, gradient, state_up_to_date,
 				     ss2, grad0, dir_scaling,
-				     cf2, grad2, curvature_coeff)) {
-	return MINIMIZER_STATUS_NOT_YET_CONVERGED;
+				     cf2, grad2, curvature_coeff);
+      if (status == MINIMIZER_STATUS_SUCCESS) {
+	return status;
+      }
+      else if (status != MINIMIZER_STATUS_NOT_YET_CONVERGED) {
+	// Cost function or its gradient not finite: revert to
+	// previous step
+	step_size = cf1;
+	if (cf1 > 0.0) {
+	  x += (ss1 * dir_scaling) * direction;
+	}
+	state_up_to_date = 0;
+	return status;
       }
      
       if (grad2 > 0.0 || cf2 >= cf1) {
@@ -126,26 +168,45 @@ namespace adept {
 	// between points 1 and 2
 	break;
       }
+      else if (at_bound) {
+	// The cost function has been reduced but we are already at
+	// the maximum step size and the gradient points towards it:
+	// make this point the solution
+	x += (ss2 * dir_scaling) * direction;
+	step_size = ss2;
+	cost_function_ = cf2;
+	state_up_to_date = 1;
+	return MINIMIZER_STATUS_BOUND_REACHED;
+      }
       else {
 	// Reduced cost function but not yet bounded -> look further
 	// ahead
+	Real new_step;
 	if (cf1 > cf2+grad2*(ss1-ss2)) {
 	  // Positive curvature: fit a quadratic
 	  Real curvature = 2.0*(cf1-cf2-grad2*(ss1-ss2))/((ss1-ss2)*(ss1-ss2));
-	  Real new_step = ss2-grad2/curvature; // Newton's method
+	  new_step = ss2-grad2/curvature; // Newton's method
 	  // Bounds on actual step size
 	  new_step = std::max(ss1+1.1*(ss2-ss1), std::min(new_step, ss1+10.0*(ss2-ss1)));
-	  ss1 = ss2;
-	  cf1 = cf2;
-	  grad1 = grad2;
-	  ss2 = new_step;
-
+	  if (max_step_size_ > 0.0 && new_step-ss2 > max_step_size_) {
+	    new_step = ss2 + max_step_size_;
+	  }
 	}
 	else {
-	  ss1 = ss2;
-	  cf1 = cf2;
-	  grad1 = grad2;
-	  ss2 *= 5.0;
+	  // Cliff gets steeper... simply jump ahead a lot more
+	  new_step = ss2 + 5.0*(ss2-ss1);
+	  if (max_step_size_ > 0.0 && new_step-ss2 > max_step_size_) {
+	    new_step = ss2 + max_step_size_;
+	  }
+	}
+	ss1 = ss2;
+	cf1 = cf2;
+	grad1 = grad2;
+	ss2 = new_step;
+
+	if (is_bound_step && ss2 >= bound_step_size) {
+	  ss2 = bound_step_size;
+	  at_bound = true;
 	}
       }
 
@@ -172,13 +233,25 @@ namespace adept {
       ss3 = std::max(0.95*ss1+0.05*ss2,
 		     std::min(0.05*ss1+0.95*ss2, ss3));
 
-      if (line_search_gradient_check(optimizable, x, direction, test_x,
+      MinimizerStatus status
+	= line_search_gradient_check(optimizable, x, direction, test_x,
 				     step_size, gradient, state_up_to_date,
 				     ss3, grad0, dir_scaling,
-				     cf3, grad3, curvature_coeff)) {
-	return MINIMIZER_STATUS_NOT_YET_CONVERGED;
+				     cf3, grad3, curvature_coeff);
+      if (status == MINIMIZER_STATUS_SUCCESS) {
+	return status;
       }
-
+      else if (status != MINIMIZER_STATUS_NOT_YET_CONVERGED) {
+	// Cost function or its gradient not finite: revert to
+	// previous step
+	step_size = cf1;
+	if (cf1 > 0.0) {
+	  x += (ss1 * dir_scaling) * direction;
+	}
+	state_up_to_date = 0;
+	return status;
+      }
+     
       if (grad3 > 0.0) {
 	// Positive gradient -> bounded between points 1 and 3
 	ss2 = ss3;
@@ -222,7 +295,7 @@ namespace adept {
     }
 
     // Cost function decreased
-    return MINIMIZER_STATUS_NOT_YET_CONVERGED;
+    return MINIMIZER_STATUS_SUCCESS;
 
   }
 

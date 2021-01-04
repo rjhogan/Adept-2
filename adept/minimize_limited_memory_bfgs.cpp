@@ -197,12 +197,25 @@ namespace adept {
       // of the minimum, so the step size is the norm of the direction
       // vector
       step_size = norm2(direction);
-      status_ = line_search(optimizable, x, direction,
-			    test_x, step_size, gradient, state_up_to_date,
-			    curvature_coeff);
+      MinimizerStatus ls_status
+	= line_search(optimizable, x, direction,
+		      test_x, step_size, gradient, state_up_to_date,
+		      curvature_coeff);
+
+      if (ls_status == MINIMIZER_STATUS_SUCCESS) {
+	// Successfully minimized along search direction: continue to
+	// next iteration
+	status_ = MINIMIZER_STATUS_NOT_YET_CONVERGED;
+      }
+      else {
+	// Unrecoverable failure in line-search: return status to
+	// calling function
+	status_ = ls_status;
+      }
 
       ++n_iterations_;
-      if (n_iterations_ >= max_iterations_) {
+      if (status_ == MINIMIZER_STATUS_NOT_YET_CONVERGED
+	  && n_iterations_ >= max_iterations_) {
 	status_ = MINIMIZER_STATUS_MAX_ITERATIONS_REACHED;
       }
 
