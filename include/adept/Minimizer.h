@@ -77,31 +77,33 @@ namespace adept {
   public:
 
     // Tedious C++98 initializations
-    Minimizer(MinimizerAlgorithm algo)
-      : algorithm_(algo),
-	max_iterations_(100), // <=0 means no limit
-	max_step_size_(-1.0),
-	converged_gradient_norm_(0.1),
-	ensure_updated_state_(-1),
-	levenberg_damping_min_(1.0/128.0),
-	levenberg_damping_max_(100000.0),
-	levenberg_damping_multiplier_(2.0),
-	levenberg_damping_divider_(5.0),
-	levenberg_damping_start_(0.0),
-	levenberg_damping_restart_(1.0/4.0) { }
+    Minimizer(MinimizerAlgorithm algo) {
+      initialize_default_settings();
+      set_algorithm(algo);
+    }
 
-    Minimizer(const std::string& algo)
-      : max_iterations_(100), // <=0 means no limit
-	max_step_size_(-1.0),
-	converged_gradient_norm_(0.1),
-	ensure_updated_state_(-1),
-	levenberg_damping_min_(1.0/128.0),
-	levenberg_damping_max_(100000.0),
-	levenberg_damping_multiplier_(2.0),
-	levenberg_damping_divider_(5.0),
-	levenberg_damping_start_(0.0),
-	levenberg_damping_restart_(1.0/4.0)
-    { set_algorithm(algo); }
+    Minimizer(const std::string& algo) {
+      initialize_default_settings();
+      set_algorithm(algo);
+    }
+
+    void initialize_default_settings() {
+      max_iterations_ = 100; // <=0 means no limit
+      max_step_size_ = -1.0;
+      converged_gradient_norm_ = 0.1;
+      ensure_updated_state_ = -1;
+      levenberg_damping_min_ = 1.0/128.0;
+      levenberg_damping_max_ = 100000.0;
+      levenberg_damping_multiplier_ = 2.0;
+      levenberg_damping_divider_ = 5.0;
+      levenberg_damping_start_ = 0.0;
+      levenberg_damping_restart_ = 1.0/4.0;
+      max_line_search_iterations_ = 10;
+      armijo_coeff_ = 1.0e-4;
+      cg_curvature_coeff_ = 0.1;
+      lbfgs_curvature_coeff_ = 0.9;
+      lbfgs_n_states_ = 6;
+    }
 
     // Unconstrained minimization
     MinimizerStatus minimize(Optimizable& optimizable, Vector x);
@@ -116,6 +118,7 @@ namespace adept {
     void set_max_iterations(int mi)             { max_iterations_ = mi; }
     void set_converged_gradient_norm(Real cgn)  { converged_gradient_norm_ = cgn; }
     void set_max_step_size(Real mss)            { max_step_size_ = mss; }
+
     // Ensure that the last call to compute the cost function uses the
     // "solution" state vector returned by minimize. This ensures that
     // any variables in user classes that inherit from Optimizable are
@@ -138,6 +141,37 @@ namespace adept {
     void set_levenberg_damping_start(Real damp_start);
     void set_levenberg_damping_restart(Real damp_restart);
     void set_levenberg_damping_multiplier(Real damp_multiply, Real damp_divide);
+
+
+    // Functions to set parameters used by the L-BFGS and
+    // Conjugate-Gradient algorithms
+    void set_max_line_search_iterations(int mi) { max_line_search_iterations_ = mi; }
+    void set_armijo_coeff(Real ac)              {
+      if (ac <= 0.0 || ac >= 1.0) {
+	throw optimization_exception("Armijo coefficient must be greater than 0 and less than 1");
+      }
+      else {
+	armijo_coeff_ = ac;
+      }
+    }
+    void set_lbfgs_curvature_coeff(Real lcc) {
+      if (lcc <= 0.0 || lcc >= 1.0) {
+	throw optimization_exception("L-BFGS curvature coefficient must be greater than 0 and less than 1");
+      }
+      else {
+	lbfgs_curvature_coeff_ = lcc;
+      }
+    }
+    void set_cg_curvature_coeff(Real cgcc) {
+      if (cgcc <= 0.0 || cgcc >= 1.0) {
+	throw optimization_exception("Conjugate-Gradient curvature coefficient must be greater than 0 and less than 1");
+      }
+      else {
+	cg_curvature_coeff_ = cgcc;
+      }
+    }
+
+
 
     // Query aspects of the algorithm progress after it has completed
     int  n_iterations()        const { return n_iterations_; }
@@ -244,21 +278,21 @@ namespace adept {
     Real levenberg_damping_restart_;
 
     // Variable used by the Conjugate-Gradient and L-BFGS minimizers
-    int max_line_search_iterations_ = 10;
+    int max_line_search_iterations_;
     // Armijo condition determined by this coefficient, the first of
     // the two Wolfe conditions
-    Real armijo_coeff_ = 1.0e-4;
+    Real armijo_coeff_;
 
     // Variables controlling the specific behaviour of the Conjugate
     // Gradient minimizer
     // Gradient in search direction must reduce by this amount
-    Real cg_curvature_coeff_ = 0.1;
+    Real cg_curvature_coeff_;
 
     // Variables controlling specific behaviour of L-BFGS minimizer
     // Gradient in search direction must reduce by this amount
-    Real lbfgs_curvature_coeff_ = 0.9;
+    Real lbfgs_curvature_coeff_;
     // Number of prevous states to store
-    int lbfgs_n_states_ = 6;
+    int lbfgs_n_states_;
 
     // Variables set during the running of an algorithm and available
     // to the user afterwards

@@ -223,8 +223,8 @@ namespace adept {
       {
 	Real step_diff = ss2-ss1;
 	Real theta = (cf1-cf2) * 3.0 / step_diff + grad1 + grad2;
-	Real max_grad = std::fmax(std::fabs(theta),
-				  std::fmax(std::fabs(grad1), std::fabs(grad2)));
+	Real max_grad = std::max(std::fabs(theta),
+				 std::max(std::fabs(grad1), std::fabs(grad2)));
 	Real scaled_theta = theta / max_grad;
 	Real gamma = max_grad * std::sqrt(scaled_theta*scaled_theta
 					  - (grad1/max_grad) * (grad2/max_grad));
