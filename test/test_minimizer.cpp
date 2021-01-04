@@ -61,6 +61,11 @@ public:
     ++ls_iteration_;
   }
 
+  void final_state_to_stderr(const adept::Vector& x, Real cost) {
+    ls_iteration_ = -1;
+    state_to_stderr(x, cost);
+  }
+
   virtual bool provides_derivative(int order) {
     if (order >= 0 && order <= 2) {
       return true;
@@ -183,6 +188,7 @@ main(int argc, const char* argv[])
   else {
     status = minimizer.minimize(rosenbrock, x);
   }
+  //rosenbrock.final_state_to_stderr(x, minimizer.cost_function());
 
   std::cout << "Status: " << minimizer_status_string(status) << "\n";
   std::cout << "Solution: x=" << x << "\n";

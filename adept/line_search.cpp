@@ -150,6 +150,9 @@ namespace adept {
 				     ss2, grad0, dir_scaling,
 				     cf2, grad2, curvature_coeff);
       if (status == MINIMIZER_STATUS_SUCCESS) {
+	if (at_bound) {
+	  status = MINIMIZER_STATUS_BOUND_REACHED;
+	}
 	return status;
       }
       else if (status != MINIMIZER_STATUS_NOT_YET_CONVERGED) {
@@ -215,8 +218,6 @@ namespace adept {
     // Second step: reduce the bounds until we get sufficiently close
     // to the minimum
     while (iterations_remaining > 0) {
-
-      //      std::cout << "  LS " << iterations_remaining << " " << static_cast<int>(task) << " " << ss1 << "-" << ss2 << " " << cf1 << "," << cf2 << " " << grad1 << "," << grad2 << "\n";
 
       // Minimizer of cubic function
       {

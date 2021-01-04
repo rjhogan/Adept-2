@@ -151,8 +151,13 @@ namespace adept {
 
     // Specific minimization algorithms
 
-    MinimizerStatus
+    // The Limited-Memory Broyden-Fletcher-Goldfarb-Shanno algorithm
+    MinimizerStatus 
     minimize_limited_memory_bfgs(Optimizable& optimizable, Vector x);
+    MinimizerStatus
+    minimize_limited_memory_bfgs_bounded(Optimizable& optimizable, Vector x,
+					 const Vector& min_x,
+					 const Vector& max_x);
 
     // The Conjugate-Gradient algorithm; Polak-Ribiere by default,
     // optionally Fletcher-Reeves

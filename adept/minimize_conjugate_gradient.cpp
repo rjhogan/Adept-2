@@ -272,6 +272,10 @@ namespace adept {
 	state_up_to_date = 1;
 	++n_samples_;
 
+	if (n_iterations_ == 0) {
+	  start_cost_function_ = cost_function_;
+	}
+
 	// Check cost function and gradient are finite
 	if (!std::isfinite(cost_function_)) {
 	  status_ = MINIMIZER_STATUS_INVALID_COST_FUNCTION;
@@ -284,13 +288,9 @@ namespace adept {
 
       }
 
-      if (n_iterations_ == 0) {
-	start_cost_function_ = cost_function_;
-      }
-
       // Check whether the bound status of each state variable is
       // consistent with the gradient if a steepest descent were to be
-      // taken
+      // taken, and if not flag a restart
       if (any(bound_status == -1 && gradient < 0.0)
 	  || any(bound_status == 1 && gradient > 0.0)) {
 	bound_status.where(bound_status == -1 && gradient < 0.0) = 0;
@@ -305,7 +305,7 @@ namespace adept {
       gradient.where(bound_status != 0) = 0.0;
 
       // Compute L2 norm of gradient to see how "flat" the environment
-      // is, restricting ourselves to the dimensions currently in play
+      // is
       if (nfree > 0) {
 	gradient_norm_ = norm2(gradient);
       }
@@ -366,8 +366,8 @@ namespace adept {
       // Store gradient for computing beta in next iteration
       previous_gradient = gradient;
 
+      // Distance to the nearest bound
       Real dir_scaling = norm2(direction);
-      // Step to the nearest bound
       Real bound_step_size = std::numeric_limits<Real>::max();
       int i_nearest_bound = -1;
       int i_bound_type = 0;

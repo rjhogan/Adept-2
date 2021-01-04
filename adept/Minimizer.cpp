@@ -119,7 +119,11 @@ namespace adept {
 	&& !optimizable.provides_derivative(2)) {
       throw optimization_exception("2nd-order minimization algorithm requires optimizable that can provide 2nd derivatives");
     }
-    if (algorithm_ == MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT) {
+    if (algorithm_ == MINIMIZER_ALGORITHM_LIMITED_MEMORY_BFGS) {
+      return minimize_limited_memory_bfgs_bounded(optimizable, x,
+						  x_lower, x_upper);
+    }
+    else if (algorithm_ == MINIMIZER_ALGORITHM_CONJUGATE_GRADIENT) {
       return minimize_conjugate_gradient_bounded(optimizable, x,
 						 x_lower, x_upper);
     }
@@ -136,7 +140,7 @@ namespace adept {
 						  x_lower, x_upper, false);
     }
     else {
-      throw optimization_exception("Minimization algorithm not recognized");
+      throw optimization_exception("Constrained minimization algorithm not recognized");
     }
   }
 
