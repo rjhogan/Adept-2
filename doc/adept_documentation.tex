@@ -3389,7 +3389,9 @@ to providing it as an argument to the \code{Minimizer} constructor.
 \citem{void set\_algorithm(const std::string\&\ algo)} Set the
 algorithm using a string, which may be one of ``\code{L-BFGS}'',
 ``\code{Conjugate-Gradient}'', ``\code{Conjugate-Gradient-FR}'',
-``\code{Levenberg}'' or ``\code{Levenberg-Marquardt}''.
+``\code{Levenberg}'' or ``\code{Levenberg-Marquardt}''.  Note that
+this function is case-insensitive, and will also accept spaces or
+underscores in place of hyphens.
 %
 \citem{void set\_max\_iterations(int max\_it)} Set the maximum number
 of iterations (default 100).

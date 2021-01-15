@@ -8,12 +8,14 @@
 
 */
 
+#include <cctype>
 
 #include <adept/Minimizer.h>
 #include <adept/exception.h>
 
 namespace adept {
 
+  // List of the names of available minimizer algorithms
   static const char* minimizer_algorithm_names_[]
     = {"L-BFGS",
        "Conjugate-Gradient",
@@ -21,6 +23,27 @@ namespace adept {
        "Levenberg",
        "Levenberg-Marquardt"};
 
+  // Lower-case versions of the list above
+  static const char* minimizer_algorithm_lower_names_[]
+    = {"l-bfgs",
+       "conjugate-gradient",
+       "conjugate-gradient-fr",
+       "levenberg",
+       "levenberg-marquardt"};
+
+  // Convert to lower case, and convert spaces and underscores to
+  // hyphens. This function is used to do a case-insensitive
+  // string-based selection of the minimizer algorithm to use.
+  static void to_lower_in_place(std::string& str) {
+    for (std::string::size_type istr = 0; istr < str.size(); ++istr) {
+      str[istr] = std::tolower(str[istr]);
+      if (str[istr] == ' ' || str[istr] == '_') {
+	str[istr] = '-';
+      }
+    }
+  }
+
+  // Return a C string describing the minimizer status
   const char*
   minimizer_status_string(MinimizerStatus status)
   {
@@ -60,12 +83,19 @@ namespace adept {
     }
   }
 
+  // Case-insensitive setting of the miminization algorithm given its
+  // name
   void
   Minimizer::set_algorithm(const std::string& algo) {
+    std::string algo_lower = algo;
+    to_lower_in_place(algo_lower);
+
+    std::cout << "Checking \"" << algo_lower << "\"\n";
+
     for (int ialgo = 0;
 	 ialgo < static_cast<int>(MINIMIZER_ALGORITHM_NUMBER_AVAILABLE);
 	 ++ialgo) {
-      if (algo == minimizer_algorithm_names_[ialgo]) {
+      if (algo_lower == minimizer_algorithm_lower_names_[ialgo]) {
 	set_algorithm(static_cast<MinimizerAlgorithm>(ialgo));
 	return;
       }
@@ -84,6 +114,7 @@ namespace adept {
     }
   }
 
+  // Unconstrained minimization
   MinimizerStatus
   Minimizer::minimize(Optimizable& optimizable, Vector x)
   {
@@ -111,6 +142,7 @@ namespace adept {
     }
   }
 
+  // Constrained minimization
   MinimizerStatus
   Minimizer::minimize(Optimizable& optimizable, Vector x,
 		      const Vector& x_lower, const Vector& x_upper)
