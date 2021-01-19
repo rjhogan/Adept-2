@@ -8,6 +8,8 @@
 
 */
 
+#include <limits>
+
 #include <adept/Minimizer.h>
 
 namespace adept {
@@ -26,11 +28,22 @@ namespace adept {
       gamma_.resize(ni);
     }
 
+    // Return false if the dot product of x_diff and gradient_diff is
+    // zero, true otherwise
     void store(int iter, const Vector& x_diff, const Vector& gradient_diff) {
       int index = (iter-1) % ni_;
       x_diff_[index] = x_diff;
       gradient_diff_[index] = gradient_diff;
-      rho_[index] = 1.0 / dot_product(x_diff, gradient_diff);
+      Real dp = dot_product(x_diff, gradient_diff);
+      if (std::fabs(dp) > 10.0*std::numeric_limits<Real>::min()) {
+	rho_[index] = 1.0 / dp;
+      }
+      else if (dp >= 0.0) {
+	rho_[index] = 1.0 / std::max(dp, 10.0*std::numeric_limits<Real>::min());
+      }
+      else {
+	rho_[index] = 1.0 / std::min(dp, -10.0*std::numeric_limits<Real>::min());
+      }
     }
 
     // Return read-only vectors containing the differences between
@@ -169,7 +182,8 @@ namespace adept {
 	}
 
 	Real gamma = dot_product(x-previous_x, gradient-previous_gradient)
-	  / dot_product(gradient-previous_gradient, gradient-previous_gradient);
+	  / std::max(10.0*std::numeric_limits<Real>::min(),
+		     dot_product(gradient-previous_gradient, gradient-previous_gradient));
 	direction *= gamma;
 
 	for (int ii = std::max(0,n_iterations_-n_states);
@@ -403,7 +417,8 @@ namespace adept {
 	}
 
 	Real gamma = dot_product(x-previous_x, gradient-previous_gradient)
-	  / dot_product(gradient-previous_gradient, gradient-previous_gradient);
+	  / std::max(10.0*std::numeric_limits<Real>::min(),
+		     dot_product(gradient-previous_gradient, gradient-previous_gradient));
 	direction *= gamma;
 
 	for (int ii = std::max(iteration_last_restart,n_iterations_-n_states);

@@ -219,17 +219,32 @@ namespace adept {
     // to the minimum
     while (iterations_remaining > 0) {
 
-      // Minimizer of cubic function
-      {
-	Real step_diff = ss2-ss1;
-	Real theta = (cf1-cf2) * 3.0 / step_diff + grad1 + grad2;
-	Real max_grad = std::max(std::fabs(theta),
-				 std::max(std::fabs(grad1), std::fabs(grad2)));
-	Real scaled_theta = theta / max_grad;
-	Real gamma = max_grad * std::sqrt(scaled_theta*scaled_theta
-					  - (grad1/max_grad) * (grad2/max_grad));
-	ss3 = ss1 + ((gamma - grad1 + theta) / (2.0*gamma + grad2 - grad1)) * step_diff;
+      if (ss2 <= ss1) {
+	// Two points are identical!
+	if (cf1 < cf0) {
+	  // Return value at point 1
+	  x += (ss1 * dir_scaling) * direction;
+	  step_size = ss1;
+	  cost_function_ = cf1;
+	  return MINIMIZER_STATUS_SUCCESS;
+	}
+	else {
+	  // Cost function did not decrease at all
+	  return MINIMIZER_STATUS_FAILED_TO_CONVERGE;
+	}
       }
+
+      // Minimizer of cubic function
+      Real step_diff = ss2-ss1;
+      Real theta = (cf1-cf2) * 3.0 / step_diff + grad1 + grad2;
+      Real max_grad = std::max(std::fabs(theta),
+			       std::max(std::fabs(grad1), std::fabs(grad2)));
+      Real scaled_theta = theta / max_grad;
+      Real gamma = max_grad * std::sqrt(scaled_theta*scaled_theta
+					- (grad1/max_grad) * (grad2/max_grad));
+      ss3 = ss1 + ((gamma - grad1 + theta) / (2.0*gamma + grad2 - grad1)) * step_diff;
+
+
       // Bound the step size to be at least 5% away from each end
       ss3 = std::max(0.95*ss1+0.05*ss2,
 		     std::min(0.05*ss1+0.95*ss2, ss3));
