@@ -100,7 +100,12 @@
 #endif
 
 #ifdef __ARM_NEON
-  #include "arm_neon.h"
+  // We only have sufficient floating-point intrinsics to vectorize on
+  // 64-bit ARM targets
+  #if defined(__aarch64__) || defined(_M_ARM64)
+    #define QE_HAVE_ARM64_NEON 1
+    #include "arm_neon.h"
+  #endif
 #endif
 
 namespace quick_e {
@@ -164,7 +169,7 @@ namespace quick_e {
   #endif
   // If QE_AVAILABLE is defined then we can use the fast exponential
   #define QE_AVAILABLE
-#elif defined(__ARM_NEON)
+#elif defined(QE_HAVE_ARM64_NEON)
   #define QE_HAVE_FAST_EXP 1
   QE_DEFINE_TRAITS(float, 4, float32x4_t, float32x4_t)
   QE_DEFINE_TRAITS(double, 2, float64x2_t, double)
@@ -617,7 +622,7 @@ namespace quick_e {
 #endif
 
   
-#ifdef __ARM_NEON
+#ifdef QE_HAVE_ARM64_NEON
 
   // Implement ARM version of x86 setzero
   inline float32x4_t vzeroq_f32() { return vdupq_n_f32(0.0); }
@@ -879,7 +884,7 @@ namespace quick_e {
   inline __m512d exp(__m512d x) { return fastexp_double(x); }
 #endif
 
-#ifdef __ARM_NEON
+#ifdef QE_HAVE_ARM64_NEON
   inline float32x4_t exp(float32x4_t x) { return fastexp_float(x);  }
   inline float64x2_t exp(float64x2_t x) { return fastexp_double(x); }
 #endif
@@ -906,6 +911,7 @@ namespace quick_e {
 #undef QE_DEFINE_POW2N_S
 #undef QE_DEFINE_POW2N_D
 #undef QE_HAVE_FAST_EXP
+#undef QE_HAVE_ARM64_NEON
 }
 
 #endif
