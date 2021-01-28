@@ -1,7 +1,7 @@
 /* interp.h -- 1D interpolation
 
 
-    Copyright (C) 2015 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015-2020 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -25,6 +25,14 @@ namespace adept {
     Array<1,YType,YIsActive> ans(length);
     if (x.size() != y.size()) {
       throw(size_mismatch("Interpolation vectors must be the same length in interp"));
+    }
+    else if (x.size() == 0) {
+      throw(size_mismatch("Interpolation from empty vectors"));
+    }
+    else if (x.size() == 1) {
+      // Input arrays are at a single point: copy this point into all
+      // output points regardless of their x coordinate
+      ans = y(0);
     }
 
     if (x(0) < x(1)) {
