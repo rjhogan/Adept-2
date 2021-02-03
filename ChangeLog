@@ -1,5 +1,7 @@
-version 2.0.9
-	- Fix bug in Array::alignment_offset affecting causing occasional
+version 2.1
+
+version 2.0.9 (28 January 2021)
+	- Fix bug in Array::alignment_offset causing occasional
 	crashes reduce and assign operations due to unaligned AVX access,
 	now tested in test_packet_operations
 	- Added Conjugate-Gradient and L-BFGS minimization methods, both
