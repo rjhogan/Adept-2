@@ -21,9 +21,10 @@ functionalities:
 * Its optimization capability provides the various minimization
   algorithms (Levenberg, Levenberg-Marquardt, Conjugate Gradient and
   Limited Memory BFGS) each of which can be used with or without box
-  constraints on the state variables.
+  constraints on the state variables. The interface to the
+  optimization functionality is in terms of Adept vectors and matrices.
 
-If you are not interested in the array or optimization capability of
+If you are not interested in the array or optimization capabilities of
 Adept 2 then Adept 1.1 may be more to your liking as a very
 lightweight library that has virtually all the
 automatic-differentiation capabilities of version 2.
@@ -32,9 +33,11 @@ automatic-differentiation capabilities of version 2.
 ## Documentation and links
 
 * The [Adept web site](http://www.met.reading.ac.uk/clouds/adept/) for formal Adept releases
-* The [Adept GitHub page](https://github.com/rjhogan/Adept-2) for the latest snapshot
+* The [Adept-2 GitHub page](https://github.com/rjhogan/Adept-2) for the latest snapshot
+* The [Adept-1.1 GitHub page](https://github.com/rjhogan/Adept) for the older (scalar) library
 * A detailed [User Guide](http://www.met.reading.ac.uk/clouds/adept/adept_documentation.pdf)
-* A paper describing the automatic differentiation capability: [Hogan, R. J., 2014: Fast reversemode automatic differentiation using expression templates in C++. *ACM Trans. Math. Softw.* **40,** 1-26](http://www.met.reading.ac.uk/~swrhgnrj/publications/adept.pdf)
+* A paper describing the automatic differentiation capability: [Hogan, R. J., 2014: Fast reversemode automatic differentiation using expression templates in C++. *ACM Trans. Math. Softw.* **40,** 26:1-26:16](http://www.met.reading.ac.uk/~swrhgnrj/publications/adept.pdf)
+* The [Adept Wikipedia page](https://en.wikipedia.org/wiki/Adept_(C++_library))
 * Bug fixes, and queries not answered by the documentation, should be addressed to Robin Hogan (r.j.hogan at ecmwf.int)
 
 ## Installation
@@ -63,6 +66,7 @@ BLAS library such as OpenBLAS.
 The code in this package has a mix of copyright owners:
 
 Copyright (C) 2012-2015 University of Reading
+
 Copyright (C) 2015-     European Centre for Medium-Range Weather Forecasts
 
 Two licenses are used for the code in this package:
