@@ -113,8 +113,8 @@
     Mathematical, Physical and Computational Sciences, University of
     Reading, UK,}}
 
-\date{Document version 2.0.9 (January 2021) applicable to \Adept\ version
-  2.0.9 \thanks{This document is copyright \copyright\ Robin J. Hogan
+\date{Document version 2.1 (February 2021) applicable to \Adept\ version
+  2.1 \thanks{This document is copyright \copyright\ Robin J. Hogan
     2013--2021.  Permission is granted to copy, distribute and/or
     modify this document under the terms of the GNU Free Documentation
     License, Version 1.3 or any later version published by the Free
@@ -283,36 +283,57 @@ depending on your system.
  make check
 \end{lstlisting}
 Note that this may be done without first installing the
-\Adept\ library to a system directory.  This compiles the following
-programs in the \code{test} directory:
-\begin{itemize}
-\item\code{test\_misc}: the trivial example from \cite{Hogan2014};
+\Adept\ library to a system directory.  This compiles a number of test
+programs in the \code{test} directory and runs them one by one; if any
+fail due to an incorrect result then \code{make check} will fail.
+%
+The \code{make check} operation also compiles
+\code{autodiff\_benchmark} in the \code{benchmark} directory for
+comparing the speed of the differentiation of two advection algorithms
+using \Adept, ADOL-C, CppAD and Sacado (or whichever subset of these
+tools you have on your system).  It also compiles \code{animate} for
+visualizing at a terminal what the algorithms are doing.  Further
+information on running these programs can be found in the
+\code{README} files in the relevant directories.
+\end{enumerate}
+%
+The test programs in in the \code{test} directory are as follows:
+%
+\begin{enumerate}
 \item\code{test\_adept}: compares the results of numerical and
-  automatic differentiation;
+  automatic differentiation.
 \item\code{test\_with\_without\_ad}: does the same but compiling the
   same source code both with and without automatic differentiation
   (see \code{test/Makefile} for how this is done),
 \item\code{test\_radiances}: demonstrates the interfacing of
-  \Adept\ with code that provides its own Jacobian;
+  \Adept\ with code that provides its own Jacobian.
 \item\code{test\_gsl\_interface}: implementation of a simple minimization
-  problem using the L-BFGS minimizer in the GSL library;
+  problem using the L-BFGS minimizer in the GSL library.
+\item\code{test\_misc}: the trivial example from \cite{Hogan2014}.
 \item\code{test\_checkpoint}: demonstration of checkpointing, a useful
-  technique for large codes;
+  technique for large codes.
 \item\code{test\_thread\_safe}: demonstration of the use of multiple
-  OpenMP threads, each with its own instance of an \Adept\ stack;
+  OpenMP threads, each with its own instance of an \Adept\ stack.
 \item\code{test\_no\_lib}: demonstrates the use of the
   \code{adept\_source.h} header file that means there is no need to
   link to the \Adept\ library in order to create an executable.
-\item\code{test\_arrays}: tests many of the array capabilities
-  described in chapter \ref{chap:arrays}.
-\item\code{test\_arrays\_active}: tests the same array capabilities
-  but with active arrays.
-\item\code{test\_arrays\_active\_pasuable}: tests that active array
-  operations can be paused as described in setion \ref{sec:pausable}.
-\item\code{test\_fixed\_arrays}: tests the similar capabilities of
-  arrays with fixed dimensions (known at compile time).
-\item\code{test\_fixed\_arrays\_active}: as \code{test\_fixed\_arrays}
-  but with active arrays.
+\item\code{test\_arrays}, \code{test\_arrays\_active},
+  \code{test\_arrays\_active\_pausable}, \code{test\_complex\_arrays}:
+  test many of the array capabilities described in chapter
+  \ref{chap:arrays}. Each of these four executables is compiled from
+  the same source file but with different compiler options in order to
+  test the same array operations but with (a) passive arrays, (b)
+  active arrays, (c) active arrays but with stack recording "paused"
+  (see setion \ref{sec:pausable}), and (d) complex arrays.
+\item\code{test\_array\_speed}: compares the speed of array operations
+  versus the equivalent C-style \code{for} loop.
+\item\code{test\_radiances\_array}: as \code{test\_radiances} but
+  demonstrates the use of \code{add\_derivative\_dependence} with
+  array arguments.
+\item\code{test\_fixed\_arrays}, \code{test\_fixed\_arrays\_active}:
+  tests the functionality of arrays with fixed dimensions, i.e.\ those
+  known at compile time. The two executables are compiled from the
+  same source file, testing (a) passive arrays and (b) active arrays.
 \item\code{test\_constructors}: test the different ways of
   constructing, assigning and linking arrays, and passing them to and
   from functions.
@@ -323,18 +344,19 @@ programs in the \code{test} directory:
 \item\code{test\_thread\_safe\_arrays}: tests two ways to ensure
   arrays may be accessed and subsetted safely in a multi-threaded
   environment.
-\end{itemize}
-After compiling these programs, they are run one by one; if any fail
-due to an incorrect result then \code{make check} will fail.
-
-The \code{make check} operation also compiles
-\code{autodiff\_benchmark} in the \code{benchmark} directory for
-comparing the speed of the differentiation of two advection algorithms
-using \Adept, ADOL-C, CppAD and Sacado (or whichever subset of these
-tools you have on your system).  It also compiles \code{animate} for
-visualizing at a terminal what the algorithms are doing.  Further
-information on running these programs can be found in the
-\code{README} files in the relevant directories.
+\item\code{test\_packet\_operations}: tests that Adept's use of Intel
+  or ARM intrinsics to accelerate vector operations leads to identical
+  output to the equivalent scalar code.
+\item\code{test\_fastexp}: tests the correctness of Adept's fast
+  exponential function.
+\item\code{test\_reduce\_active}: tests the correctness of the
+  differentiation of reduction operations (\code{sum}, \code{product},
+  \code{maxval} etc).
+\item\code{test\_minimizer}: tests Adept's minimization capabilities
+  on the N-dimensional Rosenbrock banana function. Different
+  dimensionality and minimization algorithms can be used, but by
+  default the Levenberg-Marquardt minimizer is used with the
+  2-dimensional Rosenbrock function.
 \end{enumerate}
 
 To compile source files that use the \Adept\ library, you need to make
@@ -3139,6 +3161,7 @@ functions for querying its properties:
 \label{chap:optimize}
 
 \section{Background}
+\label{sec:optimize}
 Since version 2.0.8, \Adept\ provides functionality for solving
 non-linear optimization problems, specifically finding the state
 vector ${\bf x}$ that minimizes the scalar cost function $J({\bf

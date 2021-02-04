@@ -278,10 +278,12 @@ Executable: test_packet_operations
 
 Source file: test_packet_operations.cpp
 
-Demonstrates: Use of Intel intrinsics is mathematically consistent
-regardless of whether code is compiled with SSE2, AVX2 or AVX512.  You
-will need to recompile with (e.g. for g++) -msse2, -mavx2 or -mavx512f
-and check that the output is the same each time.
+Demonstrates: Use of Intel or ARM intrinsics is mathematically
+consistent regardless of whether code is compiled with SSE2, NEON,
+AVX2 or AVX512.  You will need to recompile with (e.g. for g++)
+-msse2, -mavx2 or -mavx512f (or simply march=native to use the best
+instruction set available) and check that the output is the same each
+time.
 
 
 TEST 18: FAST EXPONENTIAL OPERATIONS
@@ -309,4 +311,12 @@ Executable: test_minimizer
 
 Source file: test_minimizer.cpp
 
-Demonstrates: Adept's Levenberg-Marquardt minimizer.
+Demonstrates: Adept's various minimization algorithms on the
+N-dimensional Rosenbrock banana function, where the (optional)
+arguments are:
+ 1. number of dimensions, default 2
+ 2. minimization algorithm string, default "Levenberg-Marquardt" (also
+ available: Levenberg, L-BFGS, Conjugate-Gradient,
+ Conjugate-Gradient-FR
+ 3. maximum number of iterations, default 100
+ 4. gradient-norm to indicate convergence, default 0.1
