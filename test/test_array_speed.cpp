@@ -43,10 +43,12 @@ int main()
   int t_adept = timer.new_activity("Adept");
   int t_adept_container_w = timer.new_activity("Adept container only (warm-up)");
   int t_adept_container = timer.new_activity("Adept container only");
+#ifndef ADEPT_NO_AUTOMATIC_DIFFERENTIATION
   int t_jacobian_w = timer.new_activity("Jacobian (warm-up)");
   int t_jacobian = timer.new_activity("Jacobian");
   int t_jacobian_array_w = timer.new_activity("Jacobian array-op (warm-up)");
   int t_jacobian_array = timer.new_activity("Jacobian array-op");
+#endif
 
   stack.new_recording();
   timer.start(t_c_style_w);

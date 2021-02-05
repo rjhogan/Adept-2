@@ -7,7 +7,7 @@ AC_INIT([adept], [2.1], [r.j.hogan@ecmwf.int], [adept], [http://www.met.reading.
 AC_LANG([C++])
 AC_CONFIG_SRCDIR([adept/Stack.cpp])
 AC_CONFIG_HEADERS([config.h config_platform_independent.h])
-AM_INIT_AUTOMAKE([-Wall -Werror])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs

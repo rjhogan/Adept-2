@@ -1,4 +1,4 @@
-pkgdata_DATA = README COPYING ChangeLog NEWS AUTHORS
+pkgdata_DATA = README.md COPYING ChangeLog NEWS AUTHORS
 SUBDIRS = adept include benchmark test
 # The test/ directory does not use automake so we need to specify the
 # files that will be included in the distribution
