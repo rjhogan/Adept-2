@@ -155,7 +155,7 @@ main(int argc, const char* argv[])
     std::cout << "Usage: " << argv[0] << " [nx] [Levenberg|Levenberg-Marquardt|L-BFGS|Conjugate-Gradient] [max_iterations] [converged_gradient_norm]\n";
   }
 
-  //minimizer.set_levenberg_damping_start(0.0);
+  minimizer.set_levenberg_damping_start(0.25);
   //minimizer.set_max_step_size(1.0);
   //  minimizer.set_levenberg_damping_multiplier(3.0, 5.0);
   minimizer.ensure_updated_state(2);
@@ -178,11 +178,12 @@ main(int argc, const char* argv[])
   MinimizerStatus status;
 
   if (is_bounded) {
-    x = -3.0; x(1) = 3.0;
+    //    x = -3.0; x(1) = 3.0;
+    x = -0.75; x(1) = 3.0;
     Vector x_lower, x_upper;
     adept::minimizer_initialize_bounds(nx, x_lower, x_upper);
-    x_upper(1) = 2.0;
-    x_lower(1) = 0.2;
+    // x_upper(1) = 2.0;   x_lower(1) = 0.2;
+    x_lower(0) = -1;
     status = minimizer.minimize(rosenbrock, x, x_lower, x_upper);
   }
   else {
