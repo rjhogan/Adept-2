@@ -1,4 +1,5 @@
-version 2.1
+version 2.1 (5 February 2021)
+	- Removed README in favour of README.md
 
 version 2.0.9 (28 January 2021)
 	- Fix bug in Array::alignment_offset causing occasional
