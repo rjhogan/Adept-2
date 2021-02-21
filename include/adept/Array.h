@@ -1,6 +1,6 @@
 /* Array.h -- active or inactive Array of arbitrary rank
 
-    Copyright (C) 2014-2018 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014-2021 European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -1484,6 +1484,24 @@ namespace adept {
 	new_offset[j-1] = offset_[j];
       }
       return Array<Rank-1,Type,IsActive>(data_ + index,
+					 storage_,
+					 new_dim, new_offset);
+    }
+
+    // The const version, alas, throws away the constness because we
+    // don't have a way of returning an unmodifiable array
+    template <typename T>
+    typename internal::enable_if<internal::is_scalar_int<T>::value && (Rank > 1),
+      Array<Rank-1,Type,IsActive> >::type
+    operator[](T i) const {
+      int index = internal::get_index_with_len(i,dimensions_[0])*offset_[0];
+      ExpressionSize<Rank-1> new_dim;
+      ExpressionSize<Rank-1> new_offset;
+      for (int j = 1; j < Rank; ++j) {
+	new_dim[j-1] = dimensions_[j];
+	new_offset[j-1] = offset_[j];
+      }
+      return Array<Rank-1,Type,IsActive>(const_cast<Type*>(data_) + index,
 					 storage_,
 					 new_dim, new_offset);
     }

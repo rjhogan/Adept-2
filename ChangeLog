@@ -1,3 +1,7 @@
+version 2.1.1
+	- interp function can perform 1D interpolation of higher
+	dimensional Y arrays
+
 version 2.1 (5 February 2021)
 	- Removed README in favour of README.md
 

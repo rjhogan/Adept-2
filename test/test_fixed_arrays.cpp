@@ -316,7 +316,12 @@ main(int argc, const char** argv) {
   EVAL2("minval", myVector2, z, myMatrix23, M, z = minval(M,1));
   EVAL2("dot product", myReal, x, myVector3, w, x = dot_product(w,w(stride(end,0,-1))));
   //  EVAL2("1D interpolation", myVector3, v, myVector3, w, (v = interp<double,double,true,double>(value(v), w, value(w)/3.0) ));
-  EVAL2("1D interpolation", myVector3, v, myVector3, w, v = interp(value(v), w, value(w)/3.0));
+  EVAL2("1D interpolation", myVector3, v, myVector3, w, v = interp(value(v), w, value(w)/2.0));
+  EVAL2("1D clamped interpolation", myVector3, v, myVector3, w, v = interp(value(v), w, value(w)/2.0, ADEPT_EXTRAPOLATE_CLAMP));
+#ifndef ALL_ACTIVE
+  EVAL2("1D interpolation of matrix", myMatrix23, M, myVector3, v, M = interp(v(range(0,1)), M, v(range(1,2))/2.0));
+  EVAL2("1D clamped interpolation of matrix", myMatrix23, M, myVector3, v, M = interp(v(range(0,1)), M, v(range(1,2))/2.0, ADEPT_EXTRAPOLATE_CLAMP));
+#endif
   HEADING("CONDITIONAL OPERATIONS");
   EVAL2("where construct, scalar right-hand-side", myMatrix23, M, myMatrix23, N, M.where(N > 20) = 0);
   EVAL2("where construct, expression right-hand-side", myMatrix23, M, myMatrix23, N, M.where(N > 20) = -N);

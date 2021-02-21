@@ -176,13 +176,26 @@ namespace adept {
       
   }
 
-  // Define spread function
+  // Define spread function applied to an expression
   template <int SpreadDim, typename Type, class E>
   typename internal::enable_if<(SpreadDim >= 0 && SpreadDim <= E::rank),
 	       internal::Spread<SpreadDim,Type,E> >::type
   spread(const Expression<Type,E>& e, Index n) {
     return internal::Spread<SpreadDim,Type,E>(e,n);
   }
+
+  /*
+  // If "spread" is applied to a scalar, we expand it to a Vector of
+  // the same type
+  template <int SpreadDim, typename Type>
+  typename internal::enable_if<internal::is_not_expression<Type>::value,
+			       Array<1,Type,false> >::type
+  spread(const Type& e, Index n) {
+    Array<1,Type,false> arr(n);
+    arr = e;
+    return arr;
+  }
+  */
 
 }
 

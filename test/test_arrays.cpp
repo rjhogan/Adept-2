@@ -517,8 +517,12 @@ main(int argc, const char** argv) {
 #ifndef ALL_COMPLEX
   EVAL2("1-dimension maxval", myVector, v, false, myMatrix, M, v = maxval(M,1));
   EVAL2("1-dimension minval", myVector, v, false, myMatrix, M, v = minval(M,1));
-  EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, Vector(value(w)/3.0)));
-  EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, value(w)/3.0));
+  EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, Vector(value(w)/2.0)));
+  EVAL2("1D clamped interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, value(w)/2.0, ADEPT_EXTRAPOLATE_CLAMP));
+#ifndef ALL_ACTIVE
+  EVAL2("1D interpolation of matrix", myMatrix, M, true, myVector, v, M = interp(v(range(0,1)), M, v(range(1,2))/2.0));
+  EVAL2("1D clamped interpolation of matrix", myMatrix, M, true, myVector, v, M = interp(v(range(0,1)), M, v(range(1,2))/2.0, ADEPT_EXTRAPOLATE_CLAMP));
+#endif
   EVAL2("all reduction", bool, b, true, myMatrix, M, b = all(M > 8.0));
   EVAL2("any reduction", bool, b, true, myMatrix, M, b = any(M > 8.0));
   EVAL2("count reduction", int, c, true, myMatrix, M, c = count(M > 8.0));
