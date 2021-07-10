@@ -277,7 +277,6 @@ namespace adept {
 	  }
 	}
       }
-      i_independent += MULTIPASS_SIZE;
     } // End of loop over blocks
     
     // Now do the same but for the remaining few columns in the matrix
