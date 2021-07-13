@@ -1,6 +1,8 @@
 version 2.1.1
 	- interp function can perform 1D interpolation of higher
 	dimensional Y arrays
+	- Bug fix in reduction of an "n" dimensional active array to an
+	"n-1" dimensional array: check_space had been forgotten
 
 version 2.1 (5 February 2021)
 	- Removed README in favour of README.md

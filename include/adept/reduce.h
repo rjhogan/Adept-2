@@ -153,7 +153,7 @@ namespace adept {
       // In the case of active arguments, the next_value_and_gradient
       // function pushes the right hand side onto the operation stack,
       // but does not push the "total" object onto the statement
-      // stack.  This is done right and the end of the summation
+      // stack.  This is done right at the end of the summation
       // operations.
       template <class E, int NArrays>
       void accumulate_active(Active<T>& total, const E& rhs, 
@@ -724,7 +724,7 @@ namespace adept {
 	ExpressionSize<E::n_arrays> loc(0);
 	int my_rank;
 	static const int last = E::rank-1;
-	ADEPT_ACTIVE_STACK->check_space(E::n_active * n); // FIX!
+	ADEPT_ACTIVE_STACK->check_space(E::n_active * n);
 	do {
 	  i[last] = 0;
 	  rhs.set_location(i, loc);
@@ -805,6 +805,8 @@ namespace adept {
 	ExpressionSize<E::n_arrays> loc(0);
 	int my_rank;
 	Active<Type> total;
+	Index n = dims.size();
+	ADEPT_ACTIVE_STACK->check_space(E::n_active * n);
 	do {
 	  i[reduce_dim] = 0;
 	  //	  total.set_value(f.first_value());
