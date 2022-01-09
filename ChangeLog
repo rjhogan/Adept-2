@@ -3,6 +3,8 @@ version 2.1.1
 	dimensional Y arrays
 	- Bug fix in reduction of an "n" dimensional active array to an
 	"n-1" dimensional array: check_space had been forgotten
+	- Added Newton-Levenberg[-Marquardt] options to test_minimizer,
+	which use the exact Hessian of the Rosenbrock banana function
 
 version 2.1 (5 February 2021)
 	- Removed README in favour of README.md
@@ -22,7 +24,7 @@ version 2.0.8 (22 August 2020)
 	- Added adept_optimize.h header file providing minimization
 	capability, initially with the constrained and unconstrained
 	Levenberg-Marquardt minimization algorithm
-	- Test program test_minimize tests with the N-dimensional
+	- Test program test_minimizer tests with the N-dimensional
 	Rosenbrock function
 	- The Stack member function "jacobian" can now operate on or
 	return Adept matrices, rather than solely on raw pointers which

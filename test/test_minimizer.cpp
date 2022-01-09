@@ -1,6 +1,6 @@
 /* test_minimizer.cpp - Test Adept minimizer with N-dimensional Rosenbrock function
 
-  Copyright (C) 2020 ECMWF
+  Copyright (C) 2020-2022 ECMWF
 
   Copying and distribution of this file, with or without modification,
   are permitted in any medium without royalty provided the copyright
@@ -22,15 +22,20 @@ using namespace adept;
 class RosenbrockN : public Optimizable {
 public:
 
-  RosenbrockN() : ls_iteration_(0) {}
+  RosenbrockN() : ls_iteration_(0), exact_hessian_(false) {}
 
-  int ls_iteration_; // Line search iteration
+  int ls_iteration_;   // Line search iteration
+
+  // Do we use the exact Hessian derivate analytically, or the
+  // approximate one from the Jacobian matrix and the Gauss-Newton
+  // formula?
+  bool exact_hessian_;
 
   // N-dimensional Rosenbrock function can be expressed as the sum of
   // the squared elements of vector y(x) defined as follows.  This
-  // form facilitates the calculation of the Hessian from the Jacobian
-  // dy/dx.  It is templated so that can be called either with a
-  // passive "Vector" or active "aVector" argument.
+  // form facilitates the calculation of the approximate Hessian from
+  // the Jacobian dy/dx.  It is templated so that can be called either
+  // with a passive "Vector" or active "aVector" argument.
   template <bool IsActive>
   Array<1,Real,IsActive> calc_y(const Array<1,Real,IsActive>& x) {
     int nx = x.size();
@@ -42,7 +47,19 @@ public:
     y *= sqrt(2.0 * COST_SCALING);
     return y;
   }
-    
+
+  void calc_exact_hessian(const adept::Vector& x, SymmMatrix& hessian) {
+    hessian = 0.0;
+    int nx = hessian.dimension();
+    for (int ix = 0; ix < nx-1; ++ix) {
+      hessian(ix,ix) = 1200.0*x(ix)*x(ix) - 400.0*x(ix+1) + 2.0;
+      hessian(ix,ix+1) = -400.0*x(ix);
+    }
+    for (int ix = 1; ix < nx; ++ix) {
+      hessian(ix,ix) = hessian(ix,ix) + 200.0;
+    }
+  }
+
   virtual void report_progress(int niter, const adept::Vector& x,
 			       Real cost, Real gnorm) {
     ls_iteration_ = 0;
@@ -108,7 +125,12 @@ public:
     stack.independent(xactive);
     stack.dependent(y);
     Matrix jac = stack.jacobian();
-    hessian  = jac.T() ** jac;
+    if (exact_hessian_) {
+      calc_exact_hessian(x, hessian);
+    }
+    else {
+      hessian  = jac.T() ** jac;
+    }
     gradient = jac.T() ** value(y);
     state_to_stderr(x,value(cost));
     return value(cost);
@@ -125,7 +147,6 @@ main(int argc, const char* argv[])
     return 0;
   }
 
-
   RosenbrockN rosenbrock;
   Minimizer minimizer(MINIMIZER_ALGORITHM_LEVENBERG_MARQUARDT);
   // The convergence criterion should be changed in accordance with
@@ -136,7 +157,17 @@ main(int argc, const char* argv[])
     // nx = std::stoi(argv[1]);
     std::sscanf(argv[1], "%d", &nx);
     if (argc > 2) {
-      minimizer.set_algorithm(argv[2]);
+      const char* algo_ptr = argv[2];
+      std::string algo(argv[2]);
+      // If algorithm name is prefixed by "Newton-" then use the exact
+      // Hessian matrix (analytically derived for this specific
+      // function) rather than the Gauss-Newton approximation from the
+      // Jacobian matrix
+      if (algo.find("Newton-") == 0) {
+	algo_ptr += 7;
+	rosenbrock.exact_hessian_ = true;
+      }
+      minimizer.set_algorithm(algo_ptr);
       if (argc > 3) {
 	int max_it;
 	// max_it = std::stof(argv[3]);
@@ -152,7 +183,7 @@ main(int argc, const char* argv[])
     }
   }
   else {
-    std::cout << "Usage: " << argv[0] << " [nx] [Levenberg|Levenberg-Marquardt|L-BFGS|Conjugate-Gradient] [max_iterations] [converged_gradient_norm]\n";
+    std::cout << "Usage: " << argv[0] << " [nx] [Levenberg|Levenberg-Marquardt|Newton-Levenberg|Newton-Levenberg-Marquardt|L-BFGS|Conjugate-Gradient] [max_iterations] [converged_gradient_norm]\n";
   }
 
   minimizer.set_levenberg_damping_start(0.25);
@@ -162,6 +193,7 @@ main(int argc, const char* argv[])
 
   std::cout << "Minimizing " << nx << "-dimensional Rosenbrock function\n";
   std::cout << "Algorithm: " << minimizer.algorithm_name() << "\n";
+  std::cout << "Use exact Hessian: " << rosenbrock.exact_hessian_ << "\n";
   std::cout << "Maximum iterations: " << minimizer.max_iterations() << "\n";
   std::cout << "Converged gradient norm: " << minimizer.converged_gradient_norm() << "\n";
 

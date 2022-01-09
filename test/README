@@ -317,6 +317,17 @@ arguments are:
  1. number of dimensions, default 2
  2. minimization algorithm string, default "Levenberg-Marquardt" (also
  available: Levenberg, L-BFGS, Conjugate-Gradient,
- Conjugate-Gradient-FR
+ Conjugate-Gradient-FR; additionally, the "Newton-Levenberg-Marquardt"
+ and "Newton-Levenberg" will use the exact Hessian, rather than an
+ approximation
  3. maximum number of iterations, default 100
  4. gradient-norm to indicate convergence, default 0.1
+
+The cost function value and gradient norm are reported to standard
+output each iteration. To standard error is written a table of
+numbers, one line per call to the function being minimized.  The first
+on each line is the number of the sub-iteration, usually the number of
+the call to the line-search algorithm, starting at 0. Then follows the
+N values of the state vector, followed by the value of the cost
+function. This can be used to plot how each minimizer progresses to
+the solution.
