@@ -506,8 +506,9 @@ require:
 \item Differentiation is first-order only: it cannot directly compute
   higher-order derivatives such as the Hessian matrix, although
   section \ref{sec:optimize} describes how \Adept\ can help compute
-  the Hessian if the cost function (also known as the penalty function
-  or objective function) is in a particular commonly used form.
+  the approximate Hessian if the cost function (also known as the
+  penalty function or objective function) is in a particular commonly
+  used form.
 \item It has limited support for complex numbers; no support for
   mathematical functions of complex numbers, and expressions involving
   operations (addition, subtraction, multiplication and division) on
@@ -3186,22 +3187,23 @@ examples in this chapter assume that they do.
 A \emph{second-order} minimization algorithm makes use of not only $J$
 and $\partial J/{\bf x}$, but also a user-supplied function for the
 Hessian ${\bf A}=\partial^2J({\bf x})/\partial{\bf x}^2=\nabla_{\bf
-  x}^2J$ (a symmetric matrix).  Examples are the Gauss-Newton and
-Levenberg-Marquardt methods. Knowing the second derivative means that
-even fewer iterations should be required to find the minimum of $J$,
-but ${\bf A}$ is more expensive to compute than $\partial J/{\bf x}$.
+  x}^2J$ (a symmetric matrix), or an approximation of it.  Examples
+are the Gauss-Newton and Levenberg-Marquardt methods. Knowing the
+second derivative means that even fewer iterations should be required
+to find the minimum of $J$, but ${\bf A}$ is more expensive to compute
+than $\partial J/{\bf x}$.
 
 \Adept\ does not have the ability to automatically compute Hessian
-matrices for an arbitrary cost function, but frequently the
-cost function has a specific form that makes it possible to
-compute the Hessian from the Jacobian matrix.  Consider the
+matrices for an arbitrary cost function, but frequently the cost
+function has a specific form that makes it possible to compute the
+approximate Hessian from the Jacobian matrix.  Consider the
 optimization problem of finding the parameters $\x$ of non-linear
 model $\y(\x)$ that provides the closest match to a set of
 ``observations'' $\y^o$ in a least-squares sense.  For maximum
 generality we add constraints that penalize differences between $\x$
 and a set of \emph{a~priori} values $\x^a$, as well as a
-regularization term.  In this case the cost function could be
-written as \def\myspace{~~}
+regularization term.  In this case the cost function could be written
+as \def\myspace{~~}
 \begin{equation}
 J(\x) \myspace =\myspace \frac12\left[\y(\x)-\y^o\right]^\mathrm{T}{\bf
   R}^{-1}\left[\y(\x)-\y^o\right]
@@ -3214,9 +3216,9 @@ Here, all vectors are treated as column vectors, ${\bf R}$ is the
 error covariance matrix of the observations, ${\bf B}$ is the error
 covariance matrix of the \emph{a~priori} values, and ${\bf T}$ is a
 Twomey-Tikhonov matrix that penalizes either spatial gradients or
-curvature in $\x$.  The Hessian matrix is then given by
+curvature in $\x$.  The approximate Hessian matrix is then given by
 \begin{equation}
-{\bf A} \myspace=\myspace {\bf H}^\mathrm{T}{\bf
+{\bf A} \myspace\simeq\myspace {\bf H}^\mathrm{T}{\bf
   R}^{-1}{\bf H}\nonumber
 \myspace+\myspace {\bf B}^{-1} \myspace+\myspace {\bf T},
 \label{eq:hessian}
@@ -3225,7 +3227,13 @@ which can be coded up using \Adept\ to compute the Jacobian matrix
 ${\bf H}=\partial\y/\partial\x$. Each term on the right-hand-side of
 (\ref{eq:hessian}) has its corresponding term in (\ref{eq:objective}),
 so it is easy to work out what the Hessian would look like if only a
-subset of the terms in (\ref{eq:objective}) were present.
+subset of the terms in (\ref{eq:objective}) were present. The first
+term of (\ref{eq:hessian}) is the `Gauss-Newton' approximation of the
+true Hessian of the first term of (\ref{eq:objective}).  It is exact
+if $\y(\x)$ is linear, i.e.\ if each element of $\y$ could be
+represented as a linear combination of the elements of $\x$. In many
+cases this is a good enough approximation of the Hessian for fast
+convergence to be achieved.
 
 \section{\Adept\ interface}
 \label{sec:minimizer_interface}
@@ -3244,7 +3252,7 @@ variables:
 The test program \code{test/test\_minimizer.cpp} uses a ${\bf y}({\bf
   x})$ function for the much more intersting case of the
 $N$-dimensional Rosenbrock function.  To set up the problem ready for
-minimizing, we use create a class that derives from \Adept's
+minimizing, we create a class that derives from \Adept's
 \code{Optimizable} class and overrides five of its virtual functions:
 %
 \begin{lstlisting}
@@ -3272,7 +3280,7 @@ minimizing, we use create a class that derives from \Adept's
      return value(cost);                   // Return cost function as passive variable
    }
 
-   // Calculate the cost function, its gradient and the Hessian matrix
+   // Calculate the cost function, its gradient and the approximate Hessian matrix
    virtual adept::Real calc_cost_function_gradient_hessian(const adept::Vector& x,
 			   adept::Vector gradient, adept::SymmMatrix& hessian) {
      adept::aVector xactive = x;           // Copy x to an active variable
@@ -3355,18 +3363,19 @@ footprint. Note that the full inverse Hessian is not computed
 explicitly so this method is still efficient in memory for large $N$.
 %
 \citem{MINIMIZER\_ALGORITHM\_LEVENBERG} The second-order Levenberg
-algorithm tries to perform a Gauss-Newton step using the Hessian
-matrix and assuming that the curvature of $J$ is locally constant. If
-$J$ at the new ${\bf x}$ is not reduced by this step then a damping
-parameter $\lambda$ is used to scale between Gauss-Newton and a
-steepest-descent algorithm.
+algorithm tries to perform a Gauss-Newton step using the approximate
+Hessian matrix and assuming that the curvature of $J$ is locally
+constant. If $J$ at the new ${\bf x}$ is not reduced by this step then
+a damping parameter $\lambda$ is used to scale between Gauss-Newton
+and a steepest-descent algorithm.
 %
 \citem{MINIMIZER\_ALGORITHM\_LEVENBERG\_MARQUARDT} The second-order
 Levenberg-Marquardt algorithm is similar to the Levenberg algorithm,
 but scales such that the step sizes are changed in each dimension
 according to the curvature of the cost function in that dimension
-(i.e.\ the diagonal of the Hessian matrix). This generally, but not
-always, results in faster convergence than the Levenberg algorithm.
+(i.e.\ the diagonal of the Hessian matrix). This tends to result in
+faster convergence than the Levenberg algorithm for problems with very
+different scaling for each element of the state vector.
 \end{description}
 The minimizer can be configured in detail by calling its member
 functions listed in section \ref{sec:minimizer_options}.  The possible
@@ -4146,9 +4155,9 @@ default behaviour, define this variable yourself in
 \item[Do you have plans to enable \Adept\ to produce Hessian
   matrices?]  Not in the near future as this is a huge change.
   However, if your cost function $J(\x)$ (also known as a cost
-  function or penalty function) has a specific form then the Hessian
-  matrix can be computed from the Jacobian matrix, as described in
-  chapter \ref{chap:optimize}.
+  function or penalty function) has a specific form then the
+  approximate Hessian matrix can be computed from the Jacobian matrix,
+  as described in chapter \ref{chap:optimize}.
 \item[Why doesn't the ternary operator work?] Some compilers will fail
   to compile the following function:
 \begin{lstlisting}
