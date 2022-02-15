@@ -353,8 +353,8 @@ namespace adept {
 
     // Return the number of independent and dependent variables that
     // have been identified
-    uIndex n_independent() const { return independent_index_.size(); }
-    uIndex n_dependent()   const { return dependent_index_.size(); }
+    uIndex n_independent() const { return static_cast<uIndex>(independent_index_.size()); }
+    uIndex n_dependent()   const { return static_cast<uIndex>(dependent_index_.size()); }
 
     // Compute the Jacobian matrix; note that jacobian_out must be
     // allocated to be of size m*n, where m is the number of dependent
@@ -664,8 +664,8 @@ namespace adept {
     uIndex n_allocated_operations() const { return n_allocated_operations_; }
 
     // Return the size of the two dimensions of a Jacobian matrix
-    uIndex n_independents() const { return independent_index_.size(); }
-    uIndex n_dependents() const { return dependent_index_.size(); }
+    uIndex n_independents() const { return static_cast<uIndex>(independent_index_.size()); }
+    uIndex n_dependents() const { return static_cast<uIndex>(dependent_index_.size()); }
 
     // Return the maximum number of gradients required to perform
     // adjoint calculation
