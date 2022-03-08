@@ -25,7 +25,10 @@ do
 	echo "### $TEST" >> $LOG
 	echo "########################################################" >> $LOG
 	echo >> $LOG
-	echo -n "$TEST... "
+	# The built-in version of "echo" on some versions of "sh" does
+	# not treat the "-n" option correctly, so we use /bin/echo
+	# here
+	/bin/echo -n "$TEST... "
 	./$TEST >> $LOG 2> $STDERR
 	if [ "$?" = 0 ]
 	then

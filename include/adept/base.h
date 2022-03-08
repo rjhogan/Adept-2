@@ -244,18 +244,21 @@
 // ADEPT_THREAD_LOCAL preprocessor variable in the previous section,
 // otherwise it is defined here depending on your compiler
 #ifndef ADEPT_THREAD_LOCAL
-  #if defined(__APPLE__)
-    // On macOS we check for its the existance of thread-local-storage
-    // using Clang features.
-    // When unavailable we turn it off and provide a blank definition
-    // of ADEPT_THREAD_LOCAL.
-    #ifdef __has_feature
-      #if __has_feature(cxx_thread_local)
-        // Clang feature check has found that thread_local is
-        // available
+  #ifdef __APPLE__
+    #ifdef __GNUC__
+      // GNU C++11 compiler on Mac should support thread_local
+      #ifdef ADEPT_CXX11_FEATURES
+        #define ADEPT_THREAD_LOCAL thread_local
+      #endif
+    #elif defined(__has_feature)
+      // Clang supports "__has_feature": check if thread_local is
+      // available
+     #if __has_feature(cxx_thread_local)
         #define ADEPT_THREAD_LOCAL thread_local
       #endif
     #endif
+    // When thread_local is unavailable we turn it off and provide a
+    // blank definition of ADEPT_THREAD_LOCAL.
     #ifndef ADEPT_THREAD_LOCAL
       #define ADEPT_STACK_THREAD_UNSAFE 1
       #define ADEPT_THREAD_LOCAL
