@@ -428,6 +428,8 @@ main(int argc, const char** argv) {
 #endif
   
   std::cout << "sizeof(myReal) = " << sizeof(myReal) << "\n";
+  std::cout << "myReal::min_inf() = " << adept::internal::numeric_limits<myReal>::min_inf() << "\n";
+  std::cout << "myReal::max_inf() = " << adept::internal::numeric_limits<myReal>::max_inf() << "\n";
   
   HEADING("ARRAY FUNCTIONALITY");
   EVAL("Array \"resize\" member function", myMatrix, M, true, M.resize(1,5));

@@ -8,7 +8,7 @@
 */
 
 #ifndef AdeptHalf_H
-#define AdeptHalf 1
+#define AdeptHalf_H 1
 
 #include <iostream>
 
@@ -30,7 +30,7 @@ namespace adept {
     os << static_cast<float>(x);
     return os;
   }
-
+  
   // For the moment implement mathematical functions by first
   // converting to single precision
   half log(half x)        { return std::log(static_cast<float>(x)); }
@@ -98,8 +98,19 @@ namespace adept {
 
 #include <adept_arrays.h>
 
-
 namespace adept {
+
+  // For reduction functions (e.g. maxval) to work we need to know
+  // positive and negative infinity of the half-precision type
+  namespace internal {
+    template <>
+    struct numeric_limits<adept::half> {
+      static adept::half min_inf() { unsigned short x = 0xfc00;
+	return *reinterpret_cast<adept::half*>(&x); }
+      static adept::half max_inf() { unsigned short x = 0x7c00;
+	return *reinterpret_cast<adept::half*>(&x); }
+    };
+  }
   
   // Shortcuts
   typedef Array<1,half> halfVector;
