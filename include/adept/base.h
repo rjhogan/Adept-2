@@ -330,6 +330,9 @@ namespace adept {
   typedef double Real;
 #elif ADEPT_REAL_TYPE_SIZE == 16
   typedef long double Real;
+#elif ADEPT_REAL_TYPE_SIZE == 2
+#include <adept_half.h>
+  typedef adept::half Real;
 #else
 #undef ADEPT_REAL_TYPE_SIZE
 #error If defined, ADEPT_REAL_TYPE_SIZE must be 4 (float), 8 (double) or 16 (long double)

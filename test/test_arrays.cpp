@@ -22,13 +22,28 @@
 
 #define ADEPT_BOUNDS_CHECKING 1
 
+// Optionally override the default precision, in which case myReal may
+// not be the same as Real
+#ifdef REAL_TYPE_SIZE
+#if REAL_TYPE_SIZE == 2
+#include <adept_half.h>
+#define REAL_TYPE adept::half
+#define IS_HALF_PRECISION
+#elif REAL_TYPE_SIZE == 4
+#define REAL_TYPE float
+#elif REAL_TYPE_SIZE == 8
+#define REAL_TYPE double
+#else
+#error "REAL_TYPE_SIZE must be 2, 4 or 8"
+#endif
+#endif
+
 #include <adept_arrays.h>
 
 //#define TRAP_FLOATING_POINT_EXCEPTIONS 1
 #ifdef TRAP_FLOATING_POINT_EXCEPTIONS
 #include <fenv.h>
 #endif
-
 
 // The following controls whether to use active variables or not
 //#define ALL_ACTIVE 1
@@ -250,7 +265,20 @@ main(int argc, const char** argv) {
 
 #endif
 #else
+#ifdef REAL_TYPE
+  typedef REAL_TYPE myReal;
+  typedef Array<2,REAL_TYPE,false> myMatrix;
+  typedef Array<1,REAL_TYPE,false> myVector;
+  typedef Array<3,REAL_TYPE,false> myArray3D;
 
+  typedef SpecialMatrix<REAL_TYPE,internal::SymmEngine<ROW_LOWER_COL_UPPER>,false> mySymmMatrix;
+  typedef SpecialMatrix<REAL_TYPE,internal::BandEngine<ROW_MAJOR,0,0>,false> myDiagMatrix;
+  typedef SpecialMatrix<REAL_TYPE,internal::BandEngine<ROW_MAJOR,1,1>,false> myTridiagMatrix;
+  typedef SpecialMatrix<REAL_TYPE,internal::LowerEngine<ROW_MAJOR>,false> myLowerMatrix;
+  typedef SpecialMatrix<REAL_TYPE,internal::UpperEngine<ROW_MAJOR>,false> myUpperMatrix;
+  typedef SpecialMatrix<REAL_TYPE,internal::BandEngine<ROW_MAJOR,2,1>,false> myOddBandMatrix;
+
+#else
   typedef Real   myReal;
   typedef Matrix myMatrix;
   typedef Vector myVector;
@@ -270,7 +298,7 @@ main(int argc, const char** argv) {
   typedef SpecialMatrix<Real,internal::BandEngine<COL_MAJOR,1,1>,false> myTridiagMatrix;
   typedef SpecialMatrix<Real,internal::BandEngine<COL_MAJOR,2,1>,false> myOddBandMatrix;
   */
-
+#endif
 #endif
 
 
@@ -279,7 +307,7 @@ main(int argc, const char** argv) {
   typedef Array<1,std::complex<Real>,IsActive> myVector;
   typedef Array<2,std::complex<Real>,IsActive> myMatrix;
   typedef Array<3,std::complex<Real>,IsActive> myArray3D;
-  typedef SpecialMatrix<std::complex<Real>,internal::SquareEngine<ROW_MAJOR>,IsActive> mySymmMatrix;
+  typedef SpecialMatrix<std::complex<Real>,internal::SymmEngine<ROW_LOWER_COL_UPPER>,IsActive> mySymmMatrix;
   typedef SpecialMatrix<std::complex<Real>,internal::BandEngine<ROW_MAJOR,0,0>,IsActive> myDiagMatrix;
   typedef SpecialMatrix<std::complex<Real>,internal::BandEngine<ROW_MAJOR,1,1>,IsActive> myTridiagMatrix;
   typedef SpecialMatrix<std::complex<Real>,internal::LowerEngine<ROW_MAJOR>, IsActive> myLowerMatrix;
@@ -398,8 +426,9 @@ main(int argc, const char** argv) {
 #ifdef ALL_COMPLEX
   std::cout << "Testing COMPLEX arrays\n";
 #endif
-
-
+  
+  std::cout << "sizeof(myReal) = " << sizeof(myReal) << "\n";
+  
   HEADING("ARRAY FUNCTIONALITY");
   EVAL("Array \"resize\" member function", myMatrix, M, true, M.resize(1,5));
   
@@ -619,7 +648,7 @@ main(int argc, const char** argv) {
   EVAL2("Matrix spread of dimension 1", myArray3D, A, false, myMatrix, M, A = spread<1>(M,2));
   EVAL2("Matrix spread of dimension 2", myArray3D, A, false, myMatrix, M, A = spread<2>(M,2));
 
-#ifndef ALL_COMPLEX
+#if !defined(ALL_COMPLEX) && !defined(IS_HALF_PRECISION)
 
 #ifndef MARVEL_STYLE
   if (adept::have_matrix_multiplication()) {
