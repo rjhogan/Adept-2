@@ -53,7 +53,7 @@ MYLIBS = $(LIBS)
 PROGRAMS = test_adept test_adept_with_and_without_ad test_radiances \
 	test_gsl_interface test_misc test_checkpoint test_thread_safe \
 	test_array_speed test_no_lib test_radiances_array test_constructors \
-	test_arrays test_float_arrays test_arrays_active test_arrays_active_pausable \
+	test_arrays test_arrays_active test_arrays_active_pausable \
 	test_fixed_arrays test_fixed_arrays_active test_derivatives \
 	test_array_derivatives test_thread_safe_arrays test_complex_arrays \
 	test_packet_operations test_fastexp test_reduce_active test_minimizer
@@ -123,14 +123,6 @@ test_arrays_active_pausable: test_arrays_active_pausable.o $(LIBADEPT)
 test_complex_arrays: test_complex_arrays.o $(LIBADEPT)
 	$(CXXLINK) test_complex_arrays.o $(MYLIBS)
 
-# Test program 9e
-test_float_arrays: test_float_arrays.o $(LIBADEPT)
-	$(CXXLINK) test_float_arrays.o $(MYLIBS)
-
-# Test program 9f
-test_half_arrays: test_half_arrays.o $(LIBADEPT)
-	$(CXXLINK) test_half_arrays.o $(MYLIBS)
-
 # Test program 10
 test_array_speed: test_array_speed.o $(LIBADEPT)
 	$(CXXLINK) test_array_speed.o $(MYLIBS)
@@ -196,12 +188,6 @@ test_arrays_active.o: test_arrays.cpp  *.h ../include/*.h ../include/adept/*.h
 
 test_arrays_active_pausable.o: test_arrays.cpp  *.h ../include/*.h ../include/adept/*h
 	$(CXX) $(COMPILE_FLAGS) -DADEPT_RECORDING_PAUSABLE -DALL_ACTIVE $(INCLUDES) -c test_arrays.cpp -o test_arrays_active_pausable.o
-
-test_float_arrays.o: test_arrays.cpp  *.h ../include/*.h ../include/adept/*.h
-	$(CXX) $(COMPILE_FLAGS) $(INCLUDES) -DREAL_TYPE_SIZE=4 -c test_arrays.cpp -o test_float_arrays.o
-
-test_half_arrays.o: test_arrays.cpp  *.h ../include/*.h ../include/adept/*.h
-	$(CXX) $(COMPILE_FLAGS) $(INCLUDES) -DREAL_TYPE_SIZE=2 -c test_arrays.cpp -o test_half_arrays.o
 
 test_complex_arrays.o: test_arrays.cpp  *.h ../include/*.h ../include/adept/*.h
 	$(CXX) $(COMPILE_FLAGS) -DALL_COMPLEX $(INCLUDES) -c test_arrays.cpp -o test_complex_arrays.o
