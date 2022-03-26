@@ -212,7 +212,7 @@ namespace quick_e {
   template <typename T> T fma(T x, T y, T z)  { return (x*y)+z; }
   template <typename T> T fnma(T x, T y, T z) { return z-(x*y); }
   template <typename T> T fmin(T x, T y)  { return std::min(x,y); }
-  template <typename T> T fmax(T x, T y)  { return std::min(x,y); }
+  template <typename T> T fmax(T x, T y)  { return std::max(x,y); }
  
 #if __cplusplus > 199711L
   template <> inline float  fmin(float x, float y)   { return std::fmin(x,y); }
