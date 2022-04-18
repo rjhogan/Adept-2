@@ -84,7 +84,7 @@ namespace adept {
   };
 
   // Forward declaration of Array, to enable Jacobian functions
-  template<int Rank, typename Type, bool IsActive>
+  template<RankType Rank, typename Type, bool IsActive>
   class Array;
 
   // ---------------------------------------------------------------------

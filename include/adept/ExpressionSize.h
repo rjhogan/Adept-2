@@ -1,6 +1,6 @@
 /* ExpressionSize.h -- Class for describing array sizes
 
-    Copyright (C) 2014-2017 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2014- European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -26,7 +26,19 @@
 #include <adept/base.h>
 #include <adept/traits.h>
 
+#ifdef ADEPT_CXX11_FEATURES
+#include <array>
+#endif
+
 namespace adept {
+
+  // In principle ExpressionSize could be replaced by std::array, but
+  // this means RankType must be unsigned std::size_t which causes
+  // problems as rank is assumed to be signed in many places.
+  
+  //  template <std::size_t Rank>
+  //  using ExpressionSize = std::array<Index, Rank>;
+
 
   // Definition of ExpressionSize class
   template <int Rank>
@@ -39,7 +51,7 @@ namespace adept {
       if (j >= 0) {
 	// Set all dimensions to the same value - usually 0 (empty
 	// array) or 1 (scalar)
-	set_all(j);
+	fill(j);
       }
       else {
 	// Set just the first dimension to j; usually this would be
@@ -67,20 +79,16 @@ namespace adept {
     // sizes, and is conveyed by a negative first element
     bool invalid_expression() const { return (dim[0] < 0); }
 
-    // Set all to specified value
-    void set_all(Index j) {
+    // Set all to specified value (as std::array)
+    void fill(Index j) {
       for (int i = 0; i < Rank; ++i) {
 	dim[i] = j;
       }
     }
 
-    // Copy from an ExpressionSize object of the same rank
-    void copy(const ExpressionSize& d) {
-      for (int i = 0; i < Rank; ++i) {
-	dim[i] = d[i];
-      }
-    }
-    // ...or pointer to raw data
+    // Copy from pointer to raw data; note that copying from an
+    // ExpressionSize object is no longer supported as we have the
+    // copy assignment operator (=) for that
     void copy(const Index* d) {
       for (int i = 0; i < Rank; ++i) {
 	dim[i] = d[i];
@@ -100,7 +108,10 @@ namespace adept {
       }
     }
 
-    // String representation
+    /*
+    // String representation; in case a future versions of Adept
+    // replaces ExpressionSize with std::array, this is now a free
+    // function internal::str
     std::string str() const {
       std::stringstream s;
       s << "[" << dim[0];
@@ -110,6 +121,7 @@ namespace adept {
       s << "]";
       return s.str();
     }
+    */
 
     // Get the total number of elements
     Index size() const {
@@ -126,6 +138,15 @@ namespace adept {
       return prod;
     }
 
+#ifdef ADEPT_CXX11_FEATURES
+    ExpressionSize& operator=(const std::array<Index,Rank>& arr) {
+      for (int i = 0; i < Rank; ++i) {
+	dim[i] = arr[i];
+      }
+      return *this;
+    }
+#endif
+    
     ExpressionSize& operator++() {
       for (int i = 0; i < Rank; ++i) {
 	++dim[i];
@@ -178,8 +199,8 @@ namespace adept {
     ExpressionSize() { }
     ExpressionSize(Index j) { }
     bool invalid_expression() const { return false; }
-    std::string str() const { return ""; }
-    void set_all(Index) const { }
+    //    std::string str() const { return ""; }
+    void fill(Index) const { }
     bool operator==(const ExpressionSize<0>&) const { return true; }
     bool operator!=(const ExpressionSize<0>&) const { return false; }
     bool operator[](int) const { return 0; }
@@ -187,13 +208,14 @@ namespace adept {
     void copy_dissimilar(const ExpressionSize<MyRank>&) { }
   };
 
+
   // Send the size of an expression to a stream
-  template <int Rank>
+  template <RankType Rank>
   inline
   std::ostream& operator<<(std::ostream& os, const ExpressionSize<Rank>& s) {
     if (Rank > 0) {
       os << "(" << s[0];
-      for (int i = 1; i < Rank; i++) {
+      for (RankType i = 1; i < Rank; i++) {
 	os << "," << s[i];
       }
       return os << ")";
@@ -209,25 +231,25 @@ namespace adept {
     // the rank is the same and the dimensions match, or if one of the
     // expressions is a scalar (zero rank).  If the ranks don't match
     // and neither is zero then the program won't compile.
-    template <int LRank, int RRank>
+    template <RankType LRank, RankType RRank>
     inline
     typename enable_if<LRank==RRank && (LRank>1), bool>::type
     compatible(const ExpressionSize<LRank>& l, const ExpressionSize<RRank>& r) {
       bool result = (l[0] == r[0]);
-      for (int i = 1; i < RRank; ++i) {
+      for (RankType i = 1; i < RRank; ++i) {
 	result = result && (l[i] == r[i]);
       }
       return result;
     }
 
-    template <int LRank, int RRank>
+    template <RankType LRank, RankType RRank>
     inline
     typename enable_if<LRank==1 && RRank==1, bool>::type
     compatible(const ExpressionSize<LRank>& l, const ExpressionSize<RRank>& r) {
       return l[0] == r[0];
     }
 
-    template <int LRank, int RRank>
+    template <RankType LRank, RankType RRank>
     inline
     typename enable_if<LRank==0 || RRank==0, bool>::type
     compatible(const ExpressionSize<LRank>& l, const ExpressionSize<RRank>& r) {
@@ -236,14 +258,26 @@ namespace adept {
 
     // Return an ExpressionSize object of specified rank that expresses
     // an invalid expression
-    template <int Rank>
+    template <RankType Rank>
     inline
     ExpressionSize<Rank> invalid_expression_size() {
       return ExpressionSize<Rank>(-1);
     }
 
+    template <RankType Rank>
+    std::string str(ExpressionSize<Rank> dim) {
+      std::stringstream s;
+      s << "[" << dim[0];
+      for (RankType i = 1; i < Rank; ++i) {
+	s << "," << dim[i];
+      }
+      s << "]";
+      return s.str();
+    }
+
   } // End namespace internal
 
+ 
   // Deprecated
   inline ExpressionSize<1> expression_size(Index j0)
   { return ExpressionSize<1>(j0); }
@@ -270,6 +304,13 @@ namespace adept {
 				      Index j3, Index j4, Index j5, Index j6)
   { return ExpressionSize<7>(j0, j1, j2, j3, j4, j5, j6); }
 
+  /*
+  // This is how we could do the above with later versions of C++
+  template <typename... T>
+  std::array<Index,sizeof...(T)> dimensions(T... j) {
+    return std::array{j...};
+  }
+  */
 
 } // End namespace adept
 

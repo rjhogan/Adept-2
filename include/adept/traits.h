@@ -235,7 +235,7 @@ namespace adept {
       static const int  count = 1;
     };
 
-    template <int Rank, typename I0, typename I1 = null_type, 
+    template <RankType Rank, typename I0, typename I1 = null_type, 
 	      typename I2 = null_type, typename I3 = null_type,
 	      typename I4 = null_type, typename I5 = null_type,
 	      typename I6 = null_type>
@@ -359,7 +359,7 @@ namespace adept {
     // Check that an array of rank LRank could enter an operation
     // (e.g. addition) with an array of rank RRank: the two ranks must
     // either be the same, or either can be zero
-    template <int LRank, int RRank>
+    template <RankType LRank, RankType RRank>
     struct rank_compatible {
       static const bool value = (LRank == RRank || LRank == 0 || RRank == 0);
     };

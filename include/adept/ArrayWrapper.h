@@ -16,11 +16,11 @@
 namespace adept {
 
   // Forward declaration of Array class
-  template <int Rank, typename Type, bool IsActive> class Array;
+  template <RankType Rank, typename Type, bool IsActive> class Array;
   
   namespace internal {
 
-    template<int Rank, typename Type, bool IsActive>
+    template<RankType Rank, typename Type, bool IsActive>
     struct ArrayWrapper : public Expression<Type,ArrayWrapper<Rank,Type,IsActive> > {
 
       typedef Array<Rank,Type,IsActive> MyArray;
@@ -134,7 +134,7 @@ namespace adept {
       typedef const T& __restrict type;
     };
 
-    template <int Rank, typename Type, bool IsActive>
+    template <RankType Rank, typename Type, bool IsActive>
     struct nested_expression<Array<Rank,Type,IsActive> > {
       typedef const ArrayWrapper<Rank,Type,IsActive> type;
     };

@@ -172,6 +172,10 @@ test_reduce_active: test_reduce_active.o $(LIBADEPT)
 test_minimizer: test_minimizer.o $(LIBADEPT)
 	$(CXXLINK) test_minimizer.o $(MYLIBS)
 
+# Test program 21
+test_basic_array: test_basic_array.o $(LIBADEPT)
+	$(CXXLINK) test_basic_array.o $(MYLIBS)
+
 # The no-automatic-differentiation version of the algorithm: uses the
 # -DADEPT_NO_AUTOMATIC_DIFFERENTIATION to produce a version of the
 # algorithm that takes double rather than adouble arguments

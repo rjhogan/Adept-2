@@ -61,7 +61,7 @@ namespace adept {
 
       // Set all dimensions to the same value
       ScratchVector(Type x) {
-	set_all(x);
+	fill(x);
       }
 
       // Specify the values of all elements
@@ -74,7 +74,7 @@ namespace adept {
       // Assume copy constructor will copy elements of val
     
       // Set all to specified value
-      void set_all(Type x) {
+      void fill(Type x) {
 	for (int i = 0; i < Size; ++i) {
 	  val[i] = x;
 	}

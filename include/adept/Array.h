@@ -101,9 +101,9 @@ namespace adept {
     // -------------------------------------------------------------------
 
     // The following are used by expression_string()
-    template <int Rank, bool IsActive>
+    template <RankType Rank, bool IsActive>
     struct array_helper            { const char* name() { return "Array";  } };
-    template <int Rank>
+    template <RankType Rank>
     struct array_helper<Rank,true> { const char* name() { return "aArray";  } };
 
     template <>
@@ -122,7 +122,7 @@ namespace adept {
   // -------------------------------------------------------------------
   // Definition of Array class
   // -------------------------------------------------------------------
-  template<int Rank, typename Type = Real, bool IsActive = false>
+  template<RankType Rank, typename Type = Real, bool IsActive = false>
   class Array
     : public Expression<Type,Array<Rank,Type,IsActive> >,
       protected internal::GradientIndex<IsActive> {
@@ -419,7 +419,7 @@ namespace adept {
       }
       else if (!internal::compatible(dims, dimensions_)) {
 	std::string str = "Expr";
-	str += dims.str() + " object assigned to " + expression_string_();
+	str += internal::str(dims) + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
 #else
@@ -480,7 +480,7 @@ namespace adept {
       }
       else if (!internal::compatible(dims, dimensions_)) {
 	std::string str = "Expr";
-	str += dims.str() + " object assigned to " + expression_string_();
+	str += internal::str(dims) + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
 
@@ -1046,7 +1046,7 @@ namespace adept {
 
     // Treat the indexing of dimension "irank" in the case that the
     // index is of integer type
-    template <typename T, int NewRank>
+    template <typename T, RankType NewRank>
     typename internal::enable_if<internal::is_scalar_int<T>::value, void>::type
     update_index(const Index& irank, const T& i, Index& inew_rank, Index& ibegin,
 		 ExpressionSize<NewRank>& new_dim, 
@@ -1056,7 +1056,7 @@ namespace adept {
 
     // Treat the indexing of dimension "irank" in the case that the
     // index is a "range" object
-    template <typename T, int NewRank>
+    template <typename T, RankType NewRank>
     typename internal::enable_if<internal::is_range<T>::value, void>::type
     update_index(const Index& irank, const T& i, Index& inew_rank, Index& ibegin,
 		 ExpressionSize<NewRank>& new_dim, 
@@ -1766,8 +1766,8 @@ namespace adept {
 	clear();
 	data_ = rhs.data();
 	storage_ = rhs.storage();
-	dimensions_.copy(rhs.dimensions());
-	offset_.copy(rhs.offset());
+	dimensions_ = rhs.dimensions();
+	offset_ = rhs.offset();
 	if (storage_) {
 	  storage_->add_link();
 	}
@@ -1907,8 +1907,8 @@ namespace adept {
 	storage_ = 0;
       }
       data_ = 0;
-      dimensions_.set_all(0);
-      offset_.set_all(0);
+      dimensions_.fill(0);
+      offset_.fill(0);
       internal::GradientIndex<IsActive>::clear();
     }
 
@@ -1936,7 +1936,7 @@ namespace adept {
 	  return;
 	}
       }
-      dimensions_.copy(dim); // Copy dimensions
+      dimensions_.copy(dim);
       if (force_contiguous) {
 	pack_contiguous_();
       }
@@ -2042,7 +2042,7 @@ namespace adept {
     // Initialize with "MyRank" explicit dimensions, the function
     // only being defined if MyRank is equal to the actual Rank of
     // the Array
-    template <int MyRank>
+    template <RankType MyRank>
     typename internal::enable_if<Rank == MyRank,void>::type
     resize_(Index m0, Index m1=-1, Index m2=-1, Index m3=-1,
 	   Index m4=-1, Index m5=-1, Index m6=-1) {
@@ -2053,12 +2053,12 @@ namespace adept {
     // Vectorization of arrays of rank>1 is possible provided that the
     // fastest varying dimension has padding, if necessary, to ensure
     // alignment
-    template <int ARank>
+    template <RankType ARank>
     typename internal::enable_if<ARank==1 || ((ARank>1)&&!Packet<Type>::is_vectorized), bool>::type
     columns_aligned_() const {
       return true;
     }
-    template <int ARank>
+    template <RankType ARank>
     typename internal::enable_if<(ARank>1)&&Packet<Type>::is_vectorized,bool>::type
     columns_aligned_() const {
       return offset_[Rank-2] % Packet<Type>::size == 0;
@@ -2109,7 +2109,7 @@ namespace adept {
     std::string expression_string_() const {
       if (true) {
 	std::string a = internal::array_helper<Rank,IsActive>().name();
-	a += dimensions_.str();
+	a += internal::str(dimensions_);
 	return a;
       }
       else {
@@ -2359,7 +2359,7 @@ namespace adept {
 
     // Transpose helper functions
   protected:
-    template<int MyRank>
+    template<RankType MyRank>
     typename internal::enable_if<MyRank == 2, Array<2,Type,IsActive> >::type
     my_T() {
       // Transpose 2D array: create output array initially as link
@@ -2368,7 +2368,7 @@ namespace adept {
       // Swap dimensions
       return out.in_place_transpose();
     }
-    template<int MyRank>
+    template<RankType MyRank>
     typename internal::enable_if<MyRank == 2, const Array<2,Type,IsActive> >::type
     my_T() const {
       // Transpose 2D array: create output array initially as link
@@ -2446,7 +2446,7 @@ namespace adept {
 
     // Only applicable to vectors, return a multi-dimensional array
     // that links to the data in the vector
-    template <int NewRank>
+    template <RankType NewRank>
     Array<NewRank,Type,IsActive> reshape(const ExpressionSize<NewRank>& dims) {
       ADEPT_STATIC_ASSERT(Rank == 1, CANNOT_RESHAPE_MULTIDIMENSIONAL_ARRAY);
       Index new_size = 1;

@@ -75,7 +75,7 @@ namespace adept {
     const A& cast() const { return static_cast<const A&>(*this); }
     
     // Return the dimensions of the expression
-    template <int Rank>
+    template <RankType Rank>
     bool get_dimensions(ExpressionSize<Rank>& dim) const {
       return cast().get_dimensions_(dim);
     }
@@ -164,7 +164,7 @@ namespace adept {
  
     // For each array in the expression use location "i" to return the
     // memory index
-    template <int Rank, int NArrays>
+    template <RankType Rank, int NArrays>
     void
     set_location(const ExpressionSize<Rank>& i, 
 		 ExpressionSize<NArrays>& index) const {
@@ -355,7 +355,7 @@ namespace adept {
 				 ScratchVector<NActive,Packet<Real> >& gradients,
 				 const MyType& multiplier) const {}
 
-      template <int MyArrayNum, int Rank, int NArrays>
+      template <int MyArrayNum, RankType Rank, int NArrays>
       void set_location_(const ExpressionSize<Rank>& i, 
 			 ExpressionSize<NArrays>& index) const {}
 

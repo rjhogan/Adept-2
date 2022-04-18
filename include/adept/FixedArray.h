@@ -33,9 +33,9 @@ namespace adept {
     // -------------------------------------------------------------------
 
     // The following are used by expression_string()
-    template <int Rank, bool IsActive>
+    template <RankType Rank, bool IsActive>
     struct fixed_array_helper            { const char* name() { return "FixedArray";  } };
-    template <int Rank>
+    template <RankType Rank>
     struct fixed_array_helper<Rank,true> { const char* name() { return "aFixedArray";  } };
 
     template <>
@@ -303,7 +303,7 @@ namespace adept {
       }
       else if (!internal::compatible(dims, dimensions())) {
 	std::string str = "Expr";
-	str += dims.str() + " object assigned to " + expression_string_();
+	str += internal::str(dims) + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
 #endif
@@ -777,7 +777,7 @@ namespace adept {
 
     // Treat the indexing of dimension "irank" in the case that the
     // index is of integer type
-    template <int Rank, typename T, int NewRank>
+    template <RankType Rank, typename T, RankType NewRank>
     typename internal::enable_if<internal::is_scalar_int<T>::value, void>::type
     update_index(const T& i, Index& inew_rank, Index& ibegin,
 		 ExpressionSize<NewRank>& new_dim, 
@@ -787,7 +787,7 @@ namespace adept {
 
     // Treat the indexing of dimension "irank" in the case that the
     // index is a "range" object
-    template <int Rank, typename T, int NewRank>
+    template <RankType Rank, typename T, RankType NewRank>
     typename internal::enable_if<internal::is_range<T>::value, void>::type
     update_index(const T& i, Index& inew_rank, Index& ibegin,
 		 ExpressionSize<NewRank>& new_dim, 
@@ -1637,7 +1637,7 @@ namespace adept {
     std::string expression_string_() const {
       if (true) {
 	std::string a = internal::fixed_array_helper<rank,IsActive>().name();
-	a += dimensions().str();
+	a += internal::str(dimensions());
 	return a;
       }
       else {
@@ -1712,7 +1712,7 @@ namespace adept {
 
     // Transpose helper functions
   protected:
-    template<int MyRank>
+    template<RankType MyRank>
     typename internal::enable_if<MyRank == 2, Array<2,Type,IsActive> >::type
     my_T() {
       // Transpose 2D array: create output array initially as link
@@ -1721,7 +1721,7 @@ namespace adept {
       // Swap dimensions
       return out.in_place_transpose();
     }
-    template<int MyRank>
+    template<RankType MyRank>
     typename internal::enable_if<MyRank == 2, const Array<2,Type,IsActive> >::type
     my_T() const {
       // Transpose 2D array: create output array initially as link

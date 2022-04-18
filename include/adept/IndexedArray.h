@@ -37,7 +37,7 @@ namespace adept {
   // Section 0: Forward declarations 
   // ---------------------------------------------------------------------
   
-  template <int Rank, typename Type, bool IsActive> class Array;
+  template <RankType Rank, typename Type, bool IsActive> class Array;
 
   
   namespace internal {
@@ -217,7 +217,7 @@ namespace adept {
     // which is the rank of the IndexedArray objects resulting from
     // indexing an Array of the specified Rank with indices I0 to
     // I[Rank-1].
-    template <int Rank, typename I0, typename I1 = Index, 
+    template <RankType Rank, typename I0, typename I1 = Index, 
 	      typename I2 = Index, typename I3 = Index,
 	      typename I4 = Index, typename I5 = Index,
 	      typename I6 = Index>
@@ -249,7 +249,7 @@ namespace adept {
     // an expression.  The indices themselves may be temporary results
     // of integer expressions, but by C++ rules they will not be
     // deleted until the full expression is complete.
-    template <int Rank, typename Type, bool IsActive, 
+    template <RankType Rank, typename Type, bool IsActive, 
 	      class ArrayType, class I0, 
 	      class I1 = Index, class I2 = Index, 
 	      class I3 = Index, class I4 = Index, 
@@ -482,7 +482,7 @@ namespace adept {
 	}
 	else if (!compatible(dims, dimensions_)) {
 	  std::string str = "Expr";
-	  str += dims.str() + " object assigned to " + expression_string_();
+	  str += internal::str(dims) + " object assigned to " + expression_string_();
 	  throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
 	}
 

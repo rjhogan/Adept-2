@@ -932,7 +932,7 @@ namespace adept {
     // expression to be discerned at compile time
     static const bool is_active  = IsActive;
     static const bool is_lvalue  = true;
-    static const int  rank       = 2;
+    static const RankType rank   = 2;
     static const int  n_active   = IsActive * (1 + internal::is_complex<Type>::value);
     static const int  n_scratch  = 0;
     static const int  n_arrays   = Engine::my_n_arrays;
@@ -1060,7 +1060,7 @@ namespace adept {
       }
       else if (!internal::compatible(dims, dimensions())) {
 	std::string str = "Expr";
-	str += dims.str() + " object assigned to " + expression_string_();
+	str += internal::str(dims) + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
 #else
@@ -1118,7 +1118,7 @@ namespace adept {
       }
       else if (!internal::compatible(dims, dimensions())) {
 	std::string str = "Expr";
-	str += dims.str() + " object assigned to " + expression_string_();
+	str += internal::str(dims) + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
 
@@ -1870,7 +1870,7 @@ namespace adept {
   // DiagMatrix containing the data as the diagonal pointing to the
   // original data, Can be used as an lvalue. Needs to be defined
   // after DiagMatrix.
-  template <int Rank, typename Type, bool IsActive>
+  template <RankType Rank, typename Type, bool IsActive>
   inline
   SpecialMatrix<Type, internal::BandEngine<ROW_MAJOR,0,0>, IsActive>
   Array<Rank,Type,IsActive>::diag_matrix() {

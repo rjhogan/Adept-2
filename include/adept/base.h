@@ -349,6 +349,11 @@ namespace adept {
   typedef int Index;
 #endif
 
+  // Unfortunately many functions perform arithmetic assuming rank is
+  // signed, so we cannot simply replace ExpressionSize<Index> with
+  // std::array<Index,std::size_t rank>.
+  typedef int RankType;
+  
   // ---------------------------------------------------------------------
   // 6: Disable stupid warnings
   // ---------------------------------------------------------------------

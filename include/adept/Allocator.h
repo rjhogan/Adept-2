@@ -37,7 +37,7 @@ namespace adept {
 	  // We have reached the end of the array: move to next row
 	  complete_row<Rank>();
 	  // All dimensions of this object are of length 1
-	  obj_size_.set_all(1);
+	  obj_size_.fill(1);
 	}
 	else if (coords_[Rank-1] == 0) {
 	  // At the beginning of a row: set the size of the template
@@ -153,7 +153,7 @@ namespace adept {
 	  throw index_out_of_bounds("Dimension overflow in filling array with \"<<\""
 				    ADEPT_EXCEPTION_LOCATION);
 	}
-	obj_size_.set_all(0);
+	obj_size_.fill(0);
       }
 
       template <int MyRank>
@@ -172,7 +172,7 @@ namespace adept {
       typename enable_if<(MyRank <= 1), void>::type
       partial_copy(const ExpressionSize<MyRank>& from,
 		   ExpressionSize<Rank-1>& to) const {
-	to.set_all(1);
+	to.fill(1);
       }
 
 
