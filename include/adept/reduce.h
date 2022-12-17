@@ -124,6 +124,9 @@ namespace adept {
     struct Sum {
       // What is the type of the running total?
       typedef T total_type;
+      // Number of extra operations per element, needed for reserving
+      // space in active calculations
+      static const int extra_element_cost = 0;
       // Do we need to do anything to the final summed value(s)?
       static const bool finish_needed = false;
       // Do we need to do anything to the final summed value(s) in the
@@ -176,6 +179,7 @@ namespace adept {
     template <typename T>
     struct Mean {
       typedef T total_type;
+      static const int extra_element_cost = 0;
       static const bool finish_needed = true;
       static const bool active_finish_needed = true;
       const char* name() { return "mean"; }
@@ -208,6 +212,7 @@ namespace adept {
     template <typename T>
     struct Product {
       typedef T total_type;
+      static const int extra_element_cost = 1;
       static const bool finish_needed = false;
       static const bool active_finish_needed = false;
       const char* name() { return "product"; }
@@ -241,6 +246,7 @@ namespace adept {
     template <typename T>
     struct MaxVal {
       typedef T total_type;
+      static const int extra_element_cost = 0;
       static const bool finish_needed = false;
       static const bool active_finish_needed = false;
       const char* name() { return "maxval"; }
@@ -297,6 +303,7 @@ namespace adept {
     template <typename T>
     struct MinVal {
       typedef T total_type;
+      static const int extra_element_cost = 0;
       static const bool finish_needed = false;
       static const bool active_finish_needed = false;
       const char* name() { return "minval"; }
@@ -349,6 +356,7 @@ namespace adept {
     template <typename T>
     struct Norm2 {
       typedef T total_type;
+      static const int extra_element_cost = 0;
       static const bool finish_needed = true;
       static const bool active_finish_needed = true;
       const char* name() { return "norm2"; }
@@ -675,7 +683,13 @@ namespace adept {
 		break;
 	      }   
 	    }
-	    else {
+	    // The following could be a simple "else", but sometimes
+	    // the compiler optimizes to the extent that it thinks
+	    // inew[-1] will be accessed (even though it won't),
+	    // leading to a warning about the array subscript being
+	    // out of bounds. Here the compiler knows the index must
+	    // be zero or positive.
+	    else if (my_rank > 0) {
 	      ++inew[my_rank-1];
 	      if (i[my_rank] >= dims[my_rank]) {
 		i[my_rank] = 0;
@@ -724,7 +738,11 @@ namespace adept {
 	ExpressionSize<E::n_arrays> loc(0);
 	int my_rank;
 	static const int last = E::rank-1;
-	ADEPT_ACTIVE_STACK->check_space(E::n_active * n);
+	// Check there is enough space on the operation stack by
+	// working out the cost of all the elements of the array. Note
+	// that the final operation to compute the total at the end is
+	// dealt with separately.
+	ADEPT_ACTIVE_STACK->check_space((E::n_active + Func::extra_element_cost) * n);
 	do {
 	  i[last] = 0;
 	  rhs.set_location(i, loc);
@@ -806,7 +824,13 @@ namespace adept {
 	int my_rank;
 	Active<Type> total;
 	Index n = dims.size();
-	ADEPT_ACTIVE_STACK->check_space(E::n_active * n);
+	// Check there is enough space on the operation stack,
+	// including the per-element cost, and an additional cost to
+	// finalize each individual strip of the array. Even though an
+	// additional check is performed at the end of each completed
+	// strip, the total number needs to be anticipated beforehand
+	// (omitting this can cause memory corruption).
+	ADEPT_ACTIVE_STACK->check_space((E::n_active + Func::extra_element_cost) * n + new_dims.size());
 	do {
 	  i[reduce_dim] = 0;
 	  //	  total.set_value(f.first_value());
@@ -926,7 +950,7 @@ namespace adept {
   /* function(active[rank>1], dim) */			\
   template <typename Type, class E>			\
   inline						\
-  typename internal::enable_if<(E::rank > 1),			\
+  typename internal::enable_if<(E::rank > 1),		\
 	     Array<E::rank-1,Type,E::is_active> >::type	\
   NAME(const Expression<Type, E>& rhs, int dim) {	\
     Array<E::rank-1,Type,E::is_active> result;		\

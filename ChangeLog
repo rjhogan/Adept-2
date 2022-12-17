@@ -1,3 +1,11 @@
+version 2.1.2
+	- Further bug fixes to reduction of active arrays which did not
+	have addequate space allocated by check_space, including "product"
+	which requires an additional differential operation per element
+	- Fixed out-of-bounds access in test_thread_safe_arrays
+	- Slight change to reduce_dimension to avoid incorrect warning
+	about ExpressionSize array subscript of -1
+
 version 2.1.1 (10 April 2022)
 	- interp function can perform 1D interpolation of higher
 	dimensional Y arrays

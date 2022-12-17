@@ -62,7 +62,7 @@ int main(int argc, const char** argv)
   for (int i = 0; i < N*1000; ++i) {
 
     for (int j = 0; j < N*1000; ++j) {
-      B[j % N] = noalias(B(__,j)) + T.diag_vector();
+      B[j % N] = noalias(B(__, j % N)) + T.diag_vector();
     }
 
   }

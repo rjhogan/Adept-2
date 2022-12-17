@@ -113,6 +113,41 @@ main(int argc, const char** argv) {
     }									\
   }
 
+  
+#ifdef ALL_ACTIVE
+#define EVAL2(MESSAGE, TYPEX, X, INITX, TYPEY, Y, EXPR)			\
+  std::cout << "--------------------------------------------------------------------\n" \
+	    << "### " << MESSAGE << "\n### " << #EXPR << "\n";	\
+  try {									\
+    TYPEX X;								\
+    if (INITX) {							\
+      X = test. X;							\
+      std::cout << #TYPEX << " " << #X << " = " << X << "\n";		\
+    }									\
+    else {								\
+      std::cout << #TYPEX << " " << #X << " = " << X << "\n";		\
+    }									\
+    TYPEY Y; Y = test. Y;						\
+    std::cout << #TYPEY << " " << #Y << " = " << Y << "\n";		\
+    std::cout << "Evaluating " << #EXPR << "\n";			\
+    std::cout.flush();							\
+    int nop=stack.n_operations();					\
+    EXPR;								\
+    std::cout << "Result: " << #X << " = " << X << "\n";		\
+    std::cout << "Differential operations: " << stack.n_operations()-nop << "\n";	\
+    if (should_fail) { std::cout << "*** INCORRECT OUTCOME\n";	        \
+      anomalous_results++;						\
+    }									\
+  } catch (const adept::exception& e) {					\
+    std::cout << "*** Failed with: " << e.what() << "\n";		\
+    if (!should_fail) { std::cout << "*** INCORRECT OUTCOME\n";		\
+      anomalous_results++;						\
+    }									\
+    else {								\
+      std::cout << "*** Correct behaviour\n";				\
+    }									\
+  }
+#else
 #define EVAL2(MESSAGE, TYPEX, X, INITX, TYPEY, Y, EXPR)			\
   std::cout << "--------------------------------------------------------------------\n" \
 	    << "### " << MESSAGE << "\n### " << #EXPR << "\n";	\
@@ -143,7 +178,7 @@ main(int argc, const char** argv) {
       std::cout << "*** Correct behaviour\n";				\
     }									\
   }
-
+#endif
 
 #define EVAL3(MESSAGE, TYPEX, X, INITX, TYPEY, Y, TYPEZ, Z, EXPR)	\
   std::cout << "--------------------------------------------------------------------\n" \
@@ -504,19 +539,25 @@ main(int argc, const char** argv) {
 
   HEADING("REDUCTION OPERATIONS"); 
   EVAL2("full sum", myReal, x, true, myMatrix, M, x = sum(M));
+  EVAL2("full mean", myReal, x, true, myMatrix, M, x = mean(M));
   EVAL2("full product", myReal, x, true, myMatrix, M, x = product(M));
+  EVAL2("full norm2", myReal, x, true, myMatrix, M, x = norm2(M));
 #ifndef ALL_COMPLEX
-  EVAL2("full maxval", myReal, x, true, myMatrix, M, x = maxval(-M));
+  EVAL2("full maxval", myReal, x, true, myMatrix, M, x = maxval(M));
   EVAL2("full minval", myReal, x, true, myMatrix, M, x = minval(-M));
 #endif
-  EVAL2("full norm2", myReal, x, true, myMatrix, M, x = norm2(M));
-  EVAL2("1-dimension mean", myVector, v, false, myMatrix, M, v = 0.5 * mean(M,0));
+  
+  EVAL2("1-dimension sum", myVector, v, true, myMatrix, M, v += sum(M,0));
+  EVAL2("1-dimension mean", myVector, v, false, myMatrix, M, v = mean(M*M,1));
+  EVAL2("1-dimension product", myVector, v, false, myMatrix, M, v = product(M,1));
   EVAL2("1-dimension norm2", myVector, v, false, myMatrix, M, v = norm2(M,1));
-  EVAL2("dot product", myReal, x, true, myVector, w, x = dot_product(w,w(stride(end,0,-1))));
-  EVAL2("dot product on expressions", myReal, x, true, myVector, w, x = dot_product(2.0*w,w(stride(end,0,-1))+1.0));
+  //  EVAL2("1-dimension sum", myMatrix, M, false, myArray3D, A, M = sum(A,2));
 #ifndef ALL_COMPLEX
   EVAL2("1-dimension maxval", myVector, v, false, myMatrix, M, v = maxval(M,1));
   EVAL2("1-dimension minval", myVector, v, false, myMatrix, M, v = minval(M,1));
+
+  EVAL2("dot product", myReal, x, true, myVector, w, x = dot_product(w,w(stride(end,0,-1))));
+  EVAL2("dot product on expressions", myReal, x, true, myVector, w, x = dot_product(2.0*w,w(stride(end,0,-1))+1.0));
   EVAL2("1D interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, Vector(value(w)/2.0)));
   EVAL2("1D clamped interpolation", myVector, v, true, myVector, w, v = interp(value(v), w, value(w)/2.0, ADEPT_EXTRAPOLATE_CLAMP));
 #ifndef ALL_ACTIVE
