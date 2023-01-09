@@ -73,7 +73,7 @@ namespace adept {
     // Cast the expression to its true type, given by the template
     // argument
     const A& cast() const { return static_cast<const A&>(*this); }
-    
+
     // Return the dimensions of the expression
     template <RankType Rank>
     bool get_dimensions(ExpressionSize<Rank>& dim) const {

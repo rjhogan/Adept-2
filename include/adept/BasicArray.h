@@ -35,6 +35,11 @@ namespace adept {
 
   public:
 
+
+    // -------------------------------------------------------------------
+    // Section 1. Typedefs and static data
+    // -------------------------------------------------------------------
+
     friend struct Expression<Type,BasicArray<Type,Rank,Options,Allocator> >;
     
     typedef Type                      value_type;
@@ -44,35 +49,62 @@ namespace adept {
     typedef Type*                     pointer;
     typedef const Type*               const_pointer;
     typedef Type&                     reference;
-    typedef const Type&               const_reference;
-    typedef internal::rank_type       rank_type;
-    typedef internal::options_type    options_type;
-    typedef Allocator                 allocator_type;
-
+    
     static const bool is_ref            = (Options & internal::ARRAY_IS_REF);
     static const bool is_partially_contiguous = (Options & internal::ARRAY_IS_PARTIALLY_CONTIGUOUS);
     static const bool is_all_contiguous = (Options & internal::ARRAY_IS_ALL_CONTIGUOUS);
     static const bool is_column_major   = (Options & internal::ARRAY_IS_COLUMN_MAJOR);
     static const bool is_active         = (Options & internal::ARRAY_IS_ACTIVE);
     static const bool is_constant       = std::is_const_v<value_type>;
-    static const rank_type rank         = Rank;
+    static const internal::rank_type rank = Rank;
 
     // Static definitions to enable this type to be treated as an
     // Expression
     static const bool      is_lvalue  = true;
-    static const rank_type n_active   = is_active * (1 + internal::is_complex<Type>::value);
-    static const rank_type n_scratch  = 0;
-    static const rank_type n_arrays   = 1;
+    static const internal::rank_type n_active   = is_active * (1 + internal::is_complex<Type>::value);
+    static const internal::rank_type n_scratch  = 0;
+    static const internal::rank_type n_arrays   = 1;
     static const bool      is_vectorizable = Packet<Type>::is_vectorized;
+    
+    typedef const Type&               const_reference;
+    typedef internal::rank_type       rank_type;
+    typedef internal::options_type    options_type;
+    typedef Allocator                 allocator_type;
+
+    // Array dimensions and offsets need to be stored and passed
+    // around, which can be done either using Adept's ExpressionSize
+    // type, or std::array
+    typedef ExpressionSize<rank>              shape_type;
+    typedef ExpressionSize<rank>              offsets_type;
+    //typedef std::array<size_type,Rank>        shape_type;
+    //typedef std::array<difference_type,Rank>  offsets_type;
+
+    // An array type to which the current array could be copied with a
+    // deep copy
+    typedef BasicArray<value_type,rank,(Options & (internal::ARRAY_IS_COLUMN_MAJOR
+						   |internal::ARRAY_IS_ACTIVE)),
+		       allocator_type> array_copy_type;
     
   protected:
     // BasicArray has a flags variable treated as a bitmask
     //    static const internal::options_type FLAG_OWNS_DATA = (1 << 0);
 
+
+    // -------------------------------------------------------------------
+    // Section 2. Data
+    // -------------------------------------------------------------------
+  protected:
+    pointer __restrict  data_ = 0;
+    total_size_type     allocated_size_ = 0;
+    allocator_type      allocator_ = allocator_type();
+    shape_type          dimensions_ = {0};
+    offsets_type        offset_ = {0};
+    //    options_type                     flags_ = (is_ref ? 0 : FLAG_OWNS_DATA);
+    
   public:
 
     // -------------------------------------------------------------------
-    // Section 1. Constructors
+    // Section 3. Constructors
     // -------------------------------------------------------------------
     
     // Construct an empty array
@@ -94,15 +126,15 @@ namespace adept {
     }
 
     // ...or using a std::array to hold the dimensions
-    BasicArray(const std::array<size_type, rank>& dims) {
+    BasicArray(const shape_type& dims) {
       static_assert(!is_ref, "BasicArray refs must be constructed from another array");
       resize(dims);
     }
 
     // Construct a ref array, likely a subset of another array, where
     // the offsets are provided explicitly
-    BasicArray(pointer data, const std::array<size_type,rank>& dims,
-	       const std::array<difference_type,rank>& offsets,
+    BasicArray(pointer data, const shape_type& dims,
+	       const offsets_type& offsets,
 	       internal::gradient_index_type gradient_index = -1)
       : data_(data), dimensions_(dims), offset_(offsets) /*, flags_(0) */ {
       // static_assert(is_ref, "Only ref arrays can be constructed to reference external data");
@@ -113,7 +145,7 @@ namespace adept {
 
     // Construct a ref array, likely a subset of another array, where
     // the data are assumed to be contiguous
-    BasicArray(pointer data, const std::array<size_type,rank>& dims,
+    BasicArray(pointer data, const shape_type& dims,
 	       internal::gradient_index_type gradient_index = -1)
       : data_(data), dimensions_(dims) /*, flags_(0) */ {
       // static_assert(is_ref, "Only ref arrays can be constructed to reference external data");
@@ -125,8 +157,8 @@ namespace adept {
 
     // Construct a const-ref array, likely a subset of another array, where
     // the offsets are provided explicitly
-    BasicArray(const_pointer data, const std::array<size_type,rank>& dims,
-	       const std::array<difference_type,rank>& offsets,
+    BasicArray(const_pointer data, const shape_type& dims,
+	       const offsets_type& offsets,
 	       internal::gradient_index_type gradient_index = -1)
       : data_(data), dimensions_(dims), offset_(offsets) /*, flags_(0) */ {
       // static_assert(is_ref, "Only ref arrays can be constructed to reference external data");
@@ -139,7 +171,7 @@ namespace adept {
 
     // Construct a ref array, likely a subset of another array, where
     // the data are assumed to be contiguous
-    BasicArray(const_pointer data, const std::array<size_type,rank>& dims,
+    BasicArray(const_pointer data, const shape_type& dims,
 	       internal::gradient_index_type gradient_index = -1)
       : data_(data), dimensions_(dims) /*, flags_(0) */ {
       // static_assert(is_ref, "Only ref arrays can be constructed to reference external data");
@@ -270,7 +302,7 @@ namespace adept {
     
     
     // -------------------------------------------------------------------
-    // Section 2. Destructor
+    // Section 4. Destructor
     // -------------------------------------------------------------------
     
     ~BasicArray() {
@@ -279,7 +311,7 @@ namespace adept {
     }
 
     // -------------------------------------------------------------------
-    // Section 4. Assignment operators
+    // Section 5. Assignment operators
     // -------------------------------------------------------------------
 
     // Assignment to another array: copy the data by calling the
@@ -299,6 +331,7 @@ namespace adept {
 	if (rhs.is_owner()) {
 	  // Steal ownership of the data via a swap
 	  swap(*this, rhs);
+	  return *this;
 	}
 	else {
 	  // RHS is not owned so we must do a deep copy as there is no
@@ -318,16 +351,17 @@ namespace adept {
       static_cast<internal::GradientIndex<is_active>&>(l).swap_value(static_cast<internal::GradientIndex<is_active>&>(r));
     }
 
-    /*
+    
     // Assignment to an array expression of the same rank
     template <typename EType, class E>
     inline //__attribute__((always_inline))
-    typename internal::enable_if<E::rank == Rank, BasicArray&>::type
-    operator=(const Expression<EType,E>&  __restrict rhs) {
+    typename std::enable_if<E::rank == rank, BasicArray&>::type
+    operator=(const Expression<EType,E>&  __restrict rhs)
+    {
 #ifndef ADEPT_NO_DIMENSION_CHECKING
-      ExpressionSize<Rank> dims;
+      shape_type dims;
       if (!rhs.get_dimensions(dims)) {
-	std::string str = "Array size mismatch in "
+	std::string str = "BasicArray size mismatch in "
 	  + rhs.expression_string() + ".";
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
@@ -336,12 +370,12 @@ namespace adept {
       }
       else if (!internal::compatible(dims, dimensions_)) {
 	std::string str = "Expr";
-	str += dims.str() + " object assigned to " + expression_string_();
+	str += internal::str(dims) + " object assigned to " + expression_string_();
 	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
       }
 #else
       if (empty()) {
-	ExpressionSize<Rank> dims;
+	shape_type dims;
 	if (!rhs.get_dimensions(dims)) {
 	  std::string str = "Array size mismatch in "
 	    + rhs.expression_string() + ".";
@@ -357,14 +391,14 @@ namespace adept {
 	Type const * ptr_end;
 	data_range(ptr_begin, ptr_end);
 	if (rhs.is_aliased(ptr_begin, ptr_end)) {
-	  Array<Rank,Type,IsActive> copy;
+	  array_copy_type copy;
 	  // It would be nice to wrap noalias around rhs, but then
 	  // this leads to infinite template recursion since the "="
 	  // operator calls the current function but with a modified
 	  // expression type. perhaps a better way would be to make
 	  // copy.assign_no_alias(rhs) work.
 	  copy = rhs;
-	  assign_expression_<Rank, IsActive, E::is_active>(copy);
+	  assign_expression_<is_active, E::is_active>(copy);
 	}
 	else {
 #endif
@@ -372,18 +406,90 @@ namespace adept {
 	  // protected function
 	  // The cast() is needed because assign_expression_ accepts
 	  // its argument by value
-	  assign_expression_<Rank, IsActive, E::is_active>(rhs.cast());
+	  assign_expression_<is_active, E::is_active>(rhs.cast());
 #ifndef ADEPT_NO_ALIAS_CHECKING
 	}
 #endif
       }
       return *this;
     }
-    */
-
     
+    // Assignment to a single value copies to every element
+    template <typename RType>
+    typename std::enable_if<internal::is_not_expression<RType>::value
+			    // FIX
+			    || internal::is_active<Type>::value
+		       , BasicArray&>::type
+    operator=(RType rhs) {
+      if (!empty()) {
+	assign_inactive_scalar_<is_active>(rhs);
+      }
+      return *this;
+    }
+
+    // Assign active scalar expression to an active array by first
+    // converting the RHS to an active scalar
+    template <typename EType, class E>
+    typename std::enable_if<E::rank == 0 && (rank > 0) && is_active && !E::is_lvalue,
+      BasicArray&>::type
+    operator=(const Expression<EType,E>& rhs) {
+      Active<EType> x = rhs;
+      *this = x;
+      return *this;
+    }
+
+    // Assign an active scalar to an active array
+    template <typename PType>
+    // FIX
+    typename std::enable_if<!internal::is_active<PType>::value && is_active, BasicArray&>::type
+    operator=(const Active<PType>& rhs) {
+      static_assert(is_active, "Attempt to assign active scalar to inactive array");
+      if (!empty()) {
+#ifdef ADEPT_RECORDING_PAUSABLE
+	if (!ADEPT_ACTIVE_STACK->is_recording()) {
+	  assign_inactive_scalar_<false>(rhs.scalar_value());
+	  return *this;
+	}
+#endif
+	offsets_type i(0);
+	Index index = 0;
+	int my_rank;
+	static const int last = rank-1;
+	// In case PType != Type we make a local copy to minimize type
+	// conversions
+	Type val = rhs.scalar_value();
+	
+	ADEPT_ACTIVE_STACK->check_space(size());
+	do {
+	  i[last] = 0;
+	  // Innermost loop
+	  for ( ; i[last] < dimensions_[last]; ++i[last],
+		  index += offset_[last]) {
+	    data_[index] = val;
+	    ADEPT_ACTIVE_STACK->push_rhs(1.0, rhs.gradient_index());
+	    ADEPT_ACTIVE_STACK->push_lhs(gradient_index()+index);
+	  }
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
+      }
+      return *this;
+    }
+
+#define ADEPT_DEFINE_OPERATOR(OPERATOR, OPSYMBOL)		\
+    template <class RType>				\
+    BasicArray& OPERATOR(const RType& rhs) {			\
+      return *this = noalias(*this OPSYMBOL rhs);	\
+    }
+    ADEPT_DEFINE_OPERATOR(operator+=, +)
+    ADEPT_DEFINE_OPERATOR(operator-=, -)
+    ADEPT_DEFINE_OPERATOR(operator*=, *)
+    ADEPT_DEFINE_OPERATOR(operator/=, /)
+  //    ADEPT_DEFINE_OPERATOR(operator&=, &);
+  //    ADEPT_DEFINE_OPERATOR(operator|=, |);
+#undef ADEPT_DEFINE_OPERATOR
+
     // -------------------------------------------------------------------
-    // Section 3. Resize and clear
+    // Section 6. Resize and clear
     // -------------------------------------------------------------------
 
     // Deallocated contents and set size to zero
@@ -405,11 +511,11 @@ namespace adept {
     template <typename... Dims>
     void resize(Dims... dims) {
       static_assert(rank == sizeof...(dims), "Array resized with wrong number of arguments");
-      resize(std::array<size_type,rank>{static_cast<size_type>(dims)...});
+      resize(shape_type{static_cast<size_type>(dims)...});
     }
 
-    // Resize specifying new dimensions in a std::array
-    void resize(const std::array<size_type,rank>& dim) {
+    // Resize specifying new dimensions
+    void resize(const shape_type& dim) {
       static_assert(!is_ref, "Array refs cannot be resized");
       // For more efficiency we could reuse allocated space if total
       // size required is not increased
@@ -484,12 +590,12 @@ namespace adept {
     }
 
 
-    // Return the dimensions of an array as a std::array
-    const std::array<size_type, rank>& dimensions() const {
+    // Return the dimensions of an array
+    const shape_type& dimensions() const {
       return dimensions_;
     }
 
-    const std::array<difference_type, rank>& offsets() const {
+    const offsets_type& offsets() const {
       return offset_;
     }
 
@@ -558,7 +664,7 @@ namespace adept {
       }
       else {
 	// Print a multi-dimensional array
-	adept::ExpressionSize<Rank> i{0};
+	offsets_type i{0};
 	int my_rank = -1;
 	os << array_print_before;
 	do {
@@ -616,6 +722,51 @@ namespace adept {
       }
     }
 
+    // Is the fastest-varying dimension contiguous in memory, and are
+    // the other dimensions aligned
+    constexpr bool all_arrays_contiguous_() const {
+      if constexpr (is_partially_contiguous) {
+        return true;
+      }
+      else if (!is_column_major) { // Row major
+	if constexpr (rank==1 || ((rank>1) && !Packet<Type>::is_vectorized)) {
+          return offset_[rank-1] == 1;
+	}
+	else {
+	  return offset_[rank-1] == 1 && offset_[rank-2] % Packet<value_type>::size == 0;
+	}
+      }
+      else { // Column major
+	if constexpr (rank==1 || ((rank>1) && !Packet<Type>::is_vectorized)) {
+          return offset_[0] == 1;
+	}
+	else {
+	  return offset_[0] == 1 && offset_[1] % Packet<value_type>::size == 0;
+	}
+      }
+    }
+
+    // Is the first data element aligned to a packet boundary?
+    bool is_aligned_() const {
+      return !(reinterpret_cast<std::size_t>(data_) & Packet<Type>::align_mask);
+      // If we could union data with a uintptr_t object then we could
+      // do the following, but there is no guarantee that uintptr_t
+      // exists :-(
+      //      return !(data_unsigned_int_ & Packet<Type>::align_mask);
+    }
+
+    // Return the number of unaligned elements before reaching the
+    // first element on an alignment boundary, which is in units of
+    // "n" Types. The first "%" argument finds how many elements the
+    // first element is above an alignment boundary; the following bit
+    // then works out how many elements to the next alignment
+    // boundary.
+    template <int n>
+    int alignment_offset_() const {
+      // This is rather slow!
+      return (n - (reinterpret_cast<std::size_t>(reinterpret_cast<void*>(data_))/sizeof(Type))
+	      % n) % n;
+    }
 
     std::string expression_string_() const {
       if (true) {
@@ -797,16 +948,322 @@ namespace adept {
       std::cout << "  index " << IDim << ": list of length" << mi.size() << "\n";
     }
     */
-    // DATA
-  protected:
-    pointer __restrict               data_ = 0;
-    total_size_type                  allocated_size_ = 0;
-    allocator_type                   allocator_ = allocator_type();
-    std::array<size_type,rank>       dimensions_ = {0};
-    std::array<difference_type,rank> offset_ = {0};
-    //    options_type                     flags_ = (is_ref ? 0 : FLAG_OWNS_DATA);
-  };
 
+
+
+    // -------------------------------------------------------------------
+    // Section n. Assignment implementations
+    // -------------------------------------------------------------------
+    
+    // When assigning a scalar to a whole array, there may be
+    // advantage in specialist behaviour depending on the rank of the
+    // array. This is a generic one that copies the number but treats
+    // the present array as passive.
+    template <bool LocalIsActive, typename X>
+    typename std::enable_if<!LocalIsActive,void>::type
+    assign_inactive_scalar_(X x) {
+      offsets_type i(0);
+      Index index = 0;
+      int my_rank;
+      do {
+	// Innermost loop - note that the counter is index, not max_index
+	for (Index max_index = index + dimensions_[rank-1]*offset_[rank-1];
+	     index < max_index;
+	     index += offset_[rank-1]) {
+	  data_[index] = x;
+	}
+	// Increment counters appropriately depending on which
+	// dimensions have been finished
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
+    }
+
+    // An active array being assigned the value of an inactive scalar
+    template <bool LocalIsActive, typename X>
+    typename std::enable_if<LocalIsActive,void>::type
+    assign_inactive_scalar_(X x) {
+      // If not recording we call the inactive version instead
+#ifdef ADEPT_RECORDING_PAUSABLE
+      if (! ADEPT_ACTIVE_STACK->is_recording()) {
+	assign_inactive_scalar_<false,X>(x);
+	return;
+      }
+#endif
+      offsets_type i(0);
+      Index gradient_ind = gradient_index();
+      Index index = 0;
+      int my_rank;
+      do {
+	// Innermost loop
+	ADEPT_ACTIVE_STACK->push_lhs_range(gradient_ind+index, dimensions_[rank-1],
+					   offset_[rank-1]);
+	for (Index max_index = index + dimensions_[rank-1]*offset_[rank-1];
+	     index < max_index; index += offset_[rank-1]) {
+	  data_[index] = x;
+	}
+
+	// Increment counters appropriately depending on which
+	// dimensions have been finished
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
+    }
+
+
+    // When copying an expression to a whole array, there may be
+    // advantage in specialist behaviour depending on the rank of the
+    // array
+    template<bool LocalIsActive, bool EIsActive, class E>
+    inline
+    typename internal::enable_if<!LocalIsActive && (!internal::expr_cast<E>::is_vectorizable
+					  || !internal::is_same<typename E::type,Type>::value),void>::type
+    assign_expression_(const E& rhs) {
+      static_assert(!EIsActive, "Cannot assign active expression to inactive array");
+      offsets_type i(0);
+      ExpressionSize<internal::expr_cast<E>::n_arrays> ind(0);
+      Index index = 0;
+      int my_rank;
+      static const int last = rank-1;
+      // FIX!!!
+      if (false) { //rhs.all_arrays_contiguous()) {
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, ind);
+	  // Innermost loop
+	  for ( ; i[last] < dimensions_[last]; ++i[last],
+		  index += offset_[last]) {
+	    // Note that this is faster as we know that all indices
+	    // need to be incremented by 1
+	    data_[index] = rhs.next_value_contiguous(ind);
+	  }
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
+      }
+      else {
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, ind);
+	  // Innermost loop
+	  for ( ; i[last] < dimensions_[last]; ++i[last],
+		  index += offset_[last]) {
+	    data_[index] = rhs.next_value(ind);
+	  }
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
+      }
+    }
+
+    // Vectorized version for Rank-1 arrays
+    template<bool LocalIsActive, bool EIsActive, class E>
+    inline //__attribute__((always_inline))
+    typename std::enable_if<!LocalIsActive && internal::expr_cast<E>::is_vectorizable
+			    && internal::is_same<typename E::type,Type>::value,void>::type
+      // Removing the reference speeds things up because otherwise E
+      // is dereferenced each loop (FIX 2023-01-09 revert for non-ref
+      // BasicArray to avoid recursive deep copy)
+      assign_expression_(const E& __restrict rhs) {
+      //assign_expression_(const E rhs) {
+      static_assert(!EIsActive, "Cannot assign active expression to inactive array");
+      offsets_type i(0);
+      ExpressionSize<internal::expr_cast<E>::n_arrays> ind(0);
+
+      if constexpr (rank == 1) {
+	if (dimensions_[0] >= Packet<value_type>::size*2
+	    && offset_[0] == 1
+	    && rhs.all_arrays_contiguous()
+	    ) {
+	  // Contiguous source and destination data
+	  Index istartvec = 0;
+	  Index iendvec = 0;
+	  
+	  istartvec = rhs.alignment_offset();
+	  if (istartvec < 0 || istartvec != alignment_offset_<Packet<value_type>::size>()) {
+	    istartvec = iendvec = 0;
+	  }
+	  else  {
+	    // Adjust iendvec such that iendvec-istartvec is a multiple
+	    // of the packet size
+	    iendvec = (dimensions_[0]-istartvec);
+	    iendvec -= (iendvec % Packet<value_type>::size);
+	    iendvec += istartvec;
+	  }
+	  i[0] = 0;
+	  rhs.set_location(i, ind);
+	  value_type* const __restrict t = data_; // Avoids an unnecessary load for some reason
+	  // Innermost loop
+	  for (int index = 0; index < istartvec; ++index) {
+	    // Scalar version
+	    t[index] = rhs.next_value_contiguous(ind);
+	  }
+	  for (int index = istartvec ; index < iendvec;
+	       index += Packet<value_type>::size) {
+	    // Vectorized version
+	    //	    rhs.next_packet(ind).put(data_+index)
+	    // FIX may need unaligned store
+	    rhs.next_packet(ind).put(t+index);
+	  }
+	  for (int index = iendvec ; index < dimensions_[0]; ++index) {
+	    // Scalar version
+	    t[index] = rhs.next_value_contiguous(ind);
+	  }
+	}
+	else {
+	  // Non-contiguous source or destination data
+	  i[0] = 0;
+	  rhs.set_location(i, ind);
+	  value_type* const __restrict t = data_; // Avoids an unnecessary load for some reason
+	  for (int index = 0; i[0] < dimensions_[0]; ++i[0],
+		 index += offset_[0]) {
+	    t[index] = rhs.next_value(ind);
+	  }
+	}
+      }
+      else if constexpr (rank > 1) {
+	Index index = 0;
+	int my_rank;
+	static const int last = rank-1;
+      
+	if (dimensions_[last] >= Packet<value_type>::size*2
+	    && all_arrays_contiguous_()
+	    && rhs.all_arrays_contiguous()) {
+	  // Contiguous source and destination data
+	  int iendvec;
+	  int istartvec = rhs.alignment_offset();
+	  if (istartvec < 0 || istartvec != alignment_offset_<Packet<value_type>::size>()) {
+	    istartvec = iendvec = 0;
+	  }
+	  else {
+	    iendvec = (dimensions_[last]-istartvec);
+	    iendvec -= (iendvec % Packet<value_type>::size);
+	    iendvec += istartvec;
+	  }
+	  do {
+	    i[last] = 0;
+	    rhs.set_location(i, ind);
+	    // Innermost loop
+	    for ( ; i[last] < istartvec; ++i[last], ++index) {
+	      // Scalar version
+	      data_[index] = rhs.next_value_contiguous(ind);
+	    }
+	    Type* const __restrict t = data_; // Avoids an unnecessary load for some reason
+	    for ( ; i[last] < iendvec; i[last] += Packet<value_type>::size,
+		    index += Packet<value_type>::size) {
+	      // Vectorized version
+	      //	    rhs.next_packet(ind).put(data_+index);
+	      // FIX may need unaligned store
+	      rhs.next_packet(ind).put(t+index);
+	    }
+	    for ( ; i[last] < dimensions_[last]; ++i[last], ++index) {
+	      // Scalar version
+	      data_[index] = rhs.next_value_contiguous(ind);
+	    }
+	    advance_index(index, my_rank, i);
+	  } while (my_rank >= 0);
+	}
+	else {
+	  // Non-contiguous source or destination data
+	  do {
+	    i[last] = 0;
+	    rhs.set_location(i, ind);
+	    // Innermost loop
+	    for ( ; i[last] < dimensions_[last]; ++i[last],
+		    index += offset_[last]) {
+	      data_[index] = rhs.next_value(ind);
+	    }
+	    advance_index(index, my_rank, i);
+	  } while (my_rank >= 0);
+	}
+      }
+      else {
+	throw("Should never get here");
+      }
+    }
+
+    template<bool LocalIsActive, bool EIsActive, class E>
+    inline
+    typename internal::enable_if<LocalIsActive && EIsActive,void>::type
+    // FIX is it slower without the reference?
+    assign_expression_(const E& rhs) {
+      //assign_expression_(const E rhs) {
+      // If recording has been paused then call the inactive version
+#ifdef ADEPT_RECORDING_PAUSABLE
+      if (!ADEPT_ACTIVE_STACK->is_recording()) {
+	assign_expression_<rank,false,false>(rhs);
+	return;
+      }
+#endif
+      offsets_type i(0);
+      ExpressionSize<internal::expr_cast<E>::n_arrays> ind(0);
+      Index index = 0;
+      int my_rank;
+      static const int last = rank-1;
+
+      ADEPT_ACTIVE_STACK->check_space(internal::expr_cast<E>::n_active * size());
+
+      if (internal::expr_cast<E>::is_vectorizable && rhs.all_arrays_contiguous()) {
+	// Contiguous source and destination data
+	value_type* const __restrict t = data_; // Avoids an unnecessary load for some reason
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, ind);
+	  // Innermost loop
+	  for ( ; i[last] < dimensions_[last]; ++i[last],
+		  index += offset_[last]) {
+	    t[index] = rhs.next_value_and_gradient_contiguous(*ADEPT_ACTIVE_STACK, ind);
+	    ADEPT_ACTIVE_STACK->push_lhs(gradient_index()+index); // What if RHS not active?
+	  }
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
+      }
+      else {
+	// Non-contiguous source or destination data
+	value_type* const __restrict t = data_; // Avoids an unnecessary load for some reason
+	do {
+	  i[last] = 0;
+	  rhs.set_location(i, ind);
+	  // Innermost loop
+	  for ( ; i[last] < dimensions_[last]; ++i[last],
+		  index += offset_[last]) {
+	    t[index] = rhs.next_value_and_gradient(*ADEPT_ACTIVE_STACK, ind);
+	    ADEPT_ACTIVE_STACK->push_lhs(gradient_index()+index); // What if RHS not active?
+	  }
+	  advance_index(index, my_rank, i);
+	} while (my_rank >= 0);
+      }
+    }
+
+    template<bool LocalIsActive, bool EIsActive, class E>
+    inline
+    typename internal::enable_if<LocalIsActive && !EIsActive,void>::type
+    assign_expression_(const E& rhs) {
+      // If recording has been paused then call the inactive version
+#ifdef ADEPT_RECORDING_PAUSABLE
+      if (!ADEPT_ACTIVE_STACK->is_recording()) {
+	assign_expression_<rank,false,false>(rhs);
+	return;
+      }
+#endif
+      offsets_type i(0);
+      ExpressionSize<internal::expr_cast<E>::n_arrays> ind(0);
+      Index index = 0;
+      int my_rank;
+      Index gradient_ind = gradient_index();
+      static const int last = rank-1;
+      do {
+	i[last] = 0;
+	rhs.set_location(i, ind);
+	// Innermost loop
+	ADEPT_ACTIVE_STACK->push_lhs_range(gradient_ind+index, dimensions_[rank-1],
+					   offset_[rank-1]);
+	for ( ; i[last] < dimensions_[last]; ++i[last],
+	       index += offset_[last]) {
+	  data_[index] = rhs.next_value(ind);
+	}
+	advance_index(index, my_rank, i);
+      } while (my_rank >= 0);
+    }
+   
+  }; 
+  
   
 };
 

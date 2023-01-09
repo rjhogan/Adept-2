@@ -19,10 +19,12 @@ int main() {
   x(1)=3.0;
   std::cerr << "3\n";
   x(2)=5.0;
-  std::cerr << "x=" << x << "\n";
+  std::cerr << "x=" << x+1 << "\n";
   std::cerr << x.info_string() << "\n";
   std::cerr << "x=" << x << "\n";
+  /*
   std::cerr << x.info_string() << "\n";
   std::cerr << "x=" << x << "\n";
+  */
   return 0;
 }

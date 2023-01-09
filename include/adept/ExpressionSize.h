@@ -139,12 +139,14 @@ namespace adept {
     }
 
 #ifdef ADEPT_CXX11_FEATURES
+    /*
     ExpressionSize& operator=(const std::array<Index,Rank>& arr) {
       for (int i = 0; i < Rank; ++i) {
 	dim[i] = arr[i];
       }
       return *this;
     }
+    */
 #endif
     
     ExpressionSize& operator++() {
@@ -188,7 +190,11 @@ namespace adept {
     Index& operator[](int i) { return dim[i]; }
     const Index& operator[](int i) const { return dim[i]; }
   private:
-    Index dim[Rank];
+    static const std::size_t Rank_uint = Rank;
+    union {
+      Index dim[Rank];
+      std::array<Index,Rank_uint> dim_as_std_array;
+    };
   };
 
   // Specialization for scalars (zero-rank arrays) known at compile
