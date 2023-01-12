@@ -6,6 +6,8 @@ version 2.1.2
 	- Slight change to reduce_dimension to avoid incorrect warning
 	about ExpressionSize array subscript of -1
 	- Fixed broken benchmark/autodiff_benchmark to work with ADOL-C
+	- Changed COMPILE_FLAGS argument order in test/Makefile in case
+	CPPFLAGS contains Timer.h or other conflicting header file
 
 version 2.1.1 (10 April 2022)
 	- interp function can perform 1D interpolation of higher

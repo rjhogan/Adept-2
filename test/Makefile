@@ -32,7 +32,7 @@ GSL_OBJECTS = test_gsl_interface.o state.o rosenbrock_banana_function.o
 
 GSL_LIBS = -lgsl
 
-COMPILE_FLAGS = $(CXXFLAGS) $(CPPFLAGS) $(ADEPT_FLAGS) -I../include
+COMPILE_FLAGS = $(CXXFLAGS) -I../include $(CPPFLAGS) $(ADEPT_FLAGS)
 
 # Because we aren't going to install the test programs, and we want
 # them to work even if Adept is not installed, it is easiest to use
