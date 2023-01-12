@@ -430,6 +430,12 @@ main(int argc, char** argv)
 	  
 	  std::cout << "   " << differentiator->name() << "\n";
 	  
+	  if (test_algorithm_is_vector[ialg] && !differentiator->supports_vector_calls()) {
+	    std::cout << "     ...vector calls not supported\n";
+	    delete differentiator;
+	    continue;
+	  }
+
 	  for (int i = 0; i < nr_warm_up; i++) {
 	    differentiator->adjoint(ta, q_init, q, q_AD, q_init_AD);
 	  }
@@ -548,7 +554,7 @@ main(int argc, char** argv)
 	    }
 	    std::cout << relative_jacobian_time << ")\n";
 	  }
-	  	  differentiator->print();
+	  differentiator->print();
 	  delete differentiator;
 	}
       }

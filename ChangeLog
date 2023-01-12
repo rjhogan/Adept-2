@@ -5,6 +5,7 @@ version 2.1.2
 	- Fixed out-of-bounds access in test_thread_safe_arrays
 	- Slight change to reduce_dimension to avoid incorrect warning
 	about ExpressionSize array subscript of -1
+	- Fixed broken benchmark/autodiff_benchmark to work with ADOL-C
 
 version 2.1.1 (10 April 2022)
 	- interp function can perform 1D interpolation of higher

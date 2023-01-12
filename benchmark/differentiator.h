@@ -25,6 +25,7 @@
 using adept::Real;
 
 #ifdef HAVE_ADOLC
+// Note that ADOL-C places the "adouble" type in the global namespace
 #include "adolc/adolc.h"
 #endif
 
@@ -53,6 +54,8 @@ const char* test_algorithm_long_string[] = {"Lax-Wendroff", "Toon et al.",
 					    "Lax-Wendroff vector", "Toon et al. vector"};
 const char* test_algorithm_string[] = {"lw","toon","lw_vector", "toon_vector"};
 
+const bool test_algorithm_is_vector[] = {false, false, true, true};
+
 inline
 std::string
 test_algorithms()
@@ -76,6 +79,8 @@ protected:
   const char* message_;
 };
 
+// Base class from which specialist differentiators (hand-coded,
+// Adept, ADOL-C etc) inherit
 class Differentiator {
 public:
   Differentiator(Timer& timer) 
@@ -92,6 +97,10 @@ public:
     c_ = c;
   }
 
+  virtual bool supports_vector_calls() { return false; }
+  
+  // Call the function to be differentiated, with the active type
+  // provided as a template argument
   template <class ActiveRealType>
   void func(TestAlgorithm test_algorithm,
 	    const std::vector<ActiveRealType>& x,
@@ -102,12 +111,6 @@ public:
     }
     else if (test_algorithm == TEST_ALGORITHM_TOON) {
       toon(nt_, c_, &x[0], &y[0]);
-    }
-    else if (test_algorithm == TEST_ALGORITHM_LAX_WENDROFF_VECTOR) {
-      lax_wendroff_vector(nt_, c_, &x[0], &y[0]);
-    }
-    else if (test_algorithm == TEST_ALGORITHM_TOON_VECTOR) {
-      toon_vector(nt_, c_, &x[0], &y[0]);
     }
     timer_.stop();
   }
@@ -173,6 +176,8 @@ public:
     init_timer(name_);
   }
 
+  virtual bool supports_vector_calls() { return true; }
+  
   virtual bool adjoint(TestAlgorithm test_algorithm,
 		       const std::vector<Real>& x,
 		       std::vector<Real>& y,
@@ -252,6 +257,30 @@ public:
     : Differentiator(timer) { init_timer(name_); }
 
   virtual ~AdeptDifferentiator() { }
+
+  virtual bool supports_vector_calls() { return true; }
+  
+  // Need to overload the function in the base class, because only
+  // Adept supports the _VECTOR versions of the algorithms
+  template <class ActiveRealType>
+  void func(TestAlgorithm test_algorithm,
+	    const std::vector<ActiveRealType>& x,
+	    std::vector<ActiveRealType>& y) {
+    timer_.start(base_timer_id_);
+    if (test_algorithm == TEST_ALGORITHM_LAX_WENDROFF) {
+      lax_wendroff(nt_, c_, &x[0], &y[0]);
+    }
+    else if (test_algorithm == TEST_ALGORITHM_TOON) {
+      toon(nt_, c_, &x[0], &y[0]);
+    }
+    else if (test_algorithm == TEST_ALGORITHM_LAX_WENDROFF_VECTOR) {
+      lax_wendroff_vector(nt_, c_, &x[0], &y[0]);
+    }
+    else if (test_algorithm == TEST_ALGORITHM_TOON_VECTOR) {
+      toon_vector(nt_, c_, &x[0], &y[0]);
+    }
+    timer_.stop();
+  }
 
   virtual bool adjoint(TestAlgorithm test_algorithm,
 		       const std::vector<Real>& x,
@@ -338,7 +367,9 @@ public:
   }
 
   virtual void print() {
+    std::cout << "========== ADEPT STACK BEGIN ==========\n";
     std::cout << stack_;
+    std::cout << "========== ADEPT STACK END ============\n";
   }
 
 private:
@@ -357,6 +388,9 @@ public:
   AdolcDifferentiator(Timer& timer, const std::string& name_)
     : Differentiator(timer), jac(0), I(0), result(0) { init_timer(name_); }
 
+  // Note that ADOL-C places the "adouble" type in the global namespace
+  typedef adouble aReal;
+  
   virtual ~AdolcDifferentiator() {
     if (I) {
       myfreeI2(NX, I);
