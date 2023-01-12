@@ -18,6 +18,7 @@
 
 #include <adept/Expression.h>
 #include <adept/traits.h>
+#include <adept/RangeIndex.h>
 
 namespace adept {
 
@@ -54,6 +55,17 @@ namespace adept {
     template <typename... T> struct all_scalar_indices {
       static const bool value = (is_scalar_int<T>::value && ...);
     };
+
+    template <typename... T> struct ranged_indices {
+      // Is there at least one "ranged" index, and all the others are
+      // scalar indices
+      static const bool value = (is_range<T>::value || ...)
+	&& (is_regular_index<T>::value && ...);
+      // Number of ranged indices, which determines the rank of an
+      // indexed array
+      static const int count = (is_range<T>::count + ...);
+    };
+    
     /*
     template <typename T0, typename... T> struct all_scalar_indices {
       static const bool value = is_scalar_int<T0>::value & all_scalar_indices<T>::value;
@@ -62,7 +74,7 @@ namespace adept {
       static const bool value = is_scalar_int<T0>::value;
     };
     */
-    
+
   };
 
 };

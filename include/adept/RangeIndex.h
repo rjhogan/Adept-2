@@ -167,7 +167,7 @@ namespace adept {
     // ---------------------------------------------------------------------
     // A class to store a range of integers, optionally with a fixed
     // stride, for simple indexing of arrays. 
-    template<class BeginType, class EndType, class StrideType>
+    template<class BeginType, class EndType, class StrideType = int>
     class RangeIndex
       : public Expression<Index, RangeIndex<BeginType, EndType, StrideType> >
     {
@@ -352,9 +352,6 @@ namespace adept {
 	+ is_range<I5>::count + is_range<I6>::count;
     };
 
-
-
-
   } // End namespace internal
 
   // User-accessible functions and objects
@@ -386,7 +383,7 @@ namespace adept {
     return adept::internal::RangeIndex<BeginType, EndType, 
 				       StrideType>(begin, end, stride);
   }
-
+  
 } // End namespace adept
 
 #endif

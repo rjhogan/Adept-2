@@ -22,6 +22,15 @@ int main() {
   std::cerr << "x=" << x+1 << "\n";
   std::cerr << x.info_string() << "\n";
   std::cerr << "x=" << x << "\n";
+
+  Matrixd M(2,3);
+  M = 7.0;
+  M(1,2) = 10;
+  std::cerr << "M=" << M << "\n";
+  Vectord_ref vv = M(1,range(0,1));
+  //  Vectord_ref vv = M(1,_{0,1});
+  std::cerr << "vv=" << vv << "\n";
+  std::cerr << M(1,range(0,1)) << "\n";
   /*
   std::cerr << x.info_string() << "\n";
   std::cerr << "x=" << x << "\n";

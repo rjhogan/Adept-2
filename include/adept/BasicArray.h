@@ -190,9 +190,9 @@ namespace adept {
       }
       else {
 	// Shallow copy
-	data_      = rhs.data();
+	data_       = rhs.data();
 	dimensions_ = rhs.dimensions();
-	offset_    = rhs.offsets();
+	offset_     = rhs.offsets();
 	if constexpr (is_active) {
 	  internal::GradientIndex<is_active>::set(rhs.gradient_index());
 	}
@@ -208,9 +208,9 @@ namespace adept {
       else {
 	// Shallow copy
 	static_assert(is_constant, "A non-const array ref cannot reference a const array");
-	data_      = rhs.data();
+	data_       = rhs.data();
 	dimensions_ = rhs.dimensions();
-	offset_    = rhs.offsets();
+	offset_     = rhs.offsets();
 	if constexpr (is_active) {
 	  internal::GradientIndex<is_active>::set(rhs.gradient_index());
 	}
@@ -230,9 +230,9 @@ namespace adept {
 	static_assert(std::is_same_v<const value_type, const T>,
 		      "Ref array cannot be constructed from an array of a different type");
 	// Will fail (correctly) if rhs.data is const and data_ is not
-	data_      = rhs.data();
+	data_       = rhs.data();
 	dimensions_ = rhs.dimensions();
-	offset_    = rhs.offsets();
+	offset_     = rhs.offsets();
 	if constexpr (is_partially_contiguous) {
           if constexpr (!is_column_major) {
 	    if (offset_[rank-1] != 1) {
@@ -265,9 +265,9 @@ namespace adept {
 	static_assert(std::is_same_v<const value_type, const T>,
 		      "Ref array cannot be constructed from an array of a different type");
 	static_assert(is_constant, "Non-const ref array cannot reference a const-ref array");
-	data_      = rhs.data();
+	data_       = rhs.data();
 	dimensions_ = rhs.dimensions();
-	offset_    = rhs.offsets();
+	offset_     = rhs.offsets();
 	if constexpr (is_partially_contiguous) {
           if constexpr (!is_column_major) {
 	    if (offset_[rank-1] != 1) {
@@ -292,7 +292,7 @@ namespace adept {
     template <typename T, class E>
     BasicArray(const Expression<T,E>& rhs) {
       static_assert(E::rank == rank && (rank > 0), "Rank mismatch in BasicArray=Expression");
-      static_assert(is_constant | !is_ref, "Non-const ref arrays cannot be constructed from Expressionl");
+      static_assert(is_constant | !is_ref, "Non-const ref arrays cannot be constructed from Expressions");
       *this = rhs;
     }
     
@@ -488,6 +488,44 @@ namespace adept {
   //    ADEPT_DEFINE_OPERATOR(operator|=, |);
 #undef ADEPT_DEFINE_OPERATOR
 
+    // Assignment to an array expression of the same rank in which the
+    // activeness of the right-hand-side is ignored
+    template <typename EType, class E>
+    typename internal::enable_if<E::rank == rank, BasicArray&>::type
+    assign_inactive(const Expression<EType,E>& rhs) {
+      shape_type dims;
+      if (!rhs.get_dimensions(dims)) {
+	std::string str = "Array size mismatch in "
+	  + rhs.expression_string() + ".";
+	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
+      }
+      else if (empty()) {
+	resize(dims);
+      }
+      else if (!internal::compatible(dims, dimensions_)) {
+	std::string str = "Expr";
+	str += internal::str(dims) + " object assigned to " + expression_string_();
+	throw size_mismatch(str ADEPT_EXCEPTION_LOCATION);
+      }
+
+      if (!empty()) {
+	// Check for aliasing first
+	Type const * ptr_begin;
+	Type const * ptr_end;
+	data_range(ptr_begin, ptr_end);
+	if (rhs.is_aliased(ptr_begin, ptr_end)) {
+	  array_copy_type copy;
+	  copy.assign_inactive(rhs);
+	  //	  *this = copy;
+	  assign_expression_<is_active, false>(copy);
+	}
+	else {
+	  assign_expression_<is_active, false>(rhs.cast());
+	}
+      }
+      return *this;
+    }
+
     // -------------------------------------------------------------------
     // Section 6. Resize and clear
     // -------------------------------------------------------------------
@@ -546,17 +584,54 @@ namespace adept {
 		    "Incorrect number of arguments when subsetting array");
       return data_[index_with_len_<0>(indices...)];
     }
-    /*
+
     template <typename... Indices>
-    typename std::enable_if_t<internal::ranged_indices<Indices...>::value,Type>
+    typename std::enable_if_t<internal::ranged_indices<Indices...>::value,
+	      BasicArray<value_type,internal::ranged_indices<Indices...>::count,
+			 Options|internal::ARRAY_IS_REF
+			 &~(internal::ARRAY_IS_PARTIALLY_CONTIGUOUS|internal::ARRAY_IS_ALL_CONTIGUOUS),
+			 allocator_type> >
     operator()(Indices... indices) {
       static_assert(rank == sizeof...(Indices),
 		    "Incorrect number of arguments when subsetting array");
-      slice_<0>(indices...);
-      return 0;
+      static const rank_type new_rank = internal::ranged_indices<Indices...>::count;
+      ExpressionSize<new_rank> new_dim, new_offset;
+      internal::size_type inew_rank = 0;
+      internal::size_type ibegin = 0;
+      rank_type irank = 0;
+      (update_index(irank++, indices, inew_rank, ibegin, new_dim, new_offset), ...);
+      return BasicArray<value_type,new_rank,(Options|internal::ARRAY_IS_REF)
+			&~(internal::ARRAY_IS_PARTIALLY_CONTIGUOUS|internal::ARRAY_IS_ALL_CONTIGUOUS),
+			allocator_type>(data_ + ibegin, new_dim, new_offset);
     }
-    */
 
+
+    // Treat the indexing of dimension "irank" in the case that the
+    // index is of integer type
+    template <typename T, RankType NewRank>
+    typename internal::enable_if<internal::is_scalar_int<T>::value, void>::type
+    update_index(const Index& irank, const T& i, Index& inew_rank, Index& ibegin,
+		 ExpressionSize<NewRank>& new_dim, 
+		 ExpressionSize<NewRank>& new_offset) const {
+      ibegin += internal::get_index_with_len(i,dimensions_[irank])*offset_[irank];
+    }
+
+    // Treat the indexing of dimension "irank" in the case that the
+    // index is a "range" object
+    template <typename T, RankType NewRank>
+    typename internal::enable_if<internal::is_range<T>::value, void>::type
+    update_index(const Index& irank, const T& i, Index& inew_rank, Index& ibegin,
+		 ExpressionSize<NewRank>& new_dim, 
+		 ExpressionSize<NewRank>& new_offset) const {
+      ibegin += i.begin(dimensions_[irank])*offset_[irank];
+      new_dim[inew_rank]
+      = (i.end(dimensions_[irank])
+	 + i.stride(dimensions_[irank])-i.begin(dimensions_[irank]))
+      / i.stride(dimensions_[irank]);
+      new_offset[inew_rank] = i.stride(dimensions_[irank])*offset_[irank];
+      ++inew_rank;
+    }
+          
     // -------------------------------------------------------------------
     // Section 4. Inquiry functions
     // -------------------------------------------------------------------
@@ -1265,6 +1340,23 @@ namespace adept {
   }; 
   
   
+ 
+  // -------------------------------------------------------------------
+  // Helper functions
+  // -------------------------------------------------------------------
+  
+  template <typename Type, class E>
+  inline
+  typename internal::enable_if<(E::rank > 0), std::ostream&>::type
+  operator<<(std::ostream& os, const Expression<Type,E>& expr) {
+    BasicArray<Type,E::rank> A;
+    A.assign_inactive(expr);
+    return A.print(os);
+  }
+
+
+  template<class BeginType = int, class EndType = int, class StrideType = int>
+  using _ = internal::RangeIndex<BeginType, EndType, StrideType>; 
 };
 
 

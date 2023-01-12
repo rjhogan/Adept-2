@@ -3291,14 +3291,12 @@ namespace adept {
     }
   }
 
-  // Print array on a stream
   template <int Rank, typename Type, bool IsActive>
   inline
   std::ostream&
   operator<<(std::ostream& os, const Array<Rank,Type,IsActive>& A) {
     return A.print(os);
   }
-
 
   // Extract inactive part of array, working correctly depending on
   // whether argument is active or inactive
@@ -3316,6 +3314,9 @@ namespace adept {
   }
 
   // Print an array expression on a stream
+  /*
+  // Now done with BasicArray...
+
   template <typename Type, class E>
   inline
   typename internal::enable_if<(E::rank > 0), std::ostream&>::type
@@ -3324,7 +3325,8 @@ namespace adept {
     A.assign_inactive(expr);
     return A.print(os);
   }
-
+  */
+  
   // -------------------------------------------------------------------
   // Transpose function
   // -------------------------------------------------------------------
