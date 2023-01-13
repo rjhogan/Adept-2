@@ -11,6 +11,7 @@
 #define AdeptCppLapack_H 1                       
 
 #include <vector>
+#include <cstddef>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -74,7 +75,7 @@ namespace adept {
       // Find out how much work memory required
       sgetri_(&n, a, &lda, ipiv, &work_query, &lwork, &info);
       lwork = static_cast<int>(work_query);
-      std::vector<float> work(static_cast<size_t>(lwork));
+      std::vector<float> work(static_cast<std::size_t>(lwork));
       // Do full calculation
       sgetri_(&n, a, &lda, ipiv, &work[0], &lwork, &info);
       return info;
@@ -87,7 +88,7 @@ namespace adept {
       // Find out how much work memory required
       dgetri_(&n, a, &lda, ipiv, &work_query, &lwork, &info);
       lwork = static_cast<int>(work_query);
-      std::vector<double> work(static_cast<size_t>(lwork));
+      std::vector<double> work(static_cast<std::size_t>(lwork));
       // Do full calculation
       dgetri_(&n, a, &lda, ipiv, &work[0], &lwork, &info);
       return info;
@@ -102,7 +103,7 @@ namespace adept {
       // Find out how much work memory required
       ssytrf_(&uplo, &n, a, &lda, ipiv, &work_query, &lwork, &info);
       lwork = static_cast<int>(work_query);
-      std::vector<float> work(static_cast<size_t>(lwork));
+      std::vector<float> work(static_cast<std::size_t>(lwork));
       // Do full calculation
       ssytrf_(&uplo, &n, a, &lda, ipiv, &work[0], &lwork, &info);
       return info;
@@ -115,7 +116,7 @@ namespace adept {
       // Find out how much work memory required
       dsytrf_(&uplo, &n, a, &lda, ipiv, &work_query, &lwork, &info);
       lwork = static_cast<int>(work_query);
-      std::vector<double> work(static_cast<size_t>(lwork));
+      std::vector<double> work(static_cast<std::size_t>(lwork));
       // Do full calculation
       dsytrf_(&uplo, &n, a, &lda, ipiv, &work[0], &lwork, &info);
       return info;
@@ -163,7 +164,7 @@ namespace adept {
       // Find out how much work memory required
       ssysv_(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, &work_query, &lwork, &info);
       lwork = static_cast<int>(work_query);
-      std::vector<float> work(static_cast<size_t>(lwork));
+      std::vector<float> work(static_cast<std::size_t>(lwork));
       // Do full calculation
       ssysv_(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, &work[0], &lwork, &info);
       return info;
@@ -177,7 +178,7 @@ namespace adept {
       // Find out how much work memory required
       dsysv_(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, &work_query, &lwork, &info);
       lwork = static_cast<int>(work_query);
-      std::vector<double> work(static_cast<size_t>(lwork));
+      std::vector<double> work(static_cast<std::size_t>(lwork));
       // Do full calculation
       dsysv_(&uplo, &n, &nrhs, a, &lda, ipiv, b, &ldb, &work[0], &lwork, &info);
       return info;
