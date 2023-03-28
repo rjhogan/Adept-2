@@ -568,7 +568,10 @@ namespace adept {
     // -------------------------------------------------------------------
     // Section x. Indexing functions
     // -------------------------------------------------------------------
-    
+
+    // Index an array A(i,j,k,...) when all arguments are scalars,
+    // returning a single element of the array as an rvalue (because
+    // *this is const)
     template <typename... Indices>
     typename std::enable_if_t<internal::all_scalar_indices<Indices...>::value,Type>
     operator()(Indices... indices) const {
@@ -576,7 +579,10 @@ namespace adept {
 		    "Incorrect number of arguments when subsetting array");
       return data_[index_with_len_<0>(indices...)];
     }
-      
+
+    // Index an array A(i,j,k,...) when all arguments are scalars,
+    // returning a single element of the array as an lvalue (because
+    // *this is non-const)
     template <typename... Indices>
     typename std::enable_if_t<internal::all_scalar_indices<Indices...>::value,Type&>
     operator()(Indices... indices) {
@@ -585,6 +591,9 @@ namespace adept {
       return data_[index_with_len_<0>(indices...)];
     }
 
+    // Index an array when at least one of the arguments is a regular
+    // array of indices (but no arguments are irregular), returning a
+    // writable "ref" array that points a subset of the original data
     template <typename... Indices>
     typename std::enable_if_t<internal::ranged_indices<Indices...>::value,
 	      BasicArray<value_type,internal::ranged_indices<Indices...>::count,
@@ -599,20 +608,44 @@ namespace adept {
       internal::size_type inew_rank = 0;
       internal::size_type ibegin = 0;
       rank_type irank = 0;
-      (update_index(irank++, indices, inew_rank, ibegin, new_dim, new_offset), ...);
+      (update_index_(irank++, indices, inew_rank, ibegin, new_dim, new_offset), ...);
       return BasicArray<value_type,new_rank,(Options|internal::ARRAY_IS_REF)
 			&~(internal::ARRAY_IS_PARTIALLY_CONTIGUOUS|internal::ARRAY_IS_ALL_CONTIGUOUS),
 			allocator_type>(data_ + ibegin, new_dim, new_offset);
     }
 
+    // Index an array when at least one of the arguments is a regular
+    // array of indices (but no arguments are irregular), returning a
+    // read-only "ref" array that points to the original data
+    template <typename... Indices>
+    typename std::enable_if_t<internal::ranged_indices<Indices...>::value,
+	      BasicArray<const value_type,internal::ranged_indices<Indices...>::count,
+			 Options|internal::ARRAY_IS_REF
+			 &~(internal::ARRAY_IS_PARTIALLY_CONTIGUOUS|internal::ARRAY_IS_ALL_CONTIGUOUS),
+			 allocator_type> >
+    operator()(Indices... indices) const {
+      static_assert(rank == sizeof...(Indices),
+		    "Incorrect number of arguments when subsetting array");
+      static const rank_type new_rank = internal::ranged_indices<Indices...>::count;
+      ExpressionSize<new_rank> new_dim, new_offset;
+      internal::size_type inew_rank = 0;
+      internal::size_type ibegin = 0;
+      rank_type irank = 0;
+      (update_index_(irank++, indices, inew_rank, ibegin, new_dim, new_offset), ...);
+      return BasicArray<const value_type,new_rank,(Options|internal::ARRAY_IS_REF)
+			&~(internal::ARRAY_IS_PARTIALLY_CONTIGUOUS|internal::ARRAY_IS_ALL_CONTIGUOUS),
+			allocator_type>(data_ + ibegin, new_dim, new_offset);
+    }
 
+
+  protected:
     // Treat the indexing of dimension "irank" in the case that the
     // index is of integer type
     template <typename T, RankType NewRank>
     typename internal::enable_if<internal::is_scalar_int<T>::value, void>::type
-    update_index(const Index& irank, const T& i, Index& inew_rank, Index& ibegin,
-		 ExpressionSize<NewRank>& new_dim, 
-		 ExpressionSize<NewRank>& new_offset) const {
+    update_index_(const Index& irank, const T& i, Index& inew_rank, Index& ibegin,
+		  ExpressionSize<NewRank>& new_dim, 
+		  ExpressionSize<NewRank>& new_offset) const {
       ibegin += internal::get_index_with_len(i,dimensions_[irank])*offset_[irank];
     }
 
@@ -620,9 +653,9 @@ namespace adept {
     // index is a "range" object
     template <typename T, RankType NewRank>
     typename internal::enable_if<internal::is_range<T>::value, void>::type
-    update_index(const Index& irank, const T& i, Index& inew_rank, Index& ibegin,
-		 ExpressionSize<NewRank>& new_dim, 
-		 ExpressionSize<NewRank>& new_offset) const {
+    update_index_(const Index& irank, const T& i, Index& inew_rank, Index& ibegin,
+		  ExpressionSize<NewRank>& new_dim, 
+		  ExpressionSize<NewRank>& new_offset) const {
       ibegin += i.begin(dimensions_[irank])*offset_[irank];
       new_dim[inew_rank]
       = (i.end(dimensions_[irank])
@@ -631,7 +664,7 @@ namespace adept {
       new_offset[inew_rank] = i.stride(dimensions_[irank])*offset_[irank];
       ++inew_rank;
     }
-          
+  public:
     // -------------------------------------------------------------------
     // Section 4. Inquiry functions
     // -------------------------------------------------------------------
