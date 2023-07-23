@@ -676,18 +676,19 @@ In the example here, the \code{Stack} object is local to the scope of
 the function. If another \code{Stack} object had been initialized by
 the calling function and so was active at the point of entry to the
 function, then the local \code{Stack} object would throw an
-\code{adept::stack\_already\_active} exception (see Test 3 described
+\code{adept::stack\_already\_active} exception. See Test 3 described
 at \code{test/README} in the \Adept\ package if you want to use
-multiple \code{Stack} objects in the same program).  A disadvantage of
-local \code{Stack} objects is that the memory it uses must be
-reallocated each time the function is called.  This can be overcome in
-several ways:
+multiple \code{Stack} objects in the same program: the relevant source
+code is in \code{test/simulate\_radiances.cpp}, which temporarily
+deactivates the existing \code{Stack} objects in order that the local
+one can run.  A disadvantage of local \code{Stack} objects is that the
+memory it uses must be reallocated each time the function is called.
+This can be overcome in several ways:
 \begin{itemize}
 \item Declare the \code{Stack} object to be \code{static}, which means
   that it will persist between function calls. This has the
   disadvantage that you won't be able to use other \code{Stack}
-  objects in the program without deactivating this one first (see Test
-  3 in the \Adept\ package, referred to above, for how to do this).
+  objects in the program without deactivating this one first (see \code{test\_radiances} in the \Adept\ package, referred to above, for how to do this).
 \item Initialize \code{Stack} at a higher level in the program. If you
   need access to the stack, you may either pass a reference to it to
   functions such as \code{algorithm\_and\_gradient}, or alternatively
@@ -901,18 +902,22 @@ of these objects, which could be done as follows:
  }
 \end{lstlisting}
 
-\section{Real-world usage: interfacing \Adept\ to a minimization library}
+\section{Real-world usage: interfacing \Adept\ to a third-party minimization library}
 \label{sec:realworld}
-Suppose we want to find the vector $\x$ that minimizes an cost function
-$J(\x)$ that consists of a large algorithm coded using the
+Suppose we want to find the vector $\x$ that minimizes an cost
+function $J(\x)$ that consists of a large algorithm coded using the
 \Adept\ library and encapsulated within a C++ class.  In this section
 we illustrate how it may be interfaced to a third-party minimization
 algorithm with a C-style interface, specifically the free one in the
-GNU Scientific Library.  The full working version of this example,
-using the N-dimensional Rosenbrock banana function as the function to
-be minimized, is ``Test 4'' in the \code{test} directory of the
-\Adept\ software package. The interface to the algorithm is as
-follows:
+GNU Scientific Library.  Note that since version 2.0.8,
+\Adept\ provides its own minimization functionality, as described in
+chapter \ref{chap:optimize}.
+
+The full working version of this example, using the N-dimensional
+Rosenbrock banana function as the function to be minimized, is in
+\code{test/test\_gsl\_interface.cpp} of the \Adept\ software package
+(see the description of Test 4 in \code{test/README}). The interface
+to the algorithm is as follows:
 %
 \begin{lstlisting}
  #include <vector>
@@ -932,12 +937,13 @@ follows:
     double calc_function_value_and_gradient(const double* x, double* dJ_dx);
     // Return the size of the state vector
     unsigned int nx() const { return active_x_.size(); }
-  protected:
+  private:
     // Active version: the algorithm is contained in the definition of this function
     adouble calc_function_value(const adouble* x);
     // DATA
-    adept::Stack stack_;             // Adept stack object
-    std::vector<adouble> active_x_;  // Active state variables
+    adept::Stack stack_;             // Adept stack object (must be before active state
+                                     // variables, e.g. adouble, in class definition)
+    std::vector<adouble> active_x_;  // Active state variables (must be after Stack)
  };
 \end{lstlisting}
 %
@@ -1266,7 +1272,7 @@ flag, as follows (using the example from section \ref{sec:realworld}):
   public:
     ...
     double calc_function_value(const double* x);
-  protected:
+  private:
  #ifndef ADEPT_NO_AUTOMATIC_DIFFERENTIATION
     adouble calc_function_value(const adouble* x);
  #endif
@@ -1297,9 +1303,10 @@ much slower than hand-coding \cite[see the Lax-Wendroff example
   in][]{Hogan2014} and we may wish to hand-code certain critical
 parts.  In general the Jacobian matrix is quite expensive to compute,
 so this interfacing strategy makes most sense if the component of the
-algorithm has a small number of inputs or a small number of
-outputs. A full working version of the following example is given as
-``Test 3'' in the \code{test} directory of the \Adept\ package.
+algorithm has a small number of inputs or a small number of outputs. A
+full working version of the following example is given as ``Test 3''
+in the \code{test} directory of the \Adept\ package (see specifically
+\code{test/README} and \code{test/test\_radiances.cpp}).
 
 Consider the example of a radiative transfer model for simulating
 satellite microwave radiances at two wavelengths, $I$ and $J$, which
