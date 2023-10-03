@@ -16,7 +16,7 @@ pkginclude_HEADERS = adept/Active.h adept/ActiveReference.h adept/Allocator.h \
 	adept/noalias.h adept/store_transpose.h adept/quick_e.h \
 	adept/GradientIndex.h adept/Optimizable.h adept/Minimizer.h
 
-EXTRA_DIST = Timer.h create_adept_source_header adept_source.h
+EXTRA_DIST = Timer.h create_adept_source_header adept_source.h adept_fortran.h
 
 adept_source.h: @top_srcdir@/adept/*.h @top_srcdir@/adept/*.cpp @srcdir@/create_adept_source_header
 	@srcdir@/create_adept_source_header
