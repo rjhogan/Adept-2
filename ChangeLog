@@ -1,4 +1,7 @@
-version 2.1.2
+version 2.1.3
+	- Added interp2d and interp3d functions
+
+version 2.1.2 (3 Oct 2023)
 	- Further bug fixes to reduction of active arrays which did not
 	have addequate space allocated by check_space, including "product"
 	which requires an additional differential operation per element

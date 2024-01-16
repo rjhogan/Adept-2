@@ -1,7 +1,6 @@
 /* interp.h -- 1D interpolation
 
-
-    Copyright (C) 2015-2021 European Centre for Medium-Range Weather Forecasts
+    Copyright (C) 2015- European Centre for Medium-Range Weather Forecasts
 
     Author: Robin Hogan <r.j.hogan@ecmwf.int>
 
@@ -16,17 +15,147 @@
 
 namespace adept {
 
+  // The three extrapolation policies for the interpolation functions
+  // if interpolation is requested outside the range of the
+  // interpolation array
   enum ExtrapolatePolicy {
-    ADEPT_EXTRAPOLATE_LINEAR = 0,
-    ADEPT_EXTRAPOLATE_CLAMP,
+    ADEPT_EXTRAPOLATE_LINEAR = 0,// Linear extrapolation
+    ADEPT_EXTRAPOLATE_CLAMP,     // Use closest valid point
+    ADEPT_EXTRAPOLATE_CONSTANT,  // Return a constant for out-of-bounds
+				 // inputs, or NaN if the constant is
+				 // not specified
   };
 
+  namespace internal {
+
+    // The dimensions of an array containing the data to be
+    // interpolated may be described either by a vector of real
+    // numbers, or by a regular range; any other type will not
+    // compile.  A regular range (which could be expressed by a
+    // LinSpace object) has not yet been defined.
+    template <typename T>
+    struct InterpHelper {
+      static const bool is_valid = false;
+    };
+
+    // Specialization for a vector of real numbers    
+    template <typename XType>
+    struct InterpHelper<Array<1,XType,false> > {
+      static const bool is_valid = is_floating_point<XType>::value;
+      template <typename XiType>
+      static void interp_get_indices_weights(const Array<1,XType,false>& x,
+				 const Array<1,XiType,false>& xi,
+				 ExtrapolatePolicy ep,
+				 Array<1,Index>& ind0, Array<1,Real,false>& weight0,
+				 Array<1,bool>& is_valid) {
+	if (x(1) > x(0)) {
+	  // Normal ordering; loop over points to be interpolated
+	  for (Index i = 0; i < xi.size(); ++i) {
+	    const XiType xii = xi(i);
+	    if (xii >= x(0) && xii <= x(end)) {
+	      // Point is in the range of the interpolated function
+	      Index jj = 1;
+	      while (jj < x.size()-1 && x(jj+1) < xii) {
+		++jj;
+	      }
+	      ind0(i) = jj-1;
+	      weight0(i) = (x(jj)-xii)/(x(jj)-x(jj-1));
+	    }
+	    else if (xii < x(0)) {
+	      // Point is off the low end of the scale
+	      ind0(i) = 0;
+	      if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+		weight0(i) = (x(1)-xii)/(x(1)-x(0));
+	      }
+	      else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+		weight0(i) = 1.0;
+	      }
+	      else {
+		is_valid(i) = false;
+	      }
+	    }
+	    else {
+	      // Point is off the high end of the scale
+	      ind0(i) = x.size()-2;
+	      if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+		weight0(i) = (x(end)-xii)/(x(end)-x(end-1));
+	      }
+	      else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+		weight0(i) = 0.0;
+	      }
+	      else {
+		is_valid(i) = false;
+	      }
+	    }
+	  }
+	}
+	else {
+	  // Reverse ordering; loop over points to be interpolated
+	  for (Index i = 0; i < xi.size(); ++i) {
+	    const XiType xii = xi(i);
+	    if (xii <= x(0) && xii >= x(end)) {
+	      // Point is in the range of the interpolated function
+	      Index jj = x.size()-2;
+	      while (jj > 0 && x(jj-1) < xii) {
+		--jj;
+	      }
+	      ind0(i) = jj;
+	      weight0(i) = (x(jj+1)-xii)/(x(jj+1)-x(jj));
+	    }
+	    else if (xii > x(0)) {
+	      // Point is off the scale (high in x, low in index)
+	      ind0(i) = 0;
+	      if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+		weight0(i) = (x(1)-xii)/(x(1)-x(0));
+	      }
+	      else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+		weight0(i) = 1.0;
+	      }
+	      else {
+		is_valid(i) = false;
+	      }
+	    }
+	    else {
+	      // Point is off the scale (low in x, high in index)
+	      ind0(i) = x.size()-2;
+	      if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+		weight0(i) = (x(end)-xii)/(x(end)-x(end-1));
+	      }
+	      else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+		weight0(i) = 0.0;
+	      }
+	      else {
+		is_valid(i) = false;
+	      }
+	    }	    
+	  }
+	}
+      }
+    };
+  }
+  
+  // 1D interpolation: interp(x,y,xi) interpolates to obtain values of
+  // y (whose first dimension is at the points in vector x)
+  // interpolated to the values in vector xi. If y has more than one
+  // dimension then multiple values are interpolated for every point
+  // in xi, and the returned array has a size equal to y except that
+  // the first dimension is of the same length as xi. If the
+  // extrapolate policy is specified and is ADEPT_EXTRAPOLATE_CLAMP
+  // then values outside the range will be clampted at the first or
+  // last point. If it is ADEPT_EXTRAPOLATE_CONSTANT then a constant
+  // value will be used which can be specified as the final argument,
+  // or is a signaling NaN by default.  Otherwise, linear
+  // extrapolation is performed (the default). Note that x and xi must
+  // be inactive variables, but y can be active in which case the
+  // returned array will be too.
   template <typename XType, typename YType, bool YIsActive, typename XiType, int YDims>
   Array<YDims,YType,YIsActive>
   interp(const Array<1,XType,false>& x,
 	 const Array<YDims,YType,YIsActive>& y,
 	 const Array<1,XiType,false>& xi,
-	 ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR) {
+	 ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR,
+	 YType extrapolate_value = std::numeric_limits<YType>::signaling_NaN()) {
+    
     ExpressionSize<YDims> ans_dims = y.dimensions();
     ans_dims[0] = xi.size();
     Array<YDims,YType,YIsActive> ans(ans_dims);
@@ -42,6 +171,7 @@ namespace adept {
       for (int ii = 0; ii < xi.size(); ++ii) {
 	ans[ii] = y[0];
       }
+      return ans;
     }
 
     if (x(0) < x(1)) {
@@ -55,9 +185,13 @@ namespace adept {
 	    // Extrapolate leftwards
 	    jmax = 1;
 	  }
-	  else {
+	  else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
 	    // Clamp at first value
 	    ans[i] = y[0];
+	    continue;
+	  }
+	  else {
+	    ans[i] = extrapolate_value;
 	    continue;
 	  }
 	}
@@ -66,9 +200,13 @@ namespace adept {
 	    // Extrapolate rightwards
 	    jmin = jmax-1;
 	  }
-	  else {
+	  else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
 	    // Clamp at final value
 	    ans[i] = y[jmax];
+	    continue;
+	  }
+	  else {
+	    ans[i] = extrapolate_value;
 	    continue;
 	  }
 	}
@@ -101,9 +239,13 @@ namespace adept {
 	    // Extrapolate leftwards
 	    jmax = 1;
 	  }
-	  else {
+	  else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
 	    // Clamp at first value
 	    ans[i] = y[0];
+	    continue;
+	  }
+	  else {
+	    ans[i] = extrapolate_value;
 	    continue;
 	  }
 	}
@@ -112,9 +254,13 @@ namespace adept {
 	    // Extrapolate rightwards
 	    jmin = jmax-1;
 	  }
-	  else {
+	  else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
 	    // Clamp at last value
 	    ans[i] = y[jmax];
+	    continue;
+	  }
+	  else {
+	    ans[i] = extrapolate_value;
 	    continue;
 	  }
 	}
@@ -139,6 +285,9 @@ namespace adept {
     return ans;
   }
 
+  // Ensure that 1D interpolation works if expressions are provided
+  // for any of the arguments; these are converted to temporary
+  // arrays.
   template <typename XType, typename YType, typename XiType,
 	    class X, class Y, class Xi>
   Array<Y::rank,YType,Y::is_active>
@@ -152,7 +301,8 @@ namespace adept {
     return interp(x2, y2, xi2, ep);
   }
 
-
+  // 1D logarithmic interpolation: interpolate log(Y) and then
+  // exponentiate the result.
   template <typename XType, typename YType, bool YIsActive, typename XiType>
   Array<1,YType,YIsActive>
   log_interp(const Array<1,XType,false>& x,
@@ -250,6 +400,202 @@ namespace adept {
       }
     }
     return ans;
+  }
+
+  // 2D interpolation: as 1D interpolation but with two vectors
+  // describing the dimensions of the interpolation array and two
+  // vectors providing points at which interpolated values are
+  // required
+  template <typename XType, typename YType,
+	    int MDims, typename MType, bool MIsActive,
+	    typename XiType, typename YiType>
+  Array<MDims-1,MType,MIsActive>
+  interp2d(const XType& x,
+	   const YType& y,
+	   const Array<MDims,MType,MIsActive>& M,
+	   const Array<1,XiType,false>& xi,
+	   const Array<1,YiType,false>& yi,
+	   ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR,
+	   MType extrapolate_value = std::numeric_limits<MType>::signaling_NaN()) {
+
+    ADEPT_STATIC_ASSERT(MDims >= 2, TWO_DIMENSIONAL_INTERPOLATION_REQUIRES_2D_ARRAY);
+    
+    if (x.size() != M.size(0)) {
+      throw(size_mismatch("Interpolation vector x must have same length as first dimension of M in interp2d"));
+    }
+    if (y.size() != M.size(1)) {
+      throw(size_mismatch("Interpolation vector y must have same length as second dimension of M in interp2d"));
+    }
+    else if (x.size() < 2 || y.size() < 2) {
+      throw(size_mismatch("Interpolation array must have at least two elements in each direction in interp2d"));
+    }
+    else if (xi.dimensions() != yi.dimensions()) {
+      throw(size_mismatch("Indexing arrays must be the same shape in interp2d"));
+    }
+
+    Index ni = xi.size();
+    ExpressionSize<MDims-1> ans_dims;
+    ans_dims[0] = xi.size();
+    for (int ii = 2; ii < MDims; ++ii) {
+      ans_dims[ii-1] = M.size(ii);
+    }
+
+    Array<MDims-1,MType,MIsActive> ans(ans_dims);
+    
+    // Indices to the first of the two elements in each dimension, and
+    // the weight of the first element
+    IntVector xind0(ni);
+    Vector xweight0(ni);
+    IntVector yind0(ni);
+    Vector yweight0(ni);
+    boolVector is_valid(ni);
+    is_valid = true;
+    internal::InterpHelper<XType>::interp_get_indices_weights(x, xi, ep,
+							      xind0, xweight0, is_valid);
+    internal::InterpHelper<YType>::interp_get_indices_weights(y, yi, ep,
+							      yind0, yweight0, is_valid);
+    for (Index ii = 0; ii < ni; ++ii) {
+      if (is_valid(ii)) {
+	// Bi-linear interpolation
+	ans[ii] = yweight0(ii) * (      xweight0(ii)  * M[xind0(ii)][yind0(ii)]
+				  +(1.0-xweight0(ii)) * M[xind0(ii)+1][yind0(ii)])
+	  + (1.0-yweight0(ii)) * (      xweight0(ii)  * M[xind0(ii)][yind0(ii)+1]
+				  +(1.0-xweight0(ii)) * M[xind0(ii)+1][yind0(ii)+1]);
+      }
+      else {
+	ans[ii] = extrapolate_value;
+      }
+    }
+    return ans;
+  }
+
+  // Ensure that 2D interpolation works if expressions are provided
+  // for any of the arguments; these are converted to temporary
+  // arrays.
+  template <typename XType, typename YType, typename MType, typename XiType, class YiType,
+	    class X, class Y, class M, class Xi, class Yi>
+  Array<M::rank-1,MType,M::is_active>
+  interp2d(const Expression<XType,X>& x,
+	   const Expression<YType,Y>& y,
+	   const Expression<MType,M>& m,
+	   const Expression<XiType,Xi>& xi,
+	   const Expression<YiType,Yi>& yi,
+	   ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR,
+	   MType extrapolate_value = std::numeric_limits<MType>::signaling_NaN()) {
+    const Array<1,XType,false> x2(x.cast());
+    const Array<1,YType,false> y2(y.cast());
+    const Array<M::rank,MType,M::is_active> m2(m.cast());
+    const Array<1,XiType,false> xi2(xi.cast());
+    const Array<1,YiType,false> yi2(yi.cast());
+    return interp2d(x2, y2, m2, xi2, yi2, ep, extrapolate_value);
+  }
+  
+  // 3D interpolation: as 1D interpolation but with two vectors
+  // describing the dimensions of the interpolation array and two
+  // vectors providing points at which interpolated values are
+  // required
+  template <typename XType, typename YType, typename ZType,
+	    int MDims, typename MType, bool MIsActive,
+	    typename XiType, typename YiType, typename ZiType>
+  Array<MDims-2,MType,MIsActive>
+  interp3d(const XType& x,
+	   const YType& y,
+	   const ZType& z,
+	   const Array<MDims,MType,MIsActive>& M,
+	   const Array<1,XiType,false>& xi,
+	   const Array<1,YiType,false>& yi,
+	   const Array<1,ZiType,false>& zi,
+	   ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR,
+	   MType extrapolate_value = std::numeric_limits<MType>::signaling_NaN()) {
+
+    ADEPT_STATIC_ASSERT(MDims >= 3, THREE_DIMENSIONAL_INTERPOLATION_REQUIRES_3D_ARRAY);
+    
+    if (x.size() != M.size(0)) {
+      throw(size_mismatch("Interpolation vector x must have same length as first dimension of M in interp3d"));
+    }
+    if (y.size() != M.size(1)) {
+      throw(size_mismatch("Interpolation vector y must have same length as second dimension of M in interp3d"));
+    }
+    if (z.size() != M.size(2)) {
+      throw(size_mismatch("Interpolation vector z must have same length as third dimension of M in interp3d"));
+    }
+    else if (x.size() < 2 || y.size() < 2 || z.size() < 2) {
+      throw(size_mismatch("Interpolation array must have at least two elements in each direction in interp3d"));
+    }
+    else if (xi.dimensions() != yi.dimensions() || xi.dimensions() != zi.dimensions()) {
+      throw(size_mismatch("Indexing arrays must be the same shape in interp3d"));
+    }
+
+    Index ni = xi.size();
+    ExpressionSize<MDims-2> ans_dims;
+    ans_dims[0] = xi.size();
+    for (int ii = 3; ii < MDims; ++ii) {
+      ans_dims[ii-2] = M.size(ii);
+    }
+
+    Array<MDims-2,MType,MIsActive> ans(ans_dims);
+    
+    // Indices to the first of the two elements in each dimension, and
+    // the weight of the first element
+    IntVector xind0(ni);
+    Vector xweight0(ni);
+    IntVector yind0(ni);
+    Vector yweight0(ni);
+    IntVector zind0(ni);
+    Vector zweight0(ni);
+    boolVector is_valid(ni);
+    is_valid = true;
+    internal::InterpHelper<XType>::interp_get_indices_weights(x, xi, ep,
+							      xind0, xweight0, is_valid);
+    internal::InterpHelper<YType>::interp_get_indices_weights(y, yi, ep,
+							      yind0, yweight0, is_valid);
+    internal::InterpHelper<ZType>::interp_get_indices_weights(z, zi, ep,
+							      zind0, zweight0, is_valid);
+    for (Index ii = 0; ii < ni; ++ii) {
+      if (is_valid(ii)) {
+	// Tri-linear interpolation
+	ans[ii] = xweight0(ii) *
+	  (yweight0(ii) * (zweight0(ii) * M[xind0(ii)][yind0(ii)][zind0(ii)]
+			   +(1.0-zweight0(ii)) * M[xind0(ii)][yind0(ii)][zind0(ii)+1])
+	   + (1.0-yweight0(ii)) * (zweight0(ii)  * M[xind0(ii)][yind0(ii)+1][zind0(ii)]
+				   +(1.0-zweight0(ii)) * M[xind0(ii)][yind0(ii)+1][zind0(ii)+1]))
+	  + (1.0 - xweight0(ii)) *
+	  (yweight0(ii) * (zweight0(ii) * M[xind0(ii)+1][yind0(ii)][zind0(ii)]
+			   +(1.0-zweight0(ii)) * M[xind0(ii)+1][yind0(ii)][zind0(ii)+1])
+	   + (1.0-yweight0(ii)) * (zweight0(ii)  * M[xind0(ii)+1][yind0(ii)+1][zind0(ii)]
+				   +(1.0-zweight0(ii)) * M[xind0(ii)+1][yind0(ii)+1][zind0(ii)+1]));
+      }
+      else {
+	ans[ii] = extrapolate_value;
+      }
+    }
+    return ans;
+  }
+
+  // Ensure that 3D interpolation works if expressions are provided
+  // for any of the arguments; these are converted to temporary
+  // arrays.
+  template <typename XType, typename YType, typename ZType, typename MType,
+	    typename XiType, class YiType, class ZiType,
+	    class X, class Y, class Z, class M, class Xi, class Yi, class Zi>
+  Array<M::rank-2,MType,M::is_active>
+  interp3d(const Expression<XType,X>& x,
+	   const Expression<YType,Y>& y,
+	   const Expression<ZType,Z>& z,
+	   const Expression<MType,M>& m,
+	   const Expression<XiType,Xi>& xi,
+	   const Expression<YiType,Yi>& yi,
+	   const Expression<ZiType,Zi>& zi,
+	   ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR,
+	   MType extrapolate_value = std::numeric_limits<MType>::signaling_NaN()) {
+    const Array<1,XType,false> x2(x.cast());
+    const Array<1,YType,false> y2(y.cast());
+    const Array<1,ZType,false> z2(z.cast());
+    const Array<M::rank,MType,M::is_active> m2(m.cast());
+    const Array<1,XiType,false> xi2(xi.cast());
+    const Array<1,YiType,false> yi2(yi.cast());
+    const Array<1,ZiType,false> zi2(zi.cast());
+    return interp3d(x2, y2, z2, m2, xi2, yi2, zi2, ep, extrapolate_value);
   }
   
 } // End namespace adept

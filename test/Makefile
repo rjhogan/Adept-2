@@ -27,7 +27,9 @@ OBJECTS = algorithm.o algorithm_noad.o test_checkpoint.o \
 	test_fixed_arrays.o test_constructors.o test_derivatives.o \
 	test_array_derivatives.o test_thread_safe_arrays.o \
 	test_complex_arrays.o test_packet_operations.o \
-	test_fastexp.o test_reduce_active.o test_minimizer.o
+	test_fastexp.o test_reduce_active.o test_minimizer.o \
+	test_interp.o
+
 GSL_OBJECTS = test_gsl_interface.o state.o rosenbrock_banana_function.o
 
 GSL_LIBS = -lgsl
@@ -171,6 +173,10 @@ test_reduce_active: test_reduce_active.o $(LIBADEPT)
 # Test program 20
 test_minimizer: test_minimizer.o $(LIBADEPT)
 	$(CXXLINK) test_minimizer.o $(MYLIBS)
+
+# Test program 21
+test_interp: test_interp.o $(LIBADEPT)
+	$(CXXLINK) test_interp.o $(MYLIBS)
 
 # The no-automatic-differentiation version of the algorithm: uses the
 # -DADEPT_NO_AUTOMATIC_DIFFERENTIATION to produce a version of the

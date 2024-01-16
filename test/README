@@ -331,3 +331,13 @@ the call to the line-search algorithm, starting at 0. Then follows the
 N values of the state vector, followed by the value of the cost
 function. This can be used to plot how each minimizer progresses to
 the solution.
+
+
+TEST 21: INTERPOLATION
+
+Executable: test_interp
+
+Source file: test_interp.cpp
+
+Demonstrates: Adept's interpolation functions interp, interp2d and
+interp3d.

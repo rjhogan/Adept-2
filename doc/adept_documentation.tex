@@ -115,7 +115,7 @@
 
 \date{Document version 2.1 (February 2021) applicable to \Adept\ version
   2.1 \thanks{This document is copyright \copyright\ Robin J. Hogan
-    2013--2021.  Permission is granted to copy, distribute and/or
+    2013--2024.  Permission is granted to copy, distribute and/or
     modify this document under the terms of the GNU Free Documentation
     License, Version 1.3 or any later version published by the Free
     Software Foundation. This license may be found at
@@ -2842,6 +2842,58 @@ performing the operation.
 Statements involving \code{solve} and \code{inv} cannot yet be
 automatically differentiated. When the \Adept\ stack is redesigned to
 hold matrices, this capability will be added.
+
+\section{Interpolation}
+\emph{Adept} supports linear interpolation, in one, two and three
+dimensions via the \code{interp}, \code{interp2d} and \code{interp3d}
+functions. The example below shows how these functions are called and
+the size of the arguments, but does not fill the arguments with actual
+data (see the test program \code{test/test\_interp.cpp} for complete
+usage):
+%
+\begin{lstlisting}
+  // Size of each dimension
+  int nx, ny, nz;
+  // Coordinate vectors of each dimension (must be monotonic)
+  Vector x(nx), y(ny), z(nz);
+  // Arrays to be interpolated
+  Vector  A1(nx);
+  Matrix  A2(ny,nx);
+  Array3D A3(nz,ny,nx);
+  // Number of points required
+  int ni;
+  // Locations of these points
+  Vector xi(ni), yi(ni), zi(ni);
+  // Output vector
+  Vector v(ni);
+  // Interpolation functions
+  v = interp(x,A1,xi);
+  v = interp2d(y,x,A2,yi,xi);
+  v = interp3d(z,y,x,A3,zi,yi,xi);
+\end{lstlisting}
+%
+Each interpolation function takes coordinate vectors describing each
+dimension of the interpolation array in the order of the dimensions of
+that array. In the two dimensional case, since matrices are indexed
+first by row ($y$ axis) then column ($x$ axis), this is the order they
+are shown here.
+
+The interpolation arrays may have more dimensions than shown here; for
+each additional dimension, a further dimension is added to the output
+array, and effectively multiple arrays are interpolated at once. In
+this case, the coordinate vectors still refer to the first one, two or
+three dimensions of this array and the remaining (more rapidly varying
+in memory) dimensions come after.
+
+When the requested points lie outside the space of the interpolation
+array, there are three available extrapolation policies which may be
+specified by one or two additional arguments:
+\begin{lstlisting}
+  v = interp(x,A1,xi,ADEPT_EXTRAPOLATE_LINEAR);        // Linear extrapolation (default)
+  v = interp(x,A1,xi,ADEPT_EXTRAPOLATE_CLAMP);         // Clamp at nearest valid point
+  v = interp(x,A1,xi,ADEPT_EXTRAPOLATE_CONSTANT);      // Set outliers to NaN
+  v = interp(x,A1,xi,ADEPT_EXTRAPOLATE_CONSTANT, 0.0); // Set outliers to zero
+\end{lstlisting}
 
 \section{Bounds and alias checking}
 \label{sec:bounds}
