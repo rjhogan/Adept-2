@@ -69,8 +69,8 @@ namespace adept {
        vector_separator = " ";
        vector_print_before = "[";
        vector_print_after = "]";
-       array_opening_bracket = "";
-       array_closing_bracket = "";
+       array_opening_bracket = "[";
+       array_closing_bracket = "]";
        array_contiguous_separator = " ";
        array_non_contiguous_separator = ";\n";
        array_print_before = "[";
