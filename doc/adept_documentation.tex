@@ -2844,32 +2844,37 @@ automatically differentiated. When the \Adept\ stack is redesigned to
 hold matrices, this capability will be added.
 
 \section{Interpolation}
-\emph{Adept} supports linear interpolation, in one, two and three
-dimensions via the \code{interp}, \code{interp2d} and \code{interp3d}
-functions. The example below shows how these functions are called and
-the size of the arguments, but does not fill the arguments with actual
-data (see the test program \code{test/test\_interp.cpp} for complete
-usage):
+\emph{Adept} supports linear and nearest-neighbour interpolation, in
+one, two and three dimensions via the \code{interp}, \code{interp2d}
+and \code{interp3d} functions. The example below shows how these
+functions are called and the size of the arguments, but does not fill
+the arguments with actual data (see the test program
+\code{test/test\_interp.cpp} for complete usage):
 %
 \begin{lstlisting}
-  // Size of each dimension
-  int nx, ny, nz;
-  // Coordinate vectors of each dimension (must be monotonic)
-  Vector x(nx), y(ny), z(nz);
-  // Arrays to be interpolated
-  Vector  A1(nx);
-  Matrix  A2(ny,nx);
-  Array3D A3(nz,ny,nx);
-  // Number of points required
-  int ni;
-  // Locations of these points
-  Vector xi(ni), yi(ni), zi(ni);
-  // Output vector
-  Vector v(ni);
-  // Interpolation functions
-  v = interp(x,A1,xi);
-  v = interp2d(y,x,A2,yi,xi);
-  v = interp3d(z,y,x,A3,zi,yi,xi);
+ // Size of each dimension
+ int nx, ny, nz;
+ // Coordinate vectors of each dimension (must be monotonic)
+ Vector x(nx), y(ny), z(nz);
+ // Arrays to be interpolated
+ Vector  A1(nx);
+ Matrix  A2(ny,nx);
+ Array3D A3(nz,ny,nx);
+ // Number of points required
+ int ni;
+ // Locations of these points
+ Vector xi(ni), yi(ni), zi(ni);
+ // Output vector
+ Vector v(ni);
+ // Linear interpolation (default)
+ v = interp(x,A1,xi);
+ v = interp(x,A1,xi,ADEPT_INTERPOLATE_LINEAR); // Specifying scheme explicitly
+ v = interp2d(y,x,A2,yi,xi);
+ v = interp3d(z,y,x,A3,zi,yi,xi);
+ // Nearest-neighbour interpolation
+ v = interp(x,A1,xi,ADEPT_INTERPOLATE_NEAREST);
+ v = interp2d(y,x,A2,yi,xi,ADEPT_INTERPOLATE_NEAREST);
+ v = interp3d(z,y,x,A3,zi,yi,xi,ADEPT_INTERPOLATE_NEAREST);
 \end{lstlisting}
 %
 Each interpolation function takes coordinate vectors describing each
@@ -2878,21 +2883,43 @@ that array. In the two dimensional case, since matrices are indexed
 first by row ($y$ axis) then column ($x$ axis), this is the order they
 are shown here.
 
-The interpolation arrays may have more dimensions than shown here; for
-each additional dimension, a further dimension is added to the output
-array, and effectively multiple arrays are interpolated at once. In
-this case, the coordinate vectors still refer to the first one, two or
-three dimensions of this array and the remaining (more rapidly varying
-in memory) dimensions come after.
+The interpolation arrays (\code{A1}, \code{A2} and \code{A3} here) may
+have more dimensions than shown above; for each additional dimension, a
+further dimension is added to the output array, and effectively
+multiple arrays are interpolated at once. In this case, the coordinate
+vectors still refer to the first one, two or three dimensions of this
+array and the remaining (more rapidly varying in memory) dimensions
+come after.
 
-When the requested points lie outside the space of the interpolation
-array, there are three available extrapolation policies which may be
-specified by one or two additional arguments:
+As can be seen from the listing above, an optional argument after the
+array arguments specifies the interpolation scheme to use, but this
+argument can also be used to specify the extrapolation policy to apply
+for requested points that lie outside of the interpolation array by
+using a bitwise-OR with one of the following:
+%
+\begin{description}
+  \citem{ADEPT\_EXTRAPOLATE\_DEFAULT} Use the default extrapolation
+  policy associated with the interpolation scheme (see
+  below). Obviously this can be omitted.
+  \citem{ADEPT\_EXTRAPOLATE\_LINEAR} Linear extrapolation; this is the
+  default for linear interpolation, but is not available with
+  nearest-neighbour interpolation.  \citem{ADEPT\_EXTRAPOLATE\_CLAMP}
+  Clamp the returned value at the nearest valid point in the
+  interpolation array; this is the default for nearest-neighbour
+  interpolation.  \citem{ADEPT\_EXTRAPOLATE\_CONSTANT} Set outliers to
+  a constant value provided by a further optional argument to the
+  function, or \code{NaN} if no additional argument is provided.
+\end{description}
+For example:
 \begin{lstlisting}
-  v = interp(x,A1,xi,ADEPT_EXTRAPOLATE_LINEAR);        // Linear extrapolation (default)
-  v = interp(x,A1,xi,ADEPT_EXTRAPOLATE_CLAMP);         // Clamp at nearest valid point
-  v = interp(x,A1,xi,ADEPT_EXTRAPOLATE_CONSTANT);      // Set outliers to NaN
-  v = interp(x,A1,xi,ADEPT_EXTRAPOLATE_CONSTANT, 0.0); // Set outliers to zero
+ // Explicit selection of default behaviour (linear interpolation & extrapolation)
+ v = interp(x,A1,xi,ADEPT_INTERPOLATE_LINEAR|ADEPT_EXTRAPOLATE_DEFAULT);
+ // Nearest-neighbour interpolation with clamped extrapolation
+ v = interp(x,A1,xi,ADEPT_INTERPOLATE_NEAREST|ADEPT_EXTRAPOLATE_CLAMP);
+ // Nearest-neighbour interpolation, outliers set to NaN
+ v = interp(x,A1,xi,ADEPT_EXTRAPOLATE_NEAREST|ADEPT_EXTRAPOLATE_CONSTANT);
+ // Linear interpolation, outliers set to zero
+ v = interp(x,A1,xi,ADEPT_EXTRAPOLATE_CONSTANT, 0.0);
 \end{lstlisting}
 
 \section{Bounds and alias checking}

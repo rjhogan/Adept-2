@@ -58,7 +58,8 @@ PROGRAMS = test_adept test_adept_with_and_without_ad test_radiances \
 	test_arrays test_arrays_active test_arrays_active_pausable \
 	test_fixed_arrays test_fixed_arrays_active test_derivatives \
 	test_array_derivatives test_thread_safe_arrays test_complex_arrays \
-	test_packet_operations test_fastexp test_reduce_active test_minimizer
+	test_packet_operations test_fastexp test_reduce_active test_minimizer \
+	test_interp
 
 all:
 	@echo "********************************************************"

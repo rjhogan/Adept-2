@@ -1,6 +1,6 @@
 /* test_interp.cpp
 
-  Copyright (C) 2024 European Centre for Medium-Range Weather Forecasts
+  Copyright (C) 2024- European Centre for Medium-Range Weather Forecasts
 
   Copying and distribution of this file, with or without modification,
   are permitted in any medium without royalty provided the copyright
@@ -15,10 +15,15 @@
 
 using namespace adept;
 
-#define TEST(FUNC)				\
+#define TEST_MULTI(FUNC)				\
   {						\
-    std::cout << #FUNC << " =\n";		\
+    std::cout << #FUNC << " =";		\
     std::cout << FUNC << "\n";			\
+  }
+
+#define TEST(FUNC)					\
+  {							\
+    std::cout << FUNC << "     \t = " << #FUNC << "\n";	\
   }
 
 int
@@ -27,42 +32,50 @@ main(int argc, const char** argv)
   set_array_print_style(PRINT_STYLE_MATLAB);
   {
     std::cout << "*** 1D interpolation ***\n\n";
-    int nx = 3;
-    Vector x = pow(linspace(1.0,nx,nx),2.0);
-    Vector m = sqrt(linspace(1.0,nx,nx));
-    Vector xi = {4.0, 2.0, 0.5, 10.0};
+    Vector x = {1.0, 4.0, 9.0};
+    Vector m = {2.0, 3.0, 5.0};
+    Vector xi = {4.0, 4.8, 3.0, 0.5, 10.0};
     std::cout << "Coordinate vector and interpolation vector:\n";
-    std::cout << "x = " << x << "\n";
-    std::cout << "m = " << m << "\n";
+    std::cout << "x  = " << x << "\n";
+    std::cout << "m  = " << m << "\n";
     std::cout << "xi = " << xi << "\n";
     std::cout << "...which are:\n"
 	      << "  (1) at a point in the interpolation vector,\n"
-	      << "  (2) between points in the interpolation vector,\n"
-	      << "  (3) off the left of the interpolation vector, and\n"
-	      << "  (4) off the right of the interpolation vector.\n\n";
+	      << "  (2) between points in the interpolation vector (closer to left),\n"
+      	      << "  (3) between points in the interpolation vector (closer to right),\n"
+	      << "  (4) off the left of the interpolation vector, and\n"
+	      << "  (5) off the right of the interpolation vector.\n\n";
     TEST(interp(x,m,xi));
     TEST(interp(x,m,xi,ADEPT_EXTRAPOLATE_LINEAR));
     TEST(interp(x,m,xi,ADEPT_EXTRAPOLATE_CLAMP));
     TEST(interp(x,m,xi,ADEPT_EXTRAPOLATE_CONSTANT));
-    TEST(interp(x,m,xi,ADEPT_EXTRAPOLATE_CONSTANT,-1000.0));
+    TEST(interp(x,m,xi,ADEPT_EXTRAPOLATE_CONSTANT,-10.0));
     TEST(interp(x(stride(end,0,-1)),m(stride(end,0,-1)),xi,ADEPT_EXTRAPOLATE_LINEAR));
     TEST(interp(x+0.0,m+0.0,xi+0.0,ADEPT_EXTRAPOLATE_LINEAR));
+    TEST(interp(x,m,xi,ADEPT_INTERPOLATE_NEAREST));
+    TEST(interp(x,m,xi,ADEPT_INTERPOLATE_NEAREST|ADEPT_EXTRAPOLATE_CLAMP));
+    TEST(interp(x,m,xi,ADEPT_INTERPOLATE_NEAREST|ADEPT_EXTRAPOLATE_CONSTANT));
+    TEST(interp(x,m,xi,ADEPT_INTERPOLATE_NEAREST|ADEPT_EXTRAPOLATE_CONSTANT,-10.0));
+    TEST(interp(x(stride(end,0,-1)),m(stride(end,0,-1)),xi,ADEPT_INTERPOLATE_NEAREST));
 
     Matrix M = spread<1>(m,2);
-    std::cout << "\n*** Multiple 1D interpolation ***\n";
+    std::cout << "\n*** Multiple 1D linear interpolation ***\n";
     std::cout << "M = " << M << "\n";
-    TEST(interp(x,M,xi));
-
+    TEST_MULTI(interp(x,M,xi));
+    TEST_MULTI(interp(x,M,xi,ADEPT_INTERPOLATE_NEAREST));
   }
 
+  
   {
-    std::cout << "\n*** 2D interpolation ***\n\n";
+    std::cout << "\n*** 2D linear interpolation ***\n\n";
     int nx = 4;
     int ny = 3;
 
     Vector y = pow(linspace(1.0,ny,ny),2.0);
     Vector x = linspace(1.0,nx,nx);
-    Matrix M = outer_product(y,x);
+    Matrix M = {{2.0,3.0,5.0,7.0},
+		{11.0,13.0,17.0,19.0},
+		{23.0,29.0,31.0,37.0}};//outer_product(y,x);
     
     Vector yi = {4.0, 2.0, 6.5, 0.5};
     Vector xi = {2.0, 3.8, 0.5, 5.0};
@@ -84,14 +97,19 @@ main(int argc, const char** argv)
     TEST(interp2d(y,x,M,yi,xi,ADEPT_EXTRAPOLATE_LINEAR));
     TEST(interp2d(y,x,M,yi,xi,ADEPT_EXTRAPOLATE_CLAMP));
     TEST(interp2d(y,x,M,yi,xi,ADEPT_EXTRAPOLATE_CONSTANT));
-    TEST(interp2d(y,x,M,yi,xi,ADEPT_EXTRAPOLATE_CONSTANT,-1000.0));
-    TEST(interp2d(y(stride(end,0,-1)),x,M(stride(end,0,-1),__),yi,xi,ADEPT_EXTRAPOLATE_LINEAR));
-    TEST(interp2d(y+0.0,x+0.0,M+0.0,yi+0.0,xi+0.0,ADEPT_EXTRAPOLATE_LINEAR));
+    TEST(interp2d(y,x,M,yi,xi,ADEPT_EXTRAPOLATE_CONSTANT,-10.0));
+    TEST(interp2d(y(stride(end,0,-1)),x,M(stride(end,0,-1),__),yi,xi));
+    TEST(interp2d(y+0.0,x+0.0,M+0.0,yi+0.0,xi+0.0));
+    TEST(interp2d(y,x,M,yi,xi,ADEPT_INTERPOLATE_NEAREST));
+    TEST(interp2d(y,x,M,yi,xi,ADEPT_INTERPOLATE_NEAREST|ADEPT_EXTRAPOLATE_CLAMP));
+    TEST(interp2d(y,x,M,yi,xi,ADEPT_INTERPOLATE_NEAREST|ADEPT_EXTRAPOLATE_CONSTANT));
+    TEST(interp2d(y,x,M,yi,xi,ADEPT_INTERPOLATE_NEAREST|ADEPT_EXTRAPOLATE_CONSTANT,-10.0));
+    TEST(interp2d(y(stride(end,0,-1)),x,M(stride(end,0,-1),__),yi,xi,ADEPT_INTERPOLATE_NEAREST));
 
     Array3D A = spread<2>(M,2);
-    std::cout << "\n*** Multiple 2D interpolation ***\n";
+    std::cout << "\n*** Multiple 2D linear interpolation ***\n";
     std::cout << "A = " << A << "\n";
-    TEST(interp2d(y,x,A,yi,xi));
+    TEST_MULTI(interp2d(y,x,A,yi,xi));
   }
 
   {
@@ -130,9 +148,14 @@ main(int argc, const char** argv)
     TEST(interp3d(z,y,x,A,zi,yi,xi,ADEPT_EXTRAPOLATE_LINEAR));
     TEST(interp3d(z,y,x,A,zi,yi,xi,ADEPT_EXTRAPOLATE_CLAMP));
     TEST(interp3d(z,y,x,A,zi,yi,xi,ADEPT_EXTRAPOLATE_CONSTANT));
-    TEST(interp3d(z,y,x,A,zi,yi,xi,ADEPT_EXTRAPOLATE_CONSTANT,-1000.0));
+    TEST(interp3d(z,y,x,A,zi,yi,xi,ADEPT_EXTRAPOLATE_CONSTANT,-10.0));
     TEST(interp3d(z,y(stride(end,0,-1)),x,A(__,stride(end,0,-1),__),zi,yi,xi,ADEPT_EXTRAPOLATE_LINEAR));
     TEST(interp3d(z+0.0,y+0.0,x+0.0,A+0.0,zi+0.0,yi+0.0,xi+0.0,ADEPT_EXTRAPOLATE_LINEAR));
+    TEST(interp3d(z,y,x,A,zi,yi,xi,ADEPT_INTERPOLATE_NEAREST));
+    TEST(interp3d(z,y,x,A,zi,yi,xi,ADEPT_INTERPOLATE_NEAREST|ADEPT_EXTRAPOLATE_CLAMP));
+    TEST(interp3d(z,y,x,A,zi,yi,xi,ADEPT_INTERPOLATE_NEAREST|ADEPT_EXTRAPOLATE_CONSTANT));
+    TEST(interp3d(z,y,x,A,zi,yi,xi,ADEPT_INTERPOLATE_NEAREST|ADEPT_EXTRAPOLATE_CONSTANT,-10.0));
+    TEST(interp3d(z,y(stride(end,0,-1)),x,A(__,stride(end,0,-1),__),zi,yi,xi,ADEPT_INTERPOLATE_NEAREST));
 
   }
   

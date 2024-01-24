@@ -15,18 +15,54 @@
 
 namespace adept {
 
-  // The three extrapolation policies for the interpolation functions
-  // if interpolation is requested outside the range of the
-  // interpolation array
-  enum ExtrapolatePolicy {
-    ADEPT_EXTRAPOLATE_LINEAR = 0,// Linear extrapolation
-    ADEPT_EXTRAPOLATE_CLAMP,     // Use closest valid point
-    ADEPT_EXTRAPOLATE_CONSTANT,  // Return a constant for out-of-bounds
-				 // inputs, or NaN if the constant is
-				 // not specified
-  };
-
   namespace internal {
+    typedef unsigned int uint;
+  };
+  
+  // The interpolation scheme and extrapolation behaviours are passed
+  // in as one "options" argument with a bitwise OR. The lowest four
+  // bits specify the extrapolation policy and the remaining bits the
+  // interpolation scheme.
+  static const internal::uint ADEPT_INTERPOLATE_LINEAR  = 0u; // Default
+  static const internal::uint ADEPT_INTERPOLATE_NEAREST = (1u<<4);
+
+  static const internal::uint ADEPT_EXTRAPOLATE_DEFAULT  = 0u;
+  static const internal::uint ADEPT_EXTRAPOLATE_LINEAR   = 1u; // Default for linear interp 
+  static const internal::uint ADEPT_EXTRAPOLATE_CLAMP    = 2u; // Default for nearest-neighbour
+  // Return a constant for out-of-bounds inputs, or NaN if the
+  // constant is not specified
+  static const internal::uint ADEPT_EXTRAPOLATE_CONSTANT = 3u;
+
+  // A bitwise AND of the "options" argument with one of the following
+  // will extract the component associated with interpolation and
+  // extrapolation
+  namespace internal {
+    static const internal::uint ADEPT_EXTRAPOLATE_MASK = 15; // Binary 1111
+    static const internal::uint ADEPT_INTERPOLATE_MASK = ~ADEPT_EXTRAPOLATE_MASK;
+
+    inline void extract_interp_extrap(uint options, uint& interp_scheme, uint& extrap_policy) {
+      interp_scheme = options & ADEPT_INTERPOLATE_MASK;
+      extrap_policy = options & ADEPT_EXTRAPOLATE_MASK;
+      if (interp_scheme != ADEPT_INTERPOLATE_LINEAR
+	  && interp_scheme != ADEPT_INTERPOLATE_NEAREST) {
+	throw array_exception("Interpolation scheme not understood");
+      }
+      else if (extrap_policy > ADEPT_EXTRAPOLATE_CONSTANT) {
+	throw array_exception("Extrapolation policy not understood");
+      }
+      else if (interp_scheme == ADEPT_INTERPOLATE_NEAREST
+	       && extrap_policy == ADEPT_EXTRAPOLATE_LINEAR) {
+	throw array_exception("Linear extrapolation not available with nearest-neighbour interpolation");
+      }
+      else if (extrap_policy == ADEPT_EXTRAPOLATE_DEFAULT) {
+	if (interp_scheme == ADEPT_INTERPOLATE_LINEAR) {
+	  extrap_policy = ADEPT_EXTRAPOLATE_LINEAR;
+	}
+	else {
+	  extrap_policy = ADEPT_EXTRAPOLATE_CLAMP;
+	}
+      }
+    }
 
     // The dimensions of an array containing the data to be
     // interpolated may be described either by a vector of real
@@ -45,7 +81,8 @@ namespace adept {
       template <typename XiType>
       static void interp_get_indices_weights(const Array<1,XType,false>& x,
 				 const Array<1,XiType,false>& xi,
-				 ExtrapolatePolicy ep,
+				 internal::uint interp_scheme,
+				 internal::uint extrap_policy,
 				 Array<1,Index>& ind0, Array<1,Real,false>& weight0,
 				 Array<1,bool>& is_valid) {
 	if (x(1) > x(0)) {
@@ -54,20 +91,20 @@ namespace adept {
 	    const XiType xii = xi(i);
 	    if (xii >= x(0) && xii <= x(end)) {
 	      // Point is in the range of the interpolated function
-	      Index jj = 1;
-	      while (jj < x.size()-1 && x(jj+1) < xii) {
+	      Index jj = 0;
+	      while (jj < x.size()-2 && x(jj+1) < xii) {
 		++jj;
 	      }
-	      ind0(i) = jj-1;
-	      weight0(i) = (x(jj)-xii)/(x(jj)-x(jj-1));
+	      ind0(i) = jj;
+	      weight0(i) = (x(jj+1)-xii)/(x(jj+1)-x(jj));
 	    }
 	    else if (xii < x(0)) {
 	      // Point is off the low end of the scale
 	      ind0(i) = 0;
-	      if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+	      if (extrap_policy == ADEPT_EXTRAPOLATE_LINEAR) {
 		weight0(i) = (x(1)-xii)/(x(1)-x(0));
 	      }
-	      else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+	      else if (extrap_policy == ADEPT_EXTRAPOLATE_CLAMP) {
 		weight0(i) = 1.0;
 	      }
 	      else {
@@ -77,10 +114,10 @@ namespace adept {
 	    else {
 	      // Point is off the high end of the scale
 	      ind0(i) = x.size()-2;
-	      if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+	      if (extrap_policy == ADEPT_EXTRAPOLATE_LINEAR) {
 		weight0(i) = (x(end)-xii)/(x(end)-x(end-1));
 	      }
-	      else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+	      else if (extrap_policy == ADEPT_EXTRAPOLATE_CLAMP) {
 		weight0(i) = 0.0;
 	      }
 	      else {
@@ -96,7 +133,7 @@ namespace adept {
 	    if (xii <= x(0) && xii >= x(end)) {
 	      // Point is in the range of the interpolated function
 	      Index jj = x.size()-2;
-	      while (jj > 0 && x(jj-1) < xii) {
+	      while (jj > 0 && x(jj) < xii) {
 		--jj;
 	      }
 	      ind0(i) = jj;
@@ -105,10 +142,10 @@ namespace adept {
 	    else if (xii > x(0)) {
 	      // Point is off the scale (high in x, low in index)
 	      ind0(i) = 0;
-	      if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+	      if (extrap_policy == ADEPT_EXTRAPOLATE_LINEAR) {
 		weight0(i) = (x(1)-xii)/(x(1)-x(0));
 	      }
-	      else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+	      else if (extrap_policy == ADEPT_EXTRAPOLATE_CLAMP) {
 		weight0(i) = 1.0;
 	      }
 	      else {
@@ -118,10 +155,10 @@ namespace adept {
 	    else {
 	      // Point is off the scale (low in x, high in index)
 	      ind0(i) = x.size()-2;
-	      if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+	      if (extrap_policy == ADEPT_EXTRAPOLATE_LINEAR) {
 		weight0(i) = (x(end)-xii)/(x(end)-x(end-1));
 	      }
-	      else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+	      else if (extrap_policy == ADEPT_EXTRAPOLATE_CLAMP) {
 		weight0(i) = 0.0;
 	      }
 	      else {
@@ -130,11 +167,16 @@ namespace adept {
 	    }	    
 	  }
 	}
+	// Not very efficient implementation of nearest-neighbour
+	// interpolation: round the weights from linear interpolation
+	if (interp_scheme == ADEPT_INTERPOLATE_NEAREST) {
+	  weight0 = round(weight0);
+	}
       }
     };
   }
   
-  // 1D interpolation: interp(x,y,xi) interpolates to obtain values of
+  // 1D interpolation: interp1(x,y,xi) interpolates to obtain values of
   // y (whose first dimension is at the points in vector x)
   // interpolated to the values in vector xi. If y has more than one
   // dimension then multiple values are interpolated for every point
@@ -153,8 +195,8 @@ namespace adept {
   interp(const Array<1,XType,false>& x,
 	 const Array<YDims,YType,YIsActive>& y,
 	 const Array<1,XiType,false>& xi,
-	 ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR,
-	 YType extrapolate_value = std::numeric_limits<YType>::signaling_NaN()) {
+	 internal::uint options = ADEPT_INTERPOLATE_LINEAR | ADEPT_EXTRAPOLATE_DEFAULT,
+	 YType extrap_value = std::numeric_limits<YType>::signaling_NaN()) {
     
     ExpressionSize<YDims> ans_dims = y.dimensions();
     ans_dims[0] = xi.size();
@@ -174,6 +216,9 @@ namespace adept {
       return ans;
     }
 
+    internal::uint interp_scheme, extrap_policy;
+    internal::extract_interp_extrap(options, interp_scheme, extrap_policy);
+    
     if (x(0) < x(1)) {
       // Normal ordering
       for (Index i = 0; i < xi.size(); i++) {
@@ -181,32 +226,32 @@ namespace adept {
 	Index jmin = 0;
 	Index jmax = x.size()-1;
 	if (xii <= x(0)) {
-	  if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+	  if (extrap_policy == ADEPT_EXTRAPOLATE_LINEAR) {
 	    // Extrapolate leftwards
 	    jmax = 1;
 	  }
-	  else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+	  else if (extrap_policy == ADEPT_EXTRAPOLATE_CLAMP) {
 	    // Clamp at first value
 	    ans[i] = y[0];
 	    continue;
 	  }
 	  else {
-	    ans[i] = extrapolate_value;
+	    ans[i] = extrap_value;
 	    continue;
 	  }
 	}
 	else if (xii >= x(jmax)) {
-	  if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+	  if (extrap_policy == ADEPT_EXTRAPOLATE_LINEAR) {
 	    // Extrapolate rightwards
 	    jmin = jmax-1;
 	  }
-	  else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+	  else if (extrap_policy == ADEPT_EXTRAPOLATE_CLAMP) {
 	    // Clamp at final value
 	    ans[i] = y[jmax];
 	    continue;
 	  }
 	  else {
-	    ans[i] = extrapolate_value;
+	    ans[i] = extrap_value;
 	    continue;
 	  }
 	}
@@ -223,9 +268,22 @@ namespace adept {
 	    }
 	  }
 	}
-	// Found value: linearly interpolate
-	ans[i] = ((xii-x(jmin))*y[jmax] + (x(jmax)-xii)*y[jmin])
-	  / (x(jmax)-x(jmin));
+	if (interp_scheme == ADEPT_INTERPOLATE_LINEAR) {
+	  // Found value: linearly interpolate. Note that we need
+	  // square brackets here because ans and y may have more than
+	  // one dimension in which case we want to slice them
+	  // returning a lower dimensional array
+	  ans[i] = ((xii-x(jmin))*y[jmax] + (x(jmax)-xii)*y[jmin])
+	    / (x(jmax)-x(jmin));
+	}
+	else if (xii-x(jmin) > x(jmax)-xii) {
+	  // Nearest neighbour is at next point
+	  ans[i] = y[jmax];
+	}
+	else {
+	  // Nearest neighbour is at previous point
+	  ans[i] = y[jmin];
+	}
       }
     }
     else {
@@ -235,32 +293,32 @@ namespace adept {
 	Index jmin = 0;
 	Index jmax = x.size()-1;
 	if (xii >= x(0)) {
-	  if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+	  if (extrap_policy == ADEPT_EXTRAPOLATE_LINEAR) {
 	    // Extrapolate leftwards
 	    jmax = 1;
 	  }
-	  else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+	  else if (extrap_policy == ADEPT_EXTRAPOLATE_CLAMP) {
 	    // Clamp at first value
 	    ans[i] = y[0];
 	    continue;
 	  }
 	  else {
-	    ans[i] = extrapolate_value;
+	    ans[i] = extrap_value;
 	    continue;
 	  }
 	}
 	else if (xii <= x(jmax)) {
-	  if (ep == ADEPT_EXTRAPOLATE_LINEAR) {
+	  if (extrap_policy == ADEPT_EXTRAPOLATE_LINEAR) {
 	    // Extrapolate rightwards
 	    jmin = jmax-1;
 	  }
-	  else if (ep == ADEPT_EXTRAPOLATE_CLAMP) {
+	  else if (extrap_policy == ADEPT_EXTRAPOLATE_CLAMP) {
 	    // Clamp at last value
 	    ans[i] = y[jmax];
 	    continue;
 	  }
 	  else {
-	    ans[i] = extrapolate_value;
+	    ans[i] = extrap_value;
 	    continue;
 	  }
 	}
@@ -277,9 +335,20 @@ namespace adept {
 	    }
 	  }
 	}
-	// Found value: linearly interpolate
-	ans[i] = ((xii-x(jmin))*y[jmax] + (x(jmax)-xii)*y[jmin])
-	  / (x(jmax)-x(jmin));
+	if (interp_scheme == ADEPT_INTERPOLATE_LINEAR) {
+	  // Found value: linearly interpolate (all weights here are
+	  // negative)
+	  ans[i] = ((xii-x(jmin))*y[jmax] + (x(jmax)-xii)*y[jmin])
+	    / (x(jmax)-x(jmin));
+	}
+	else if (xii-x(jmin) < x(jmax)-xii) {
+	  // Nearest neighbour is at next point
+	  ans[i] = y[jmax];
+	}
+	else {
+	  // Nearest neighbour is at previous point
+	  ans[i] = y[jmin];
+	}
       }
     }
     return ans;
@@ -294,11 +363,12 @@ namespace adept {
   interp(const Expression<XType,X>& x,
 	 const Expression<YType,Y>& y,
 	 const Expression<XiType,Xi>& xi,
-	 ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR) {
+	 internal::uint options = ADEPT_INTERPOLATE_LINEAR | ADEPT_EXTRAPOLATE_DEFAULT,
+	 YType extrap_value = std::numeric_limits<YType>::signaling_NaN()) {
     const Array<1,XType,false> x2(x.cast());
     const Array<Y::rank,YType,Y::is_active> y2(y.cast());
     const Array<1,XiType,false> xi2(xi.cast());
-    return interp(x2, y2, xi2, ep);
+    return interp(x2, y2, xi2, options, extrap_value);
   }
 
   // 1D logarithmic interpolation: interpolate log(Y) and then
@@ -415,8 +485,8 @@ namespace adept {
 	   const Array<MDims,MType,MIsActive>& M,
 	   const Array<1,XiType,false>& xi,
 	   const Array<1,YiType,false>& yi,
-	   ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR,
-	   MType extrapolate_value = std::numeric_limits<MType>::signaling_NaN()) {
+	   internal::uint options = ADEPT_INTERPOLATE_LINEAR | ADEPT_EXTRAPOLATE_DEFAULT,
+	   MType extrap_value = std::numeric_limits<MType>::signaling_NaN()) {
 
     ADEPT_STATIC_ASSERT(MDims >= 2, TWO_DIMENSIONAL_INTERPOLATION_REQUIRES_2D_ARRAY);
     
@@ -433,6 +503,9 @@ namespace adept {
       throw(size_mismatch("Indexing arrays must be the same shape in interp2d"));
     }
 
+    internal::uint interp_scheme, extrap_policy;
+    internal::extract_interp_extrap(options, interp_scheme, extrap_policy);
+    
     Index ni = xi.size();
     ExpressionSize<MDims-1> ans_dims;
     ans_dims[0] = xi.size();
@@ -450,10 +523,16 @@ namespace adept {
     Vector yweight0(ni);
     boolVector is_valid(ni);
     is_valid = true;
-    internal::InterpHelper<XType>::interp_get_indices_weights(x, xi, ep,
+    internal::InterpHelper<XType>::interp_get_indices_weights(x, xi, interp_scheme, extrap_policy,
 							      xind0, xweight0, is_valid);
-    internal::InterpHelper<YType>::interp_get_indices_weights(y, yi, ep,
+    internal::InterpHelper<YType>::interp_get_indices_weights(y, yi, interp_scheme, extrap_policy,
 							      yind0, yweight0, is_valid);
+    /*
+    std::cout << "xind0 " << xind0 << "\n";
+    std::cout << "xweight00 " << xweight0 << "\n";
+    std::cout << "yind0 " << yind0 << "\n";
+    std::cout << "yweight00 " << yweight0 << "\n";
+    */
     for (Index ii = 0; ii < ni; ++ii) {
       if (is_valid(ii)) {
 	// Bi-linear interpolation
@@ -463,7 +542,7 @@ namespace adept {
 				  +(1.0-xweight0(ii)) * M[xind0(ii)+1][yind0(ii)+1]);
       }
       else {
-	ans[ii] = extrapolate_value;
+	ans[ii] = extrap_value;
       }
     }
     return ans;
@@ -480,14 +559,14 @@ namespace adept {
 	   const Expression<MType,M>& m,
 	   const Expression<XiType,Xi>& xi,
 	   const Expression<YiType,Yi>& yi,
-	   ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR,
-	   MType extrapolate_value = std::numeric_limits<MType>::signaling_NaN()) {
+	   internal::uint options = ADEPT_INTERPOLATE_LINEAR | ADEPT_EXTRAPOLATE_DEFAULT,
+	   MType extrap_value = std::numeric_limits<MType>::signaling_NaN()) {
     const Array<1,XType,false> x2(x.cast());
     const Array<1,YType,false> y2(y.cast());
     const Array<M::rank,MType,M::is_active> m2(m.cast());
     const Array<1,XiType,false> xi2(xi.cast());
     const Array<1,YiType,false> yi2(yi.cast());
-    return interp2d(x2, y2, m2, xi2, yi2, ep, extrapolate_value);
+    return interp2d(x2, y2, m2, xi2, yi2, options, extrap_value);
   }
   
   // 3D interpolation: as 1D interpolation but with two vectors
@@ -505,8 +584,8 @@ namespace adept {
 	   const Array<1,XiType,false>& xi,
 	   const Array<1,YiType,false>& yi,
 	   const Array<1,ZiType,false>& zi,
-	   ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR,
-	   MType extrapolate_value = std::numeric_limits<MType>::signaling_NaN()) {
+	   internal::uint options = ADEPT_INTERPOLATE_LINEAR | ADEPT_EXTRAPOLATE_DEFAULT,
+	   MType extrap_value = std::numeric_limits<MType>::signaling_NaN()) {
 
     ADEPT_STATIC_ASSERT(MDims >= 3, THREE_DIMENSIONAL_INTERPOLATION_REQUIRES_3D_ARRAY);
     
@@ -526,6 +605,9 @@ namespace adept {
       throw(size_mismatch("Indexing arrays must be the same shape in interp3d"));
     }
 
+    internal::uint interp_scheme, extrap_policy;
+    internal::extract_interp_extrap(options, interp_scheme, extrap_policy);
+    
     Index ni = xi.size();
     ExpressionSize<MDims-2> ans_dims;
     ans_dims[0] = xi.size();
@@ -545,11 +627,11 @@ namespace adept {
     Vector zweight0(ni);
     boolVector is_valid(ni);
     is_valid = true;
-    internal::InterpHelper<XType>::interp_get_indices_weights(x, xi, ep,
+    internal::InterpHelper<XType>::interp_get_indices_weights(x, xi, interp_scheme, extrap_policy,
 							      xind0, xweight0, is_valid);
-    internal::InterpHelper<YType>::interp_get_indices_weights(y, yi, ep,
+    internal::InterpHelper<YType>::interp_get_indices_weights(y, yi, interp_scheme, extrap_policy,
 							      yind0, yweight0, is_valid);
-    internal::InterpHelper<ZType>::interp_get_indices_weights(z, zi, ep,
+    internal::InterpHelper<ZType>::interp_get_indices_weights(z, zi, interp_scheme, extrap_policy,
 							      zind0, zweight0, is_valid);
     for (Index ii = 0; ii < ni; ++ii) {
       if (is_valid(ii)) {
@@ -566,7 +648,7 @@ namespace adept {
 				   +(1.0-zweight0(ii)) * M[xind0(ii)+1][yind0(ii)+1][zind0(ii)+1]));
       }
       else {
-	ans[ii] = extrapolate_value;
+	ans[ii] = extrap_value;
       }
     }
     return ans;
@@ -586,8 +668,8 @@ namespace adept {
 	   const Expression<XiType,Xi>& xi,
 	   const Expression<YiType,Yi>& yi,
 	   const Expression<ZiType,Zi>& zi,
-	   ExtrapolatePolicy ep = ADEPT_EXTRAPOLATE_LINEAR,
-	   MType extrapolate_value = std::numeric_limits<MType>::signaling_NaN()) {
+	   internal::uint options = ADEPT_INTERPOLATE_LINEAR | ADEPT_EXTRAPOLATE_DEFAULT,
+	   MType extrap_value = std::numeric_limits<MType>::signaling_NaN()) {
     const Array<1,XType,false> x2(x.cast());
     const Array<1,YType,false> y2(y.cast());
     const Array<1,ZType,false> z2(z.cast());
@@ -595,7 +677,7 @@ namespace adept {
     const Array<1,XiType,false> xi2(xi.cast());
     const Array<1,YiType,false> yi2(yi.cast());
     const Array<1,ZiType,false> zi2(zi.cast());
-    return interp3d(x2, y2, z2, m2, xi2, yi2, zi2, ep, extrapolate_value);
+    return interp3d(x2, y2, z2, m2, xi2, yi2, zi2, options, extrap_value);
   }
   
 } // End namespace adept
