@@ -3260,24 +3260,24 @@ multiple times for different ${\bf x}$ to find the minimum $J$.
 %
 A \emph{first-order} minimization algorithm requires also a
 user-supplied function returning the gradient of the cost function
-$\partial J/{\bf x}$ (a vector). Examples are the Conjugate Gradient
+$\partial J/{\partial\bf x}$ (a vector). Examples are the Conjugate Gradient
 method and the Limited-Memory Broyden-Fletcher-Goldfarb-Shanno
 (L-BFGS) method. Knowing the gradient enables such algorithms to find
 the minimum with far fewer function calls, although a function call
-returning $\partial J/{\bf x}$ is slower than one returning only
+returning $\partial J/{\partial\bf x}$ is slower than one returning only
 $J$. \Adept's optimization interface is in terms of passive array
 types, so the user is not obliged to use \Adept's automatic
 differentiation capability to compute these gradients, although the
 examples in this chapter assume that they do.
 %
 A \emph{second-order} minimization algorithm makes use of not only $J$
-and $\partial J/{\bf x}$, but also a user-supplied function for the
+and $\partial J/{\partial\bf x}$, but also a user-supplied function for the
 Hessian ${\bf A}=\partial^2J({\bf x})/\partial{\bf x}^2=\nabla_{\bf
   x}^2J$ (a symmetric matrix), or an approximation of it.  Examples
 are the Gauss-Newton and Levenberg-Marquardt methods. Knowing the
 second derivative means that even fewer iterations should be required
 to find the minimum of $J$, but ${\bf A}$ is more expensive to compute
-than $\partial J/{\bf x}$.
+than $\partial J/{\partial\bf x}$.
 
 \Adept\ does not have the ability to automatically compute Hessian
 matrices for an arbitrary cost function, but frequently the cost
