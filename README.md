@@ -36,14 +36,14 @@ automatic-differentiation capabilities of version 2.
 * The [Adept-2 GitHub page](https://github.com/rjhogan/Adept-2) for the latest snapshot
 * The [Adept-1.1 GitHub page](https://github.com/rjhogan/Adept) for the older (scalar) library
 * A detailed [User Guide](http://www.met.reading.ac.uk/clouds/adept/adept_documentation.pdf)
-* A paper describing the automatic differentiation capability: [Hogan, R. J., 2014: Fast reversemode automatic differentiation using expression templates in C++. *ACM Trans. Math. Softw.* **40,** 26:1-26:16](http://www.met.reading.ac.uk/~swrhgnrj/publications/adept.pdf)
+* A paper describing the automatic differentiation capability: [Hogan, R. J., 2014: Fast reverse-mode automatic differentiation using expression templates in C++. *ACM Trans. Math. Softw.* **40,** 26:1-26:16](http://www.met.reading.ac.uk/~swrhgnrj/publications/adept.pdf)
 * The [Adept Wikipedia page](https://en.wikipedia.org/wiki/Adept_(C++_library))
 * Bug fixes, and queries not answered by the documentation, should be addressed to Robin Hogan (r.j.hogan at ecmwf.int)
 
 ## Installation
 
 To build Adept from a GitHub snapshot, first do the following to
-recreate the configure script:
+recreate the configure script (requiring the autotools package):
 
     autoreconf -i
 
