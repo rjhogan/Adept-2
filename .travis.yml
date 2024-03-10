@@ -7,7 +7,11 @@ compiler:
 before_install:
   - sudo apt-get install gfortran -y
   - type gfortran
-install: autoreconf -i && ./configure && make -j8 
-script: 
-  - make check -j8
-  - cat test/test_results.txt
+jobs:
+  include:
+    - stage: build-and-test
+      install: autoreconf -i && ./configure && make -j8 
+      script: make check -j8 && cat test/test_results.txt
+    - 
+      install: mkdir build && cd build && cmake -DCMAKE_PREFIX_PATH=$PWD .. && make -j8 install
+      script: ./test.sh
