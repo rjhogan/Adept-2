@@ -1,4 +1,4 @@
-version 2.1.3
+version 2.1.3 (22 Feb 2024)
 	- Added interp2d and interp3d interpolation functions
 	- Added option of nearest-neighbour interpolation
 
