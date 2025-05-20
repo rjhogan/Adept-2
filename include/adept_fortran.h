@@ -75,6 +75,12 @@
 #include <complex>
 #include <adept_arrays.h>
 
+// GNU defines CFI_type_Bool as "_Bool", but this is only available in
+// C99, not C++, so we to make it an alias for C++'s "bool"
+#ifdef __GNUC__
+#include <stdbool.h>
+#endif
+
 // Load the Fortran array interface into the global namespace
 #include <ISO_Fortran_binding.h>
 
